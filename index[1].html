@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0f17" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="BodyFit" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+  <title>BodyFit Prep</title>
+  <style>
+    :root{
+      --bg:#0b0f17; --panel:#131a25; --panel2:#192231; --text:#f4f7fb;
+      --muted:#9aa8ba; --accent:#20d6c7; --accent2:#57a8ff; --danger:#ff6b6b;
+      --warn:#ffc857; --ok:#56d364; --border:#263247;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:linear-gradient(180deg,#090d14,#111827);color:var(--text)}
+    button,input,select,textarea{font:inherit}
+    .app{max-width:1100px;margin:auto;min-height:100vh;padding:16px 16px 90px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+    .title h1{font-size:24px;margin:0}.title p{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .badge{background:rgba(32,214,199,.12);color:var(--accent);border:1px solid rgba(32,214,199,.35);padding:8px 12px;border-radius:999px;font-weight:700;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+    .card{background:rgba(19,26,37,.96);border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+    .span-12{grid-column:span 12}.span-8{grid-column:span 8}.span-6{grid-column:span 6}.span-4{grid-column:span 4}.span-3{grid-column:span 3}
+    .metric{font-size:28px;font-weight:800}.label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .muted{color:var(--muted)} .small{font-size:12px}
+    .progress{height:10px;background:#222d3d;border-radius:99px;overflow:hidden;margin-top:8px}
+    .progress > div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0}
+    h2{font-size:18px;margin:0 0 12px} h3{font-size:15px;margin:12px 0 8px}
+    .tabs{display:flex;gap:8px;overflow:auto;padding-bottom:4px;margin-bottom:14px}
+    .tab{border:1px solid var(--border);background:var(--panel);color:var(--muted);padding:10px 14px;border-radius:12px;white-space:nowrap}
+    .tab.active{background:var(--accent);color:#041412;border-color:transparent;font-weight:800}
+    .view{display:none}.view.active{display:block}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:130px}
+    label{font-size:12px;color:var(--muted)}
+    input,select,textarea{width:100%;background:#0f1520;color:var(--text);border:1px solid var(--border);border-radius:12px;padding:11px 12px}
+    textarea{min-height:84px;resize:vertical}
+    .btn{border:0;border-radius:12px;padding:11px 14px;background:var(--accent);color:#041412;font-weight:800;cursor:pointer}
+    .btn.secondary{background:#243044;color:var(--text)} .btn.danger{background:var(--danger);color:white}
+    .btn.sm{padding:8px 10px;font-size:12px}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--border)}
+    th{color:var(--muted);font-weight:600}
+    .exercise{border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:10px;background:#111823}
+    .exercise-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .set-row{display:grid;grid-template-columns:42px 1fr 1fr 1fr 42px;gap:8px;align-items:center;margin-top:8px}
+    .set-row input{padding:9px}
+    .pill{display:inline-block;padding:5px 8px;border-radius:999px;background:#202b3c;color:var(--muted);font-size:11px;margin:2px}
+    .status-ok{color:var(--ok)} .status-warn{color:var(--warn)} .status-danger{color:var(--danger)}
+    .nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,14,21,.95);backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;justify-content:center;z-index:20}
+    .nav-inner{display:flex;max-width:900px;width:100%}
+    .nav button{flex:1;border:0;background:none;color:var(--muted);padding:12px 4px 16px;font-size:11px}
+    .nav button.active{color:var(--accent);font-weight:800}
+    .warning{border-left:4px solid var(--warn);background:rgba(255,200,87,.08);padding:12px;border-radius:12px;color:#ffe7a5}
+    canvas{width:100%;height:220px;background:#0f1520;border-radius:12px}
+    .meal-card{border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:10px}
+    .right{margin-left:auto}
+    @media(max-width:760px){
+      .span-8,.span-6,.span-4,.span-3{grid-column:span 12}
+      .set-row{grid-template-columns:32px 1fr 1fr 1fr 36px}
+      .app{padding:12px 12px 90px}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="title"><h1>BodyFit Prep</h1><p>Preparación física de 16 semanas · Gustavo</p></div>
+    <div class="badge" id="weekBadge">Semana 1/16</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-view="dashboard">Resumen</button>
+    <button class="tab" data-view="training">Entreno</button>
+    <button class="tab" data-view="nutrition">Comidas</button>
+    <button class="tab" data-view="checkin">Check-in</button>
+    <button class="tab" data-view="mobility">Core/Espalda</button>
+    <button class="tab" data-view="settings">Ajustes</button>
+  </div>
+
+  <section id="dashboard" class="view active">
+    <div class="grid">
+      <div class="card span-3"><div class="label">Peso actual</div><div class="metric" id="dashWeight">173.1 lb</div><div class="small muted">Meta: <span id="dashGoal">165 lb</span></div></div>
+      <div class="card span-3"><div class="label">Grasa corporal</div><div class="metric" id="dashFat">21.5%</div><div class="small muted">Inicio: 25.3%</div></div>
+      <div class="card span-3"><div class="label">Músculo esquelético</div><div class="metric" id="dashMuscle">75.4 lb</div><div class="small muted">Mantener ≥ 75 lb</div></div>
+      <div class="card span-3"><div class="label">Días restantes</div><div class="metric" id="daysLeft">112</div><div class="small muted">Preparación simulada</div></div>
+
+      <div class="card span-8">
+        <h2>Progreso del peso</h2>
+        <canvas id="weightChart" width="800" height="260"></canvas>
+      </div>
+      <div class="card span-4">
+        <h2>Meta semanal</h2>
+        <div class="row"><span class="muted">Pérdida buscada</span><strong class="right">0.5–1.0 lb</strong></div>
+        <div class="row"><span class="muted">Proteína</span><strong class="right" id="proteinGoal">180 g</strong></div>
+        <div class="row"><span class="muted">Calorías</span><strong class="right" id="calGoal">2,050</strong></div>
+        <div class="row"><span class="muted">Pasos</span><strong class="right" id="stepsGoal">10,000</strong></div>
+        <div class="progress"><div id="weightProgress"></div></div>
+        <p class="small muted" id="progressText"></p>
+      </div>
+
+      <div class="card span-6">
+        <h2>Último entrenamiento</h2>
+        <div id="lastWorkout" class="muted">Aún no has registrado entrenamiento.</div>
+      </div>
+      <div class="card span-6">
+        <h2>Último check-in</h2>
+        <div id="lastCheckin" class="muted">Aún no has hecho un check-in.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="training" class="view">
+    <div class="card">
+      <div class="row">
+        <div class="field"><label>Día de entrenamiento</label><select id="workoutDay"></select></div>
+        <div class="field"><label>Fecha</label><input type="date" id="workoutDate"></div>
+        <button class="btn" id="loadWorkout">Cargar rutina</button>
+      </div>
+    </div>
+    <div id="workoutContainer" style="margin-top:14px"></div>
+    <div class="card" id="workoutSaveCard" style="display:none">
+      <div class="row">
+        <div class="field"><label>Dolor lumbar durante el entrenamiento (0–10)</label><input type="number" min="0" max="10" id="painScore" value="0"></div>
+        <div class="field"><label>Energía (1–10)</label><input type="number" min="1" max="10" id="energyScore" value="7"></div>
+        <div class="field"><label>Notas</label><input id="workoutNotes" placeholder="Técnica, molestias, récords..."></div>
+      </div>
+      <button class="btn" id="saveWorkout" style="margin-top:12px">Guardar entrenamiento</button>
+    </div>
+  </section>
+
+  <section id="nutrition" class="view">
+    <div class="grid">
+      <div class="card span-4">
+        <h2>Objetivos diarios</h2>
+        <div class="row"><span>Calorías</span><strong class="right" id="macroCalories">2050</strong></div>
+        <div class="row"><span>Proteína</span><strong class="right" id="macroProtein">180 g</strong></div>
+        <div class="row"><span>Carbohidratos</span><strong class="right" id="macroCarbs">190 g</strong></div>
+        <div class="row"><span>Grasas</span><strong class="right" id="macroFat">60 g</strong></div>
+      </div>
+      <div class="card span-8">
+        <h2>Agregar comida</h2>
+        <div class="row">
+          <div class="field"><label>Fecha</label><input type="date" id="mealDate"></div>
+          <div class="field"><label>Comida</label><select id="mealType"><option>Desayuno</option><option>Almuerzo</option><option>Pre-entreno</option><option>Post-entreno</option><option>Cena</option><option>Snack</option></select></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <div class="field"><label>Alimentos</label><input id="mealFood" placeholder="Ej.: 1 taza Rice Krispies + Fairlife + Nitro-Tech"></div>
+          <div class="field"><label>kcal</label><input type="number" id="mealKcal" min="0"></div>
+          <div class="field"><label>Proteína g</label><input type="number" id="mealProtein" min="0"></div>
+          <div class="field"><label>Carbs g</label><input type="number" id="mealCarbs" min="0"></div>
+          <div class="field"><label>Grasa g</label><input type="number" id="mealFat" min="0"></div>
+        </div>
+        <button class="btn" id="addMeal" style="margin-top:12px">Agregar comida</button>
+      </div>
+      <div class="card span-12">
+        <div class="row"><h2>Registro del día</h2><input type="date" id="nutritionFilterDate" style="max-width:180px" class="right"></div>
+        <div id="mealList"></div>
+        <div id="dailyTotals"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="checkin" class="view">
+    <div class="card">
+      <h2>Check-in semanal</h2>
+      <div class="row">
+        <div class="field"><label>Fecha</label><input type="date" id="checkDate"></div>
+        <div class="field"><label>Peso en ayunas (lb)</label><input type="number" step="0.1" id="checkWeight"></div>
+        <div class="field"><label>Cintura (in)</label><input type="number" step="0.1" id="checkWaist"></div>
+        <div class="field"><label>% grasa estimado</label><input type="number" step="0.1" id="checkFat"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="field"><label>Sueño promedio (h)</label><input type="number" step="0.1" id="checkSleep"></div>
+        <div class="field"><label>Pasos promedio</label><input type="number" id="checkSteps"></div>
+        <div class="field"><label>Hambre (1–10)</label><input type="number" min="1" max="10" id="checkHunger"></div>
+        <div class="field"><label>Energía (1–10)</label><input type="number" min="1" max="10" id="checkEnergy"></div>
+        <div class="field"><label>Dolor lumbar (0–10)</label><input type="number" min="0" max="10" id="checkPain"></div>
+      </div>
+      <div class="field" style="margin-top:10px"><label>Notas</label><textarea id="checkNotes" placeholder="Fuerza, digestión, molestias, adherencia..."></textarea></div>
+      <button class="btn" id="saveCheckin" style="margin-top:12px">Guardar check-in</button>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>Historial</h2>
+      <div style="overflow:auto"><table><thead><tr><th>Fecha</th><th>Peso</th><th>Cintura</th><th>% grasa</th><th>Sueño</th><th>Dolor</th><th></th></tr></thead><tbody id="checkinTable"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="mobility" class="view">
+    <div class="warning">
+      Dolor que baja por la pierna, entumecimiento, debilidad nueva, pérdida de control de vejiga/intestino o dolor intenso progresivo requiere evaluación médica. No entrenes “a través” de esos síntomas.
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div class="card span-6">
+        <h2>Bloque A · Estabilidad lumbar (10–12 min)</h2>
+        <div class="meal-card"><strong>McGill curl-up modificado</strong><div class="muted small">3 × 6–8 repeticiones, pausa de 8–10 s</div></div>
+        <div class="meal-card"><strong>Side plank</strong><div class="muted small">3 × 20–30 s por lado</div></div>
+        <div class="meal-card"><strong>Bird dog</strong><div class="muted small">3 × 6 por lado, pausa de 5–8 s</div></div>
+        <div class="meal-card"><strong>Pallof press</strong><div class="muted small">3 × 10–12 por lado</div></div>
+      </div>
+      <div class="card span-6">
+        <h2>Bloque B · Cadera y glúteos (10–12 min)</h2>
+        <div class="meal-card"><strong>Glute bridge</strong><div class="muted small">3 × 12–15</div></div>
+        <div class="meal-card"><strong>Caminata lateral con banda</strong><div class="muted small">3 × 12–15 pasos por lado</div></div>
+        <div class="meal-card"><strong>Hip airplane asistido</strong><div class="muted small">2 × 6 por lado</div></div>
+        <div class="meal-card"><strong>Dead bug</strong><div class="muted small">3 × 8 por lado</div></div>
+      </div>
+      <div class="card span-12">
+        <h2>Reglas de dolor</h2>
+        <span class="pill">0–2/10: continuar</span>
+        <span class="pill">3–4/10: reducir carga/rango</span>
+        <span class="pill">≥5/10: detener ejercicio</span>
+        <p class="muted small">Evita por ahora flexión lumbar cargada, hiperextensión agresiva y repeticiones forzadas en ejercicios que reproduzcan dolor.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="settings" class="view">
+    <div class="card">
+      <h2>Ajustes del plan</h2>
+      <div class="row">
+        <div class="field"><label>Fecha de inicio</label><input type="date" id="startDate"></div>
+        <div class="field"><label>Peso inicial</label><input type="number" step="0.1" id="startWeight"></div>
+        <div class="field"><label>Peso meta</label><input type="number" step="0.1" id="goalWeight"></div>
+        <div class="field"><label>Calorías</label><input type="number" id="setCalories"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="field"><label>Proteína g</label><input type="number" id="setProtein"></div>
+        <div class="field"><label>Carbohidratos g</label><input type="number" id="setCarbs"></div>
+        <div class="field"><label>Grasas g</label><input type="number" id="setFat"></div>
+        <div class="field"><label>Pasos diarios</label><input type="number" id="setSteps"></div>
+      </div>
+      <button class="btn" id="saveSettings" style="margin-top:12px">Guardar ajustes</button>
+      <button class="btn secondary" id="exportData" style="margin-top:12px">Exportar respaldo JSON</button>
+      <label class="btn secondary" style="display:inline-block;margin-top:12px">Importar respaldo<input type="file" id="importData" accept=".json" hidden></label>
+      <button class="btn danger" id="resetData" style="margin-top:12px">Borrar todos los datos</button>
+    </div>
+  </section>
+</div>
+
+<nav class="nav"><div class="nav-inner">
+  <button data-view="dashboard" class="active">Resumen</button>
+  <button data-view="training">Entreno</button>
+  <button data-view="nutrition">Comidas</button>
+  <button data-view="checkin">Check-in</button>
+  <button data-view="mobility">Core</button>
+</div></nav>
+
+<script>
+const defaultData = {
+  settings:{startDate:"2026-07-30",startWeight:173.1,goalWeight:165,calories:2050,protein:180,carbs:190,fat:60,steps:10000,durationWeeks:16},
+  body:{weight:173.1,bodyFat:21.5,muscle:75.4},
+  workouts:[], meals:[], checkins:[
+    {date:"2026-02-26",weight:183.6,waist:37.2,bodyFat:25.3,sleep:"",steps:"",hunger:"",energy:"",pain:"",notes:"Evolt 360"},
+    {date:"2026-07-24",weight:173.1,waist:34.8,bodyFat:21.5,sleep:"",steps:"",hunger:"",energy:"",pain:"",notes:"Evolt 360"}
+  ]
+};
+let data = JSON.parse(localStorage.getItem("prepTrackerData")||"null") || defaultData;
+
+const routines = {
+ "Lunes · Push": [
+  ["Press inclinado en máquina",4,"6–10"],["Press plano con mancuernas",3,"8–12"],["Apertura en cable",3,"12–15"],
+  ["Elevación lateral",4,"12–20"],["Press de hombro sentado",3,"8–12"],["Tríceps cuerda",3,"10–15"]
+ ],
+ "Martes · Pull": [
+  ["Jalón neutro",4,"8–12"],["Remo pecho apoyado",4,"8–12"],["Remo unilateral en cable",3,"10–12"],
+  ["Face pull",3,"12–15"],["Curl inclinado",3,"8–12"],["Curl martillo",3,"10–12"]
+ ],
+ "Miércoles · Pierna A": [
+  ["Prensa inclinada",4,"8–12"],["Split squat asistido",3,"8–10"],["Curl femoral sentado",4,"10–15"],
+  ["Hip thrust",4,"8–12"],["Extensión de cuádriceps",3,"12–15"],["Pantorrilla",4,"10–15"]
+ ],
+ "Jueves · Descanso/Core": [
+  ["McGill curl-up",3,"6–8"],["Side plank",3,"20–30 s"],["Bird dog",3,"6/lado"],["Pallof press",3,"10/lado"]
+ ],
+ "Viernes · Torso": [
+  ["Press inclinado con mancuernas",3,"8–12"],["Remo pecho apoyado",3,"8–12"],["Jalón unilateral",3,"10–12"],
+  ["Elevación lateral",4,"12–20"],["Pec deck",3,"12–15"],["Superset bíceps/tríceps",3,"10–15"]
+ ],
+ "Sábado · Pierna B": [
+  ["Hack squat o goblet squat",4,"8–12"],["Peso muerto rumano con mancuernas",3,"8–10"],["Curl femoral",3,"10–15"],
+  ["Step-up bajo",3,"8–10"],["Abducción de cadera",3,"15–20"],["Pantorrilla",4,"10–15"]
+ ],
+ "Domingo · Descanso": [["Caminata zona 2",1,"35–45 min"],["Movilidad suave",1,"10 min"]]
+};
+
+function save(){localStorage.setItem("prepTrackerData",JSON.stringify(data)); renderAll()}
+function today(){return new Date().toISOString().slice(0,10)}
+function fmt(n,d=1){return Number(n).toFixed(d)}
+function switchView(id){
+ document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));
+ document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===id));
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>switchView(b.dataset.view));
+
+function renderDashboard(){
+ const s=data.settings;
+ const latest=[...data.checkins].sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
+ if(latest){data.body.weight=+latest.weight||data.body.weight; data.body.bodyFat=+latest.bodyFat||data.body.bodyFat}
+ document.getElementById("dashWeight").textContent=fmt(data.body.weight)+" lb";
+ document.getElementById("dashGoal").textContent=fmt(s.goalWeight)+" lb";
+ document.getElementById("dashFat").textContent=fmt(data.body.bodyFat)+"%";
+ document.getElementById("dashMuscle").textContent=fmt(data.body.muscle)+" lb";
+ const start=new Date(s.startDate+"T00:00:00"), now=new Date(), end=new Date(start); end.setDate(end.getDate()+s.durationWeeks*7);
+ const days=Math.max(0,Math.ceil((end-now)/86400000)); document.getElementById("daysLeft").textContent=days;
+ const week=Math.min(s.durationWeeks,Math.max(1,Math.floor((now-start)/604800000)+1)); document.getElementById("weekBadge").textContent=`Semana ${week}/${s.durationWeeks}`;
+ document.getElementById("proteinGoal").textContent=s.protein+" g"; document.getElementById("calGoal").textContent=s.calories.toLocaleString(); document.getElementById("stepsGoal").textContent=s.steps.toLocaleString();
+ const total=s.startWeight-s.goalWeight, done=s.startWeight-data.body.weight, pct=Math.max(0,Math.min(100,done/total*100));
+ document.getElementById("weightProgress").style.width=pct+"%"; document.getElementById("progressText").textContent=`${fmt(done)} lb de ${fmt(total)} lb completadas`;
+ const lw=[...data.workouts].sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
+ document.getElementById("lastWorkout").innerHTML=lw?`<strong>${lw.day}</strong><br>${lw.date} · Energía ${lw.energy}/10 · Dolor ${lw.pain}/10`:"Aún no has registrado entrenamiento.";
+ document.getElementById("lastCheckin").innerHTML=latest?`<strong>${latest.date}</strong><br>${latest.weight} lb · cintura ${latest.waist||"—"} in · dolor ${latest.pain||"—"}/10`:"Aún no has hecho un check-in.";
+ drawChart();
+}
+function drawChart(){
+ const c=document.getElementById("weightChart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=220;
+ c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
+ const pts=[...data.checkins].filter(x=>x.weight).sort((a,b)=>a.date.localeCompare(b.date));
+ ctx.strokeStyle="#263247";ctx.lineWidth=1;
+ for(let i=0;i<5;i++){let y=20+i*(h-40)/4;ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(w-10,y);ctx.stroke()}
+ if(pts.length<2){ctx.fillStyle="#9aa8ba";ctx.fillText("Agrega más check-ins para ver la gráfica",20,30);return}
+ const vals=pts.map(x=>+x.weight),min=Math.min(...vals,data.settings.goalWeight)-2,max=Math.max(...vals)+2;
+ const X=i=>40+i*(w-60)/(pts.length-1),Y=v=>20+(max-v)*(h-40)/(max-min);
+ ctx.strokeStyle="#20d6c7";ctx.lineWidth=3;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(X(i),Y(+p.weight)):ctx.moveTo(X(i),Y(+p.weight)));ctx.stroke();
+ pts.forEach((p,i)=>{ctx.fillStyle="#57a8ff";ctx.beginPath();ctx.arc(X(i),Y(+p.weight),4,0,Math.PI*2);ctx.fill()});
+ ctx.fillStyle="#9aa8ba";ctx.font="12px sans-serif";ctx.fillText(max.toFixed(1)+" lb",2,25);ctx.fillText(min.toFixed(1)+" lb",2,h-20);
+}
+function setupWorkout(){
+ const sel=document.getElementById("workoutDay"); sel.innerHTML=Object.keys(routines).map(x=>`<option>${x}</option>`).join("");
+ document.getElementById("workoutDate").value=today();
+ document.getElementById("loadWorkout").onclick=renderWorkout;
+}
+function renderWorkout(){
+ const day=document.getElementById("workoutDay").value, cont=document.getElementById("workoutContainer");
+ cont.innerHTML=routines[day].map((e,idx)=>`<div class="exercise card" data-ex="${idx}">
+  <div class="exercise-head"><div><strong>${e[0]}</strong><div class="muted small">${e[1]} series · objetivo ${e[2]}</div></div><span class="pill">RIR 1–3</span></div>
+  ${Array.from({length:e[1]},(_,i)=>`<div class="set-row"><span>#${i+1}</span><input type="number" step="0.5" placeholder="lb" class="set-weight"><input type="number" placeholder="reps" class="set-reps"><input type="number" min="0" max="5" placeholder="RIR" class="set-rir"><button class="btn secondary sm clear-set">×</button></div>`).join("")}
+ </div>`).join("");
+ cont.querySelectorAll(".clear-set").forEach(b=>b.onclick=()=>b.parentElement.querySelectorAll("input").forEach(i=>i.value=""));
+ document.getElementById("workoutSaveCard").style.display="block";
+}
+document.getElementById("saveWorkout").onclick=()=>{
+ const exercises=[...document.querySelectorAll("#workoutContainer .exercise")].map((box,idx)=>({
+  name:routines[document.getElementById("workoutDay").value][idx][0],
+  sets:[...box.querySelectorAll(".set-row")].map(r=>({weight:r.querySelector(".set-weight").value,reps:r.querySelector(".set-reps").value,rir:r.querySelector(".set-rir").value})).filter(s=>s.weight||s.reps)
+ }));
+ const rec={date:document.getElementById("workoutDate").value,day:document.getElementById("workoutDay").value,exercises,pain:+document.getElementById("painScore").value,energy:+document.getElementById("energyScore").value,notes:document.getElementById("workoutNotes").value};
+ data.workouts.push(rec); save(); alert(rec.pain>=5?"Guardado. Por el dolor registrado, evita continuar con ejercicios que lo reproduzcan y considera evaluación profesional.":"Entrenamiento guardado.");
+};
+
+function renderNutrition(){
+ const s=data.settings; ["Calories","Protein","Carbs","Fat"].forEach(k=>document.getElementById("macro"+k).textContent=s[k.toLowerCase()]+(k==="Calories"?"":" g"));
+ const date=document.getElementById("nutritionFilterDate").value||today(); document.getElementById("nutritionFilterDate").value=date;
+ const meals=data.meals.filter(m=>m.date===date); const list=document.getElementById("mealList");
+ list.innerHTML=meals.length?meals.map((m,i)=>`<div class="meal-card"><div class="row"><strong>${m.type}</strong><button class="btn danger sm right" onclick="deleteMeal('${m.id}')">Eliminar</button></div><div>${m.food}</div><div class="small muted">${m.kcal} kcal · P ${m.protein} · C ${m.carbs} · G ${m.fat}</div></div>`).join(""):'<div class="muted">No hay comidas registradas.</div>';
+ const t=meals.reduce((a,m)=>({kcal:a.kcal+ +m.kcal,protein:a.protein+ +m.protein,carbs:a.carbs+ +m.carbs,fat:a.fat+ +m.fat}),{kcal:0,protein:0,carbs:0,fat:0});
+ document.getElementById("dailyTotals").innerHTML=`<h3>Total: ${t.kcal} / ${s.calories} kcal</h3><span class="pill">P ${t.protein}/${s.protein} g</span><span class="pill">C ${t.carbs}/${s.carbs} g</span><span class="pill">G ${t.fat}/${s.fat} g</span>`;
+}
+window.deleteMeal=id=>{data.meals=data.meals.filter(m=>m.id!==id);save()}
+document.getElementById("addMeal").onclick=()=>{
+ const m={id:crypto.randomUUID(),date:document.getElementById("mealDate").value,type:document.getElementById("mealType").value,food:document.getElementById("mealFood").value,kcal:+document.getElementById("mealKcal").value||0,protein:+document.getElementById("mealProtein").value||0,carbs:+document.getElementById("mealCarbs").value||0,fat:+document.getElementById("mealFat").value||0};
+ if(!m.food)return alert("Escribe los alimentos."); data.meals.push(m); ["mealFood","mealKcal","mealProtein","mealCarbs","mealFat"].forEach(id=>document.getElementById(id).value=""); save();
+};
+document.getElementById("nutritionFilterDate").onchange=renderNutrition;
+
+function renderCheckins(){
+ const tb=document.getElementById("checkinTable"); tb.innerHTML=[...data.checkins].sort((a,b)=>b.date.localeCompare(a.date)).map((c,i)=>`<tr><td>${c.date}</td><td>${c.weight||"—"}</td><td>${c.waist||"—"}</td><td>${c.bodyFat||"—"}</td><td>${c.sleep||"—"}</td><td>${c.pain||"—"}</td><td><button class="btn danger sm" onclick="deleteCheckin('${c.date}',${i})">×</button></td></tr>`).join("");
+}
+window.deleteCheckin=(date,i)=>{const sorted=[...data.checkins].sort((a,b)=>b.date.localeCompare(a.date));const target=sorted[i];data.checkins=data.checkins.filter(x=>x!==target);save()}
+document.getElementById("saveCheckin").onclick=()=>{
+ const c={date:document.getElementById("checkDate").value,weight:+document.getElementById("checkWeight").value,waist:+document.getElementById("checkWaist").value||"",bodyFat:+document.getElementById("checkFat").value||"",sleep:+document.getElementById("checkSleep").value||"",steps:+document.getElementById("checkSteps").value||"",hunger:+document.getElementById("checkHunger").value||"",energy:+document.getElementById("checkEnergy").value||"",pain:+document.getElementById("checkPain").value||0,notes:document.getElementById("checkNotes").value};
+ if(!c.date||!c.weight)return alert("Fecha y peso son obligatorios."); data.checkins.push(c);save();alert("Check-in guardado.");
+};
+
+function renderSettings(){
+ const s=data.settings;
+ startDate.value=s.startDate;startWeight.value=s.startWeight;goalWeight.value=s.goalWeight;setCalories.value=s.calories;setProtein.value=s.protein;setCarbs.value=s.carbs;setFat.value=s.fat;setSteps.value=s.steps;
+}
+document.getElementById("saveSettings").onclick=()=>{
+ data.settings={...data.settings,startDate:startDate.value,startWeight:+startWeight.value,goalWeight:+goalWeight.value,calories:+setCalories.value,protein:+setProtein.value,carbs:+setCarbs.value,fat:+setFat.value,steps:+setSteps.value};save();alert("Ajustes guardados.");
+};
+document.getElementById("exportData").onclick=()=>{
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="prep-tracker-respaldo.json";a.click();URL.revokeObjectURL(a.href);
+};
+document.getElementById("importData").onchange=e=>{
+ const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{data=JSON.parse(r.result);save();alert("Respaldo importado.")}catch{alert("Archivo inválido.")}};r.readAsText(f);
+};
+document.getElementById("resetData").onclick=()=>{if(confirm("¿Borrar todo?")){localStorage.removeItem("prepTrackerData");location.reload()}};
+
+function renderAll(){renderDashboard();renderNutrition();renderCheckins();renderSettings()}
+["mealDate","checkDate"].forEach(id=>document.getElementById(id).value=today());
+setupWorkout();renderAll();window.addEventListener("resize",drawChart);
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script></body>
+</html>
