@@ -1,20 +1,53 @@
 import { useMemo, useState } from 'react';
-import { ArrowRight, CalendarCheck, Check } from 'lucide-react';
+import { ArrowRight, CalendarCheck, Camera, Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import { Page, PageHeader } from '@/components/ui/PageHeader';
 import { Card, SectionTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Label, Slider } from '@/components/ui/Field';
+import { Input, Label, Slider } from '@/components/ui/Field';
 import { EmptyState, Stat } from '@/components/ui/Misc';
 import { ProgressTabs } from '@/features/body/ProgressTabs';
-import { analyzeCheckin, VERDICT_TONE } from '@/domain/checkin';
-import { addDays, friendlyDate, shortDate, startOfWeek, today, weekRange } from '@/lib/date';
+import { RecommendationCard } from './RecommendationCard';
+import { recommend } from '@/domain/recommendations';
+import { compareMetrics, DIRECTION_TONE, type MetricComparison } from '@/domain/weeklySummary';
+import { PROJECTION_LABEL, PROJECTION_TONE } from '@/domain/competition';
+import { addDays, shortDate, startOfWeek, today, weekRange } from '@/lib/date';
 import { cx, fmtSigned } from '@/lib/utils';
+import { alive } from '@/store/persist';
 import { useProfile, useProfileStore } from '@/store/profileStore';
 import { useCheckinStore } from '@/store/checkinStore';
 import { useNutritionStore } from '@/store/nutritionStore';
-import { useCheckins, useMeasurements, useTargets, useWorkouts } from '@/store/selectors';
-import { alive } from '@/store/persist';
+import { useBodyStore } from '@/store/bodyStore';
+import { usePrepStore } from '@/store/prepStore';
+import {
+  useCheckins,
+  useMeasurements,
+  usePhotos,
+  useProjection,
+  useReadiness,
+  useTargets,
+  useWeekActivity,
+  useWeightTrend,
+  useWorkouts,
+} from '@/store/selectors';
 import { toast } from '@/store/uiStore';
+
+const MEASURE_FIELDS = [
+  { key: 'waist', label: 'Cintura' },
+  { key: 'chest', label: 'Pecho' },
+  { key: 'arm', label: 'Brazo' },
+  { key: 'thigh', label: 'Muslo' },
+  { key: 'hip', label: 'Cadera' },
+  { key: 'calf', label: 'Pantorrilla' },
+] as const;
+
+const SCALES = [
+  { key: 'energy', label: 'Energia', lo: 'Agotado', hi: 'Excelente' },
+  { key: 'sleep', label: 'Sueno', lo: 'Fatal', hi: 'Perfecto' },
+  { key: 'hunger', label: 'Hambre', lo: 'Saciado', hi: 'Voraz' },
+  { key: 'stress', label: 'Estres', lo: 'Tranquilo', hi: 'Al limite' },
+  { key: 'digestion', label: 'Digestion', lo: 'Mala', hi: 'Perfecta' },
+  { key: 'strength', label: 'Fuerza en el gimnasio', lo: 'En caida', hi: 'Subiendo' },
+] as const;
 
 export default function CheckinPage() {
   const profile = useProfile();
@@ -22,87 +55,237 @@ export default function CheckinPage() {
   const measurements = useMeasurements();
   const workouts = useWorkouts();
   const checkins = useCheckins();
+  const readiness = useReadiness();
+  const photos = usePhotos();
   const entries = useNutritionStore((s) => s.entries);
   const targets = useTargets();
+  const trend = useWeightTrend();
+  const projection = useProjection();
   const upsert = useCheckinStore((s) => s.upsert);
+  const upsertBody = useBodyStore((s) => s.upsert);
+  const saveRecommendation = usePrepStore((s) => s.saveRecommendation);
+  const recommendations = usePrepStore((s) => s.recommendations);
 
   const weekStart = startOfWeek(today());
   const prevStart = addDays(weekStart, -7);
+  const week = useWeekActivity(weekStart);
+  const prevWeek = useWeekActivity(prevStart);
 
-  /* Medias semanales de peso: comparar medias, no dias sueltos. */
+  /* ─────────────────────────────────────────── datos calculados */
+
   const stats = useMemo(() => {
-    const avg = (from: string, to: string) => {
-      const vals = measurements
-        .filter((m) => m.date >= from && m.date < to && typeof m.weight === 'number')
-        .map((m) => m.weight as number);
-      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-    };
-    const thisWeek = avg(weekStart, addDays(weekStart, 7));
-    const lastWeek = avg(prevStart, weekStart);
     const days = weekRange(weekStart).filter((d) => d <= today());
-    const daysLogged = days.filter((d) => alive(entries).some((e) => e.date === d)).length;
+    const logged = days.filter((d) => alive(entries).some((e) => e.date === d)).length;
     const kcalDays = days
       .map((d) => alive(entries).filter((e) => e.date === d).reduce((n, e) => n + e.macros.kcal, 0))
       .filter((v) => v > 0);
 
-    return {
-      thisWeek,
-      lastWeek,
-      change: thisWeek != null && lastWeek != null ? thisWeek - lastWeek : 0,
-      workouts: workouts.filter((w) => w.date >= weekStart).length,
-      autoAdherence: days.length ? Math.round((daysLogged / days.length) * 100) : 0,
-      avgKcal: kcalDays.length ? Math.round(kcalDays.reduce((a, b) => a + b, 0) / kcalDays.length) : undefined,
+    const avgOf = (key: 'energy' | 'sleepQuality' | 'hunger' | 'stress' | 'digestion', from: string, to: string) => {
+      const vals = readiness
+        .filter((r) => r.date >= from && r.date < to && r[key] != null)
+        .map((r) => r[key] as number);
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
     };
-  }, [measurements, workouts, entries, weekStart, prevStart]);
+
+    return {
+      autoAdherence: days.length ? Math.round((logged / days.length) * 100) : 0,
+      avgKcal: kcalDays.length ? Math.round(kcalDays.reduce((a, b) => a + b, 0) / kcalDays.length) : undefined,
+      workouts: workouts.filter((w) => w.date >= weekStart).length,
+      prevWorkouts: workouts.filter((w) => w.date >= prevStart && w.date < weekStart).length,
+      readinessNow: {
+        energy: avgOf('energy', weekStart, addDays(weekStart, 7)),
+        sleep: avgOf('sleepQuality', weekStart, addDays(weekStart, 7)),
+        hunger: avgOf('hunger', weekStart, addDays(weekStart, 7)),
+        stress: avgOf('stress', weekStart, addDays(weekStart, 7)),
+        digestion: avgOf('digestion', weekStart, addDays(weekStart, 7)),
+      },
+      readinessPrev: {
+        energy: avgOf('energy', prevStart, weekStart),
+        sleep: avgOf('sleepQuality', prevStart, weekStart),
+        hunger: avgOf('hunger', prevStart, weekStart),
+        stress: avgOf('stress', prevStart, weekStart),
+        digestion: avgOf('digestion', prevStart, weekStart),
+      },
+    };
+  }, [entries, readiness, workouts, weekStart, prevStart]);
+
+  const latestMeasurement = measurements[measurements.length - 1];
+  const prevMeasurement = measurements[measurements.length - 2];
+
+  /* ─────────────────────────────────────────── formulario */
 
   const [adherence, setAdherence] = useState(stats.autoAdherence);
-  const [energy, setEnergy] = useState(3);
-  const [sleep, setSleep] = useState(3);
-  const [hunger, setHunger] = useState(3);
-  const [stress, setStress] = useState(3);
+  const [scales, setScales] = useState<Record<string, number>>({
+    energy: 3, sleep: 3, hunger: 3, stress: 3, digestion: 3, strength: 3,
+  });
+  const [measures, setMeasures] = useState<Record<string, string>>({});
+  const [comments, setComments] = useState('');
 
-  const currentWeight = stats.thisWeek ?? profile.startWeight;
+  /* ─────────────────────────────────────────── resumen automatico */
 
-  const result = useMemo(
+  const summary = useMemo(
     () =>
-      analyzeCheckin({
-        profile,
-        currentWeight,
-        weightChange: stats.change,
-        adherence,
-        energy,
-        sleep,
-        hunger,
-        stress,
-        workoutsCompleted: stats.workouts,
-        currentKcal: targets.kcal,
-      }),
-    [profile, currentWeight, stats, adherence, energy, sleep, hunger, stress, targets.kcal],
+      compareMetrics([
+        {
+          key: 'weight',
+          label: 'Peso (media 7 dias)',
+          current: trend.avg7,
+          previous: trend.prevAvg7,
+          higherIsBetter: profile.goal === 'volumen',
+          threshold: 0.2,
+          unit: ' kg',
+        },
+        {
+          key: 'waist',
+          label: 'Cintura',
+          current: latestMeasurement?.waist ?? null,
+          previous: prevMeasurement?.waist ?? null,
+          higherIsBetter: false,
+          threshold: 0.5,
+          unit: ' cm',
+        },
+        {
+          key: 'cardio',
+          label: 'Cardio completado',
+          current: week.cardioMinutes,
+          previous: prevWeek.cardioMinutes,
+          higherIsBetter: true,
+          threshold: 15,
+          unit: ' min',
+          decimals: 0,
+        },
+        {
+          key: 'steps',
+          label: 'Pasos diarios',
+          current: week.avgSteps || null,
+          previous: prevWeek.avgSteps || null,
+          higherIsBetter: true,
+          threshold: 500,
+          decimals: 0,
+        },
+        {
+          key: 'workouts',
+          label: 'Entrenamientos',
+          current: stats.workouts,
+          previous: stats.prevWorkouts,
+          higherIsBetter: true,
+          threshold: 1,
+          decimals: 0,
+        },
+        {
+          key: 'energy',
+          label: 'Energia',
+          current: stats.readinessNow.energy,
+          previous: stats.readinessPrev.energy,
+          higherIsBetter: true,
+          threshold: 0.4,
+        },
+        {
+          key: 'sleep',
+          label: 'Sueno',
+          current: stats.readinessNow.sleep,
+          previous: stats.readinessPrev.sleep,
+          higherIsBetter: true,
+          threshold: 0.4,
+        },
+        {
+          key: 'hunger',
+          label: 'Hambre',
+          current: stats.readinessNow.hunger,
+          previous: stats.readinessPrev.hunger,
+          higherIsBetter: false,
+          threshold: 0.4,
+        },
+      ]),
+    [trend, latestMeasurement, prevMeasurement, week, prevWeek, stats, profile.goal],
   );
 
-  const alreadyDone = checkins.some((c) => c.weekStart === weekStart);
+  /* ─────────────────────────────────────────── recomendacion */
 
-  const save = (applyAdjustment: boolean) => {
+  const recommendation = useMemo(
+    () =>
+      recommend({
+        trend,
+        projection: projection ?? {
+          projectedWeight: null,
+          vsTarget: null,
+          requiredWeekly: null,
+          currentWeekly: trend.weekChange,
+          status: 'sin-objetivo',
+          explanation: '',
+        },
+        adherence,
+        energy: scales.energy,
+        sleep: scales.sleep,
+        hunger: scales.hunger,
+        stress: scales.stress,
+        strength: scales.strength,
+        cardioMinutes: week.cardioMinutes,
+        workouts: stats.workouts,
+        currentKcal: targets.kcal,
+        weeksOut: null,
+      }),
+    [trend, projection, adherence, scales, week.cardioMinutes, stats.workouts, targets.kcal],
+  );
+
+  const savedRec = useMemo(
+    () => alive(recommendations).find((r) => r.weekStart === weekStart),
+    [recommendations, weekStart],
+  );
+
+  const weekPhotos = photos.filter((p) => p.date >= weekStart);
+
+  /* ─────────────────────────────────────────── guardado */
+
+  const saveCheckin = () => {
+    const patch: Record<string, number> = {};
+    for (const f of MEASURE_FIELDS) {
+      const n = Number(measures[f.key]);
+      if (n > 0) patch[f.key] = n;
+    }
+    if (Object.keys(patch).length) upsertBody({ date: today(), ...patch });
+
     upsert({
       weekStart,
-      avgWeight: Math.round(currentWeight * 10) / 10,
-      weightChange: Math.round(stats.change * 100) / 100,
+      avgWeight: trend.avg7 ?? profile.startWeight,
+      weightChange: trend.weekChange ?? 0,
+      ...(patch.waist ? { waist: patch.waist } : {}),
       adherence,
-      energy,
-      sleep,
-      hunger,
-      stress,
+      energy: scales.energy,
+      sleep: scales.sleep,
+      hunger: scales.hunger,
+      stress: scales.stress,
       workoutsCompleted: stats.workouts,
       avgKcal: stats.avgKcal,
-      kcalAdjustment: applyAdjustment ? result.kcalAdjustment : 0,
-      newKcalTarget: applyAdjustment ? result.newKcalTarget : targets.kcal,
+      ...(comments.trim() ? { notes: comments.trim() } : {}),
     });
-    if (applyAdjustment && result.kcalAdjustment !== 0) {
-      updateProfile({ kcalOverride: result.newKcalTarget });
-      toast(`Objetivo actualizado a ${result.newKcalTarget} kcal`);
+    toast('Check-in guardado');
+  };
+
+  const applyRecommendation = (kcalDelta: number, cardioDelta: number) => {
+    saveRecommendation({
+      weekStart,
+      action: recommendation.action,
+      headline: recommendation.headline,
+      reasoning: recommendation.reasoning,
+      dataUsed: recommendation.dataUsed,
+      kcalDelta: recommendation.kcalDelta,
+      cardioMinutesDelta: recommendation.cardioMinutesDelta,
+      estimatedImpact: recommendation.estimatedImpact,
+      confidence: recommendation.confidence,
+      outcome: kcalDelta === recommendation.kcalDelta ? 'aceptada' : 'modificada',
+      appliedKcalDelta: kcalDelta,
+      appliedCardioDelta: cardioDelta,
+    });
+
+    if (kcalDelta !== 0) {
+      const next = Math.max(1200, Math.round((targets.kcal + kcalDelta) / 10) * 10);
+      updateProfile({ kcalOverride: next });
+      toast(`Objetivo actualizado a ${next} kcal`);
     } else {
-      toast('Check-in guardado');
+      toast('Recomendacion registrada');
     }
+    saveCheckin();
   };
 
   return (
@@ -112,116 +295,207 @@ export default function CheckinPage() {
       <Page>
         <ProgressTabs />
 
-        {/* -------------------------------------------------- datos de la semana */}
+        {/* ─────────────────────────── datos de la semana */}
         <Card>
           <div className="grid grid-cols-3 gap-3">
-            <Stat
-              label="Peso medio"
-              value={stats.thisWeek != null ? stats.thisWeek.toFixed(1) : '—'}
-              unit="kg"
-              sub={stats.lastWeek != null ? `antes ${stats.lastWeek.toFixed(1)}` : 'sin semana previa'}
-            />
+            <Stat label="Media 7 dias" value={trend.avg7 != null ? trend.avg7.toFixed(1) : '—'} unit="kg" />
             <Stat
               label="Cambio"
-              value={stats.thisWeek != null && stats.lastWeek != null ? fmtSigned(stats.change) : '—'}
+              value={trend.weekChange != null ? fmtSigned(trend.weekChange) : '—'}
               unit="kg"
-              tone={VERDICT_TONE[result.verdict]}
             />
             <Stat label="Entrenos" value={stats.workouts} sub={stats.avgKcal ? `${stats.avgKcal} kcal/dia` : undefined} />
           </div>
+          {projection && projection.status !== 'sin-datos' && (
+            <div className="mt-3 border-t border-line pt-3">
+              <p className={cx('text-[13px] font-semibold', PROJECTION_TONE[projection.status])}>
+                {PROJECTION_LABEL[projection.status]}
+              </p>
+              <p className="mt-1 text-[12px] text-muted">{projection.explanation}</p>
+            </div>
+          )}
         </Card>
 
-        {/* --------------------------------------------------------- sensaciones */}
+        {/* ─────────────────────────── resumen automatico */}
         <div className="mt-5">
-          <SectionTitle>¿Como fue la semana?</SectionTitle>
+          <SectionTitle>Resumen de la semana</SectionTitle>
+          <Card>
+            <p className="mb-3 text-[14px] font-medium">{summary.headline}</p>
+            <div className="space-y-2.5">
+              <Group title="Mejoro" items={summary.improved} icon={<TrendingUp size={13} />} />
+              <Group title="Empeoro" items={summary.worsened} icon={<TrendingDown size={13} />} />
+              <Group title="Se mantuvo" items={summary.stable} icon={<Minus size={13} />} />
+            </div>
+            {summary.missing.length > 0 && (
+              <p className="mt-3 border-t border-line pt-2 text-[11px] text-faint">
+                Sin datos para comparar: {summary.missing.map((m) => m.label).join(', ')}
+              </p>
+            )}
+          </Card>
+        </div>
+
+        {/* ─────────────────────────── medidas */}
+        <div className="mt-5">
+          <SectionTitle
+            action={
+              latestMeasurement ? (
+                <span className="text-[11px] text-faint">ultima {shortDate(latestMeasurement.date)}</span>
+              ) : undefined
+            }
+          >
+            Medidas de esta semana
+          </SectionTitle>
+          <Card>
+            <div className="grid grid-cols-2 gap-3">
+              {MEASURE_FIELDS.map((f) => (
+                <div key={f.key}>
+                  <Label
+                    hint={
+                      latestMeasurement?.[f.key] != null
+                        ? `antes ${latestMeasurement[f.key]}`
+                        : undefined
+                    }
+                  >
+                    {f.label}
+                  </Label>
+                  <Input
+                    inputMode="decimal"
+                    value={measures[f.key] ?? ''}
+                    onChange={(e) => setMeasures((v) => ({ ...v, [f.key]: e.target.value }))}
+                    suffix="cm"
+                    placeholder="—"
+                  />
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        {/* ─────────────────────────── fotos */}
+        <div className="mt-5">
+          <SectionTitle
+            action={
+              <a href="/fotos" className="text-[12px] text-brand">
+                Anadir
+              </a>
+            }
+          >
+            Fotos de la semana
+          </SectionTitle>
+          <Card>
+            <div className="flex items-center gap-3">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface2 text-faint">
+                <Camera size={19} />
+              </div>
+              <p className="text-[13px] text-muted">
+                {weekPhotos.length > 0
+                  ? `${weekPhotos.length} fotos registradas esta semana.`
+                  : 'Sin fotos esta semana. Mismo encuadre y misma luz que la semana anterior.'}
+              </p>
+            </div>
+          </Card>
+        </div>
+
+        {/* ─────────────────────────── sensaciones */}
+        <div className="mt-5">
+          <SectionTitle>Como fue la semana</SectionTitle>
           <Card>
             <div className="space-y-5">
               <div>
                 <Label hint={`${adherence}%`}>Adherencia al plan</Label>
-                <Slider value={adherence} onChange={setAdherence} min={0} max={100} step={5} labels={['0%', '50%', '100%']} />
+                <Slider
+                  value={adherence}
+                  onChange={setAdherence}
+                  min={0}
+                  max={100}
+                  step={5}
+                  labels={['0%', '50%', '100%']}
+                />
                 <p className="mt-1 text-[11px] text-faint">
-                  Calculado: registraste comida {stats.autoAdherence}% de los dias
+                  Calculado: registraste comida el {stats.autoAdherence}% de los dias
                 </p>
               </div>
-              <Scale5 label="Energia" value={energy} onChange={setEnergy} lo="Agotado" hi="Excelente" />
-              <Scale5 label="Sueno" value={sleep} onChange={setSleep} lo="Fatal" hi="Perfecto" />
-              <Scale5 label="Hambre" value={hunger} onChange={setHunger} lo="Saciado" hi="Voraz" />
-              <Scale5 label="Estres" value={stress} onChange={setStress} lo="Tranquilo" hi="Al limite" />
+
+              {SCALES.map((s) => (
+                <div key={s.key}>
+                  <Label hint={`${scales[s.key]} / 5`}>{s.label}</Label>
+                  <div className="flex gap-1.5">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => setScales((v) => ({ ...v, [s.key]: n }))}
+                        className={cx(
+                          'pressable h-11 flex-1 rounded-xl text-[15px] font-medium',
+                          scales[s.key] === n
+                            ? 'bg-brand text-base'
+                            : 'border border-line bg-surface2 text-muted',
+                        )}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-1 flex justify-between text-[11px] text-faint">
+                    <span>{s.lo}</span>
+                    <span>{s.hi}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4">
+              <Label hint="opcional">Comentarios</Label>
+              <textarea
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+                rows={3}
+                placeholder="Contexto de la semana, viajes, eventos, molestias..."
+                className="w-full resize-none rounded-2xl border border-line bg-surface2 px-3.5 py-3 text-[15px] outline-none placeholder:text-faint focus:border-brand/60"
+              />
             </div>
           </Card>
         </div>
 
-        {/* ------------------------------------------------------- veredicto */}
+        {/* ─────────────────────────── recomendacion */}
         <div className="mt-5">
-          <SectionTitle>Diagnostico</SectionTitle>
-          <Card>
-            <div className="flex items-start gap-3">
-              <div
-                className={cx(
-                  'flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface2',
-                  VERDICT_TONE[result.verdict],
-                )}
-              >
-                <CalendarCheck size={19} />
-              </div>
-              <div className="min-w-0">
-                <p className={cx('text-[16px] font-semibold', VERDICT_TONE[result.verdict])}>
-                  {result.headline}
-                </p>
-                <p className="mt-1 text-[13px] text-muted">{result.detail}</p>
-              </div>
-            </div>
-
-            {result.kcalAdjustment !== 0 && (
-              <div className="mt-4 flex items-center justify-center gap-4 rounded-2xl border border-line bg-surface2 py-3">
-                <div className="text-center">
-                  <p className="text-[11px] text-faint">Ahora</p>
-                  <p className="text-[19px] font-semibold tabular">{targets.kcal}</p>
-                </div>
-                <ArrowRight size={18} className="text-brand" />
-                <div className="text-center">
-                  <p className="text-[11px] text-faint">Nuevo</p>
-                  <p className="text-[19px] font-semibold tabular text-brand">{result.newKcalTarget}</p>
-                </div>
-              </div>
-            )}
-
-            {result.tips.length > 0 && (
-              <ul className="mt-4 space-y-1.5">
-                {result.tips.map((tip) => (
-                  <li key={tip} className="flex gap-2 text-[13px] text-muted">
-                    <Check size={14} className="mt-0.5 shrink-0 text-brand" />
-                    {tip}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <SectionTitle>Recomendacion</SectionTitle>
+          <RecommendationCard
+            result={recommendation}
+            currentKcal={targets.kcal}
+            currentCardio={week.cardioPlanned || week.cardioMinutes}
+            resolved={savedRec?.outcome}
+            onAccept={applyRecommendation}
+            onReject={() => {
+              saveRecommendation({
+                weekStart,
+                action: recommendation.action,
+                headline: recommendation.headline,
+                reasoning: recommendation.reasoning,
+                dataUsed: recommendation.dataUsed,
+                kcalDelta: recommendation.kcalDelta,
+                cardioMinutesDelta: recommendation.cardioMinutesDelta,
+                estimatedImpact: recommendation.estimatedImpact,
+                confidence: recommendation.confidence,
+                outcome: 'rechazada',
+              });
+              saveCheckin();
+              toast('Recomendacion rechazada. El check-in se guardo igual.', 'info');
+            }}
+          />
         </div>
 
-        <div className="mt-3 space-y-2">
-          {result.kcalAdjustment !== 0 && (
-            <Button variant="primary" size="lg" block onClick={() => save(true)}>
-              Aplicar {fmtSigned(result.kcalAdjustment)} kcal y guardar
-            </Button>
-          )}
-          <Button variant="secondary" size="lg" block onClick={() => save(false)}>
-            Guardar sin cambiar calorias
-          </Button>
-          {alreadyDone && (
-            <p className="text-center text-[12px] text-faint">
-              Ya hiciste el check-in de esta semana. Guardar lo sobrescribe.
-            </p>
-          )}
-        </div>
+        <Button variant="secondary" size="lg" block className="mt-3" onClick={saveCheckin}>
+          Guardar check-in sin aplicar cambios
+        </Button>
 
-        {/* -------------------------------------------------------- historial */}
+        {/* ─────────────────────────── historial */}
         <div className="mt-6">
           <SectionTitle>Check-ins anteriores</SectionTitle>
           {checkins.length === 0 ? (
             <EmptyState
+              icon={<CalendarCheck size={22} />}
               title="Sin check-ins"
-              description="Haz uno cada lunes. Es lo que convierte los datos sueltos en decisiones."
+              description="Haz uno cada semana. Es lo que convierte datos sueltos en decisiones."
             />
           ) : (
             <div className="space-y-1.5">
@@ -232,7 +506,8 @@ export default function CheckinPage() {
                     <span className="text-[13px] tabular text-muted">{c.avgWeight.toFixed(1)} kg</span>
                   </div>
                   <p className="mt-0.5 text-[12px] tabular text-faint">
-                    {fmtSigned(c.weightChange)} kg · {c.adherence}% adherencia · {c.workoutsCompleted} entrenos
+                    {fmtSigned(c.weightChange)} kg · {c.adherence}% adherencia ·{' '}
+                    {c.workoutsCompleted} entrenos
                     {c.kcalAdjustment ? ` · ${fmtSigned(c.kcalAdjustment)} kcal` : ''}
                   </p>
                 </div>
@@ -241,47 +516,39 @@ export default function CheckinPage() {
           )}
         </div>
 
-        <p className="mt-6 text-center text-[12px] text-faint">
-          Proximo check-in: {friendlyDate(addDays(weekStart, 7))}
+        <p className="mt-6 flex items-center justify-center gap-2 text-center text-[12px] text-faint">
+          Proximo check-in: {shortDate(addDays(weekStart, 7))}
+          <ArrowRight size={12} />
         </p>
       </Page>
     </>
   );
 }
 
-function Scale5({
-  label,
-  value,
-  onChange,
-  lo,
-  hi,
+function Group({
+  title,
+  items,
+  icon,
 }: {
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
-  lo: string;
-  hi: string;
+  title: string;
+  items: MetricComparison[];
+  icon: React.ReactNode;
 }) {
+  if (!items.length) return null;
+  const tone = DIRECTION_TONE[items[0].direction];
   return (
     <div>
-      <Label hint={`${value} / 5`}>{label}</Label>
-      <div className="flex gap-1.5">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            onClick={() => onChange(n)}
-            className={cx(
-              'pressable h-11 flex-1 rounded-xl text-[15px] font-medium',
-              value === n ? 'bg-brand text-base' : 'border border-line bg-surface2 text-muted',
-            )}
-          >
-            {n}
-          </button>
+      <p className={cx('mb-1 flex items-center gap-1.5 text-[12px] font-semibold', tone)}>
+        {icon}
+        {title}
+      </p>
+      <div className="space-y-1">
+        {items.map((m) => (
+          <div key={m.key} className="flex items-baseline justify-between gap-3 text-[13px]">
+            <span className="text-muted">{m.label}</span>
+            <span className="shrink-0 tabular text-[12px] text-faint">{m.detail}</span>
+          </div>
         ))}
-      </div>
-      <div className="mt-1 flex justify-between text-[11px] text-faint">
-        <span>{lo}</span>
-        <span>{hi}</span>
       </div>
     </div>
   );

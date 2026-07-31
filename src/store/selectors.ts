@@ -8,14 +8,30 @@ import { setCatalog } from '@/data/foodSearch';
 import { BUILTIN_ROUTINES } from '@/data/routines';
 import { computeTargets } from '@/domain/energy';
 import { remainingMacros, sumMacros } from '@/domain/macros';
+import {
+  countdown,
+  projectToShow,
+  weightTrend,
+  type CompetitionPrep,
+  type Countdown,
+  type DailyReadiness,
+  type Projection,
+  type WeightTrend,
+} from '@/domain/competition';
 import { addDays, today } from '@/lib/date';
 import { alive } from './persist';
+import { useActivityStore } from './activityStore';
 import { useBodyStore } from './bodyStore';
 import { useCheckinStore } from './checkinStore';
 import { useNutritionStore } from './nutritionStore';
+import { usePhotoStore } from './photoStore';
+import { usePrepStore } from './prepStore';
 import { useProfileStore } from './profileStore';
+import { useSettingsStore } from './settingsStore';
 import { useTrainingStore } from './trainingStore';
 import type { Food, FoodEntry, MacroTarget, Macros } from '@/domain/types';
+import { DAY_TYPE_FACTOR } from '@/domain/prepTypes';
+import type { ProgressPhoto } from '@/domain/prepTypes';
 
 /* --------------------------------------------------------------- catalogo */
 
@@ -89,9 +105,35 @@ export interface DayNutrition {
   signedRemaining: Macros;
 }
 
+/**
+ * Objetivo del dia ajustado por tipo de dia.
+ *
+ * Un refeed o un diet break no cambian el objetivo base: lo escalan solo para
+ * esa fecha. La proteina se mantiene practicamente fija (es lo que protege el
+ * musculo) y el ajuste recae sobre los carbohidratos.
+ */
+export function useDayTarget(date: string): MacroTarget {
+  const base = useTargets();
+  const dayTypes = useNutritionStore((s) => s.dayTypes);
+
+  return useMemo(() => {
+    const type = dayTypes[date];
+    if (!type || type === 'entrenamiento') return base;
+
+    const factor = DAY_TYPE_FACTOR[type];
+    const kcal = Math.round(base.kcal * factor);
+    // La proteina se mueve muy poco; la grasa algo; el resto va a carbohidratos
+    const protein = Math.round(base.protein * (factor > 1 ? 1 : 1.02));
+    const fat = Math.round(base.fat * (factor > 1 ? Math.min(1.15, factor) : Math.max(0.85, factor)));
+    const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4));
+
+    return { kcal, protein, carbs, fat, fiber: base.fiber };
+  }, [base, dayTypes, date]);
+}
+
 export function useDayNutrition(date: string): DayNutrition {
   const entries = useDayEntries(date);
-  const target = useTargets();
+  const target = useDayTarget(date);
   const consumed = useMemo(() => sumMacros(entries.map((e) => e.macros)), [entries]);
   const remaining = useMemo(() => remainingMacros(target, consumed), [target, consumed]);
   const signedRemaining = useMemo(
@@ -158,6 +200,87 @@ export function useStreak(): number {
   }, [entries, workouts]);
 }
 
+/* ------------------------------------------------------------------ prep */
+
+/** Preparacion activa, o null si no hay modo competencia. */
+export function useActivePrep(): CompetitionPrep | null {
+  const preps = usePrepStore((s) => s.preps);
+  const activeId = usePrepStore((s) => s.activePrepId);
+  return useMemo(() => {
+    if (!activeId) return null;
+    return alive(preps).find((p) => p.id === activeId) ?? null;
+  }, [preps, activeId]);
+}
+
+export function useReadiness(): DailyReadiness[] {
+  const readiness = usePrepStore((s) => s.readiness);
+  return useMemo(() => alive(readiness).sort((a, b) => a.date.localeCompare(b.date)), [readiness]);
+}
+
+/** Tendencia del peso a partir del registro diario y de las mediciones. */
+export function useWeightTrend(): WeightTrend {
+  const readiness = useReadiness();
+  const measurements = useBodyStore((s) => s.measurements);
+
+  return useMemo(() => {
+    // Se combinan ambas fuentes: el registro diario manda si hay dos del mismo dia
+    const byDate = new Map<string, number>();
+    for (const m of alive(measurements)) {
+      if (typeof m.weight === 'number') byDate.set(m.date, m.weight);
+    }
+    for (const r of readiness) {
+      if (typeof r.weight === 'number') byDate.set(r.date, r.weight);
+    }
+    const entries = [...byDate.entries()].map(([date, weight]) => ({ date, weight }));
+    return weightTrend(entries, today());
+  }, [readiness, measurements]);
+}
+
+export function useCountdown(): Countdown | null {
+  const prep = useActivePrep();
+  return useMemo(() => (prep ? countdown(prep, today()) : null), [prep]);
+}
+
+export function useProjection(): Projection | null {
+  const prep = useActivePrep();
+  const trend = useWeightTrend();
+  return useMemo(() => (prep ? projectToShow(prep, trend, today()) : null), [prep, trend]);
+}
+
+/** Actividad de la semana en curso: cardio, pasos y posing. */
+export function useWeekActivity(weekStart: string) {
+  const cardio = useActivityStore((s) => s.cardioSessions);
+  const steps = useActivityStore((s) => s.steps);
+  const posing = useActivityStore((s) => s.posingSessions);
+
+  return useMemo(() => {
+    const end = addDays(weekStart, 7);
+    const inWeek = <T extends { date: string }>(list: T[]) =>
+      list.filter((x) => x.date >= weekStart && x.date < end);
+
+    const sessions = inWeek(alive(cardio));
+    const stepList = inWeek(alive(steps));
+    const posingList = inWeek(alive(posing));
+
+    return {
+      cardioSessions: sessions,
+      cardioMinutes: sessions.filter((c) => c.completed).reduce((n, c) => n + c.minutes, 0),
+      cardioPlanned: sessions.reduce((n, c) => n + c.minutes, 0),
+      steps: stepList,
+      avgSteps: stepList.length
+        ? Math.round(stepList.reduce((n, s2) => n + s2.steps, 0) / stepList.length)
+        : 0,
+      posingSessions: posingList,
+      posingMinutes: posingList.reduce((n, p) => n + p.minutes, 0),
+    };
+  }, [cardio, steps, posing, weekStart]);
+}
+
+export function usePhotos(): ProgressPhoto[] {
+  const photos = usePhotoStore((s) => s.photos);
+  return useMemo(() => alive(photos).sort((a, b) => b.date.localeCompare(a.date)), [photos]);
+}
+
 /* -------------------------------------------------------------- hidratacion */
 
 const PERSISTED_STORES = [
@@ -166,6 +289,10 @@ const PERSISTED_STORES = [
   useTrainingStore,
   useBodyStore,
   useCheckinStore,
+  useSettingsStore,
+  usePrepStore,
+  useActivityStore,
+  usePhotoStore,
 ];
 
 /**

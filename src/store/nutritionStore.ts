@@ -3,6 +3,7 @@ import { alive, newEntity, persisted, softDelete, touch } from './persist';
 import { macrosFor } from '@/domain/macros';
 import { today } from '@/lib/date';
 import type { CustomFood, Entity, Food, FoodEntry, MealSlot, Recipe } from '@/domain/types';
+import type { NutritionDayType } from '@/domain/prepTypes';
 
 interface NutritionState {
   entries: FoodEntry[];
@@ -18,6 +19,10 @@ interface NutritionState {
   updateEntry: (id: string, patch: { grams?: number; slot?: MealSlot }) => void;
   removeEntry: (id: string) => void;
   duplicateDay: (from: string, to: string) => void;
+
+  /** Tipo de dia por fecha: escala el objetivo de macros. */
+  dayTypes: Record<string, NutritionDayType>;
+  setDayType: (date: string, type: NutritionDayType) => void;
 
   toggleFavorite: (foodId: string) => void;
   addCustomFood: (food: Omit<CustomFood, keyof Entity | 'custom'>) => CustomFood;
@@ -36,6 +41,10 @@ export const useNutritionStore = create<NutritionState>()(
     recipes: [],
     favorites: [],
     recent: [],
+    dayTypes: {},
+
+    setDayType: (date, type) =>
+      set((s) => ({ dayTypes: { ...s.dayTypes, [date]: type } })),
 
     addEntry: ({ food, grams, slot, date }) => {
       const entry = newEntity<Omit<FoodEntry, keyof Entity>>({

@@ -14,6 +14,7 @@ import { macrosFor } from '../src/domain/macros';
 import { analyzeCheckin } from '../src/domain/checkin';
 import { navyBodyFat } from '../src/domain/body';
 import { estimate1RM } from '../src/domain/training';
+import { runCompetitionTests } from './smoke-competition.mts';
 import type { Profile } from '../src/domain/types';
 
 setCatalog(FOODS);
@@ -225,6 +226,9 @@ check(
 );
 check('sin ids duplicados', new Set(FOODS.map((f) => f.id)).size === FOODS.length);
 console.log(`   ${FOODS.length} alimentos en la base local`);
+
+/* ============================== SUITE DE COMPETENCIA ================== */
+runCompetitionTests(check, line);
 
 /* ---------------------------------------------------------------------- */
 console.log(`\n${failures === 0 ? 'TODO CORRECTO' : `${failures} COMPROBACIONES FALLIDAS`}\n`);

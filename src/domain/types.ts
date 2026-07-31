@@ -103,7 +103,70 @@ export type MuscleGroup =
   | 'antebrazo'
   | 'cardio';
 
-export type Equipment = 'barra' | 'mancuerna' | 'maquina' | 'polea' | 'peso corporal' | 'otro';
+export type Equipment =
+  | 'barra'
+  | 'mancuerna'
+  | 'maquina'
+  | 'polea'
+  | 'peso corporal'
+  | 'banda'
+  | 'kettlebell'
+  | 'otro';
+
+export type Difficulty = 'principiante' | 'intermedio' | 'avanzado';
+
+export type MovementPattern =
+  | 'empuje-horizontal'
+  | 'empuje-vertical'
+  | 'traccion-horizontal'
+  | 'traccion-vertical'
+  | 'sentadilla'
+  | 'bisagra'
+  | 'zancada'
+  | 'aislamiento'
+  | 'core-antiextension'
+  | 'core-antirotacion'
+  | 'movilidad'
+  | 'cardio'
+  | 'transporte';
+
+/** Cuanta carga impone el ejercicio sobre la zona lumbar. */
+export type LumbarLoad = 'bajo' | 'moderado' | 'alto';
+
+/** Guia de tecnica. Contenido propio, sin material de terceros. */
+export interface ExerciseTechnique {
+  /** Preparacion inicial. */
+  setup: string[];
+  /** Ejecucion paso a paso. */
+  execution: string[];
+  breathing: string;
+  rangeOfMotion: string;
+  /** Tempo sugerido, formato excentrica-pausa-concentrica-pausa. */
+  tempo: string;
+  commonMistakes: string[];
+  safety: string[];
+  hypertrophy: string[];
+  strength: string[];
+  /** Contraindicaciones generales, no consejo medico. */
+  contraindications: string[];
+}
+
+/**
+ * Media del ejercicio. Todo es opcional y configurable por el usuario: la app
+ * no incrusta videos de terceros que puedan desaparecer o tener copyright.
+ */
+export interface ExerciseMedia {
+  /** URL propia de un MP4. */
+  videoUrl?: string;
+  /** URL propia de un WebM (se ofrece antes que el MP4 si existe). */
+  videoWebmUrl?: string;
+  /** Id de YouTube configurado por el usuario. */
+  youtubeId?: string;
+  /** Imagen de portada del video. */
+  videoPoster?: string;
+  /** Imagen estatica ilustrativa. */
+  imageUrl?: string;
+}
 
 export interface Exercise {
   id: string;
@@ -115,6 +178,20 @@ export interface Exercise {
   /** Ejercicio compuesto: pesa mas en el calculo de fatiga/volumen. */
   compound: boolean;
   unilateral?: boolean;
+  difficulty: Difficulty;
+  pattern: MovementPattern;
+  lumbarLoad: LumbarLoad;
+  /** Ejercicios equivalentes para el mismo objetivo. */
+  substitutions: string[];
+  /** Versiones mas faciles. */
+  regressions: string[];
+  /** Versiones mas exigentes. */
+  progressions: string[];
+  /** Alternativas cuando hay sensibilidad lumbar. */
+  lumbarSafeAlternatives?: string[];
+  technique: ExerciseTechnique;
+  media?: ExerciseMedia;
+  tags: string[];
 }
 
 export interface WorkoutSet {

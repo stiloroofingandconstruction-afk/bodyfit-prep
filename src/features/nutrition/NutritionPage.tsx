@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Copy, Plus, Sparkles, Trash2, Wand2 } from 'lucide-react';
+import { CalendarRange, ChevronLeft, ChevronRight, Copy, Plus, Sparkles, Trash2, Wand2 } from 'lucide-react';
 import { Page, PageHeader } from '@/components/ui/PageHeader';
 import { Card, SectionTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -10,6 +10,9 @@ import { MacroSummary } from './MacroSummary';
 import { FoodSearchSheet } from './FoodSearchSheet';
 import { SmartMealSheet } from './SmartMealSheet';
 import { CustomFoodSheet } from './CustomFoodSheet';
+import { DayPlanSheet } from './DayPlanSheet';
+import { Chip } from '@/components/ui/Misc';
+import { DAY_TYPE_LABEL, type NutritionDayType } from '@/domain/prepTypes';
 import { addDays, friendlyDate, today } from '@/lib/date';
 import { fmtNum } from '@/lib/utils';
 import { sumMacros } from '@/domain/macros';
@@ -42,9 +45,13 @@ export default function NutritionPage() {
   const [smart, setSmart] = useState<'plan' | 'auto' | null>(null);
   const [editing, setEditing] = useState<FoodEntry | null>(null);
   const [creating, setCreating] = useState(false);
+  const [planning, setPlanning] = useState(false);
 
   const { entries, consumed, target, remaining } = useDayNutrition(date);
   const duplicateDay = useNutritionStore((s) => s.duplicateDay);
+  const dayTypes = useNutritionStore((s) => s.dayTypes);
+  const setDayType = useNutritionStore((s) => s.setDayType);
+  const currentDayType: NutritionDayType = dayTypes[date] ?? 'entrenamiento';
 
   const bySlot = useMemo(() => {
     const map = new Map<MealSlot, FoodEntry[]>();
@@ -89,6 +96,15 @@ export default function NutritionPage() {
           <MacroSummary consumed={consumed} target={target} />
         </Card>
 
+        {/* Tipo de dia: refeed, diet break, descanso... escala el objetivo */}
+        <div className="scroll-momentum -mx-4 mt-3 flex gap-2 overflow-x-auto px-4">
+          {(Object.keys(DAY_TYPE_LABEL) as NutritionDayType[]).map((t) => (
+            <Chip key={t} active={currentDayType === t} onClick={() => setDayType(date, t)}>
+              {DAY_TYPE_LABEL[t]}
+            </Chip>
+          ))}
+        </div>
+
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Button variant="primary" size="lg" onClick={() => setSmart('plan')}>
             <Sparkles size={17} />
@@ -99,6 +115,11 @@ export default function NutritionPage() {
             Completar macros
           </Button>
         </div>
+
+        <Button variant="secondary" size="lg" block className="mt-2" onClick={() => setPlanning(true)}>
+          <CalendarRange size={17} />
+          Planear mi dia completo
+        </Button>
 
         <div className="mt-5 space-y-4">
           {visibleSlots.map((slot) => {
@@ -207,6 +228,13 @@ export default function NutritionPage() {
           onClose={() => setSmart(null)}
         />
       )}
+
+      <DayPlanSheet
+        open={planning}
+        onClose={() => setPlanning(false)}
+        remaining={remaining}
+        date={date}
+      />
 
       <CustomFoodSheet open={creating} onClose={() => setCreating(false)} />
 

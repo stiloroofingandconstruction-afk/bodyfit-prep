@@ -1,5 +1,19 @@
 import { useRef, useState } from 'react';
-import { Download, Share, SquarePlus, Trash2, Upload } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import {
+  Bell,
+  ChevronRight,
+  Download,
+  FileText,
+  Film,
+  Info,
+  Share,
+  ShieldCheck,
+  SquarePlus,
+  Trash2,
+  Trophy,
+  Upload,
+} from 'lucide-react';
 import { Page, PageHeader } from '@/components/ui/PageHeader';
 import { Card, SectionTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -11,10 +25,14 @@ import { download } from '@/lib/utils';
 import { toISODate } from '@/lib/date';
 import { useProfile, useProfileStore } from '@/store/profileStore';
 import { useNutritionStore } from '@/store/nutritionStore';
-import { useCurrentWeight, useTargets } from '@/store/selectors';
+import { useSettingsStore, type Experience } from '@/store/settingsStore';
+import { useActivePrep, useCurrentWeight, useTargets } from '@/store/selectors';
 import { alive } from '@/store/persist';
 import { toast } from '@/store/uiStore';
+import { LOCALE_LABEL, type Locale } from '@/i18n';
+import { EXERCISE_BY_ID } from '@/data/exercises';
 import type { ActivityLevel, Goal, Sex } from '@/domain/types';
+import type { WeightUnit, LengthUnit } from '@/domain/units';
 
 export default function SettingsPage() {
   const profile = useProfile();
@@ -23,6 +41,8 @@ export default function SettingsPage() {
   const targets = useTargets();
   const customFoods = useNutritionStore((s) => s.customFoods);
   const removeCustomFood = useNutritionStore((s) => s.removeCustomFood);
+  const settings = useSettingsStore();
+  const prep = useActivePrep();
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -35,6 +55,44 @@ export default function SettingsPage() {
       <PageHeader title="Ajustes" subtitle="Perfil, objetivos y datos" />
 
       <Page>
+        {/* ------------------------------------------------- modo competencia */}
+        <SectionTitle>Competencia</SectionTitle>
+        <Card>
+          <div className="flex items-start gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface2 text-brand">
+              <Trophy size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-medium">Modo competencia</p>
+              <p className="mt-0.5 text-[12px] text-muted">
+                {prep
+                  ? `${prep.showName} · ${prep.division}`
+                  : 'Cuenta atras, fases del prep, cardio, posing, peak week y dia del show'}
+              </p>
+            </div>
+            <button
+              onClick={() => settings.update({ competitionMode: !settings.competitionMode })}
+              className={cxToggle(settings.competitionMode)}
+              aria-label="Alternar modo competencia"
+            >
+              <span
+                className={`block size-5 rounded-full bg-white transition-transform ${
+                  settings.competitionMode ? 'translate-x-5' : ''
+                }`}
+              />
+            </button>
+          </div>
+          {settings.competitionMode && (
+            <Link
+              to="/competencia"
+              className="pressable mt-3 flex items-center justify-between rounded-xl bg-surface2 px-3 py-2.5 text-[14px]"
+            >
+              <span>{prep ? 'Ver panel de competencia' : 'Configurar competencia'}</span>
+              <ChevronRight size={16} className="text-faint" />
+            </Link>
+          )}
+        </Card>
+
         {/* ------------------------------------------------------------ perfil */}
         <SectionTitle>Perfil</SectionTitle>
         <Card>
@@ -214,6 +272,144 @@ export default function SettingsPage() {
           </Card>
         </div>
 
+        {/* ------------------------------------------- unidades e idioma */}
+        <div className="mt-5">
+          <SectionTitle>Unidades e idioma</SectionTitle>
+          <Card>
+            <div className="space-y-4">
+              <div>
+                <Label>Peso</Label>
+                <Segmented
+                  value={settings.weightUnit}
+                  onChange={(v: WeightUnit) => settings.setUnits({ weightUnit: v })}
+                  options={[
+                    { value: 'kg', label: 'Kilogramos' },
+                    { value: 'lb', label: 'Libras' },
+                  ]}
+                />
+              </div>
+              <div>
+                <Label>Longitud</Label>
+                <Segmented
+                  value={settings.lengthUnit}
+                  onChange={(v: LengthUnit) => settings.setUnits({ lengthUnit: v })}
+                  options={[
+                    { value: 'cm', label: 'Centimetros' },
+                    { value: 'in', label: 'Pulgadas' },
+                  ]}
+                />
+              </div>
+              <div>
+                <Label>Idioma</Label>
+                <Segmented
+                  value={settings.locale}
+                  onChange={(v: Locale) => settings.setLocaleSetting(v)}
+                  options={(Object.keys(LOCALE_LABEL) as Locale[]).map((l) => ({
+                    value: l,
+                    label: LOCALE_LABEL[l],
+                  }))}
+                />
+                <p className="mt-1.5 text-[11px] text-faint">
+                  La app esta completa en espanol. El ingles cubre la navegacion y los modulos de
+                  competencia; el resto se ira traduciendo.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* --------------------------------------------- entrenamiento */}
+        <div className="mt-5">
+          <SectionTitle>Entrenamiento</SectionTitle>
+          <Card>
+            <div className="space-y-4">
+              <div>
+                <Label>Nivel de experiencia</Label>
+                <Select
+                  value={settings.experience}
+                  onChange={(e) => settings.update({ experience: e.target.value as Experience })}
+                >
+                  <option value="principiante">Principiante</option>
+                  <option value="intermedio">Intermedio</option>
+                  <option value="avanzado">Avanzado</option>
+                  <option value="competidor">Competidor</option>
+                </Select>
+              </div>
+              <div>
+                <Label hint={`${settings.trainingDaysPerWeek} dias`}>Dias de entrenamiento</Label>
+                <Slider
+                  value={settings.trainingDaysPerWeek}
+                  onChange={(v) => settings.update({ trainingDaysPerWeek: v })}
+                  min={1}
+                  max={7}
+                  step={1}
+                  labels={['1', '4', '7']}
+                />
+              </div>
+              <div>
+                <Label hint="separadas por comas">Molestias fisicas</Label>
+                <Input
+                  value={settings.discomforts.join(', ')}
+                  onChange={(e) =>
+                    settings.update({
+                      discomforts: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
+                    })
+                  }
+                  placeholder="lumbar, hombro derecho"
+                />
+                <p className="mt-1.5 text-[11px] text-faint">
+                  La biblioteca de ejercicios marca la carga lumbar y propone alternativas cuando es
+                  alta. No es consejo medico.
+                </p>
+              </div>
+              {settings.avoidedExercises.length > 0 && (
+                <div>
+                  <Label hint={`${settings.avoidedExercises.length}`}>Ejercicios a evitar</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {settings.avoidedExercises.map((id) => (
+                      <button
+                        key={id}
+                        onClick={() => settings.toggleAvoidedExercise(id)}
+                        className="pressable rounded-full border border-rose/30 bg-rose/10 px-2.5 py-1 text-[12px] text-rose"
+                      >
+                        {EXERCISE_BY_ID.get(id)?.name ?? id} ×
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* --------------------------------------------------- herramientas */}
+        <div className="mt-5">
+          <SectionTitle>Herramientas</SectionTitle>
+          <div className="space-y-1.5">
+            {[
+              { to: '/ejercicios', label: 'Biblioteca de ejercicios', detail: 'Tecnica, variantes y seguridad', Icon: ShieldCheck },
+              { to: '/ajustes/videos', label: 'Videos de ejercicios', detail: 'Asocia tus propios videos', Icon: Film },
+              { to: '/ajustes/recordatorios', label: 'Recordatorios', detail: 'Avisos dentro de la app', Icon: Bell },
+              { to: '/informes', label: 'Informes y exportacion', detail: 'CSV, JSON y resumen para coach', Icon: FileText },
+            ].map(({ to, label, detail, Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                className="pressable flex items-center gap-3 rounded-2xl border border-line bg-surface px-3.5 py-3"
+              >
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface2 text-brand">
+                  <Icon size={17} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-medium">{label}</p>
+                  <p className="truncate text-[12px] text-faint">{detail}</p>
+                </div>
+                <ChevronRight size={17} className="shrink-0 text-faint" />
+              </Link>
+            ))}
+          </div>
+        </div>
+
         {/* ----------------------------------------------- alimentos propios */}
         {customs.length > 0 && (
           <div className="mt-5">
@@ -336,8 +532,37 @@ export default function SettingsPage() {
           </Card>
         </div>
 
-        <p className="mt-6 text-center text-[11px] text-faint">BodyFit Prep · v1.0.0</p>
+        {/* ------------------------------------------------------- avisos */}
+        <div className="mt-5">
+          <SectionTitle>Aviso</SectionTitle>
+          <Card className="border-line/70">
+            <div className="flex gap-2.5">
+              <Info size={15} className="mt-0.5 shrink-0 text-faint" />
+              <div className="space-y-2 text-[12px] text-faint">
+                <p>
+                  BodyFit Prep es una herramienta de planificacion y seguimiento. No sustituye la
+                  atencion medica ni la valoracion de un entrenador cualificado.
+                </p>
+                <p>
+                  La app no recomienda sustancias, diureticos ni protocolos de deshidratacion, y no
+                  automatiza manipulaciones de agua o sodio. Ante cualquier sintoma que te preocupe,
+                  consulta con un profesional sanitario.
+                </p>
+                <p>Tus datos se guardan unicamente en este dispositivo.</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <p className="mt-6 text-center text-[11px] text-faint">BodyFit Prep · v2.0.0</p>
       </Page>
     </>
   );
+}
+
+/** Interruptor tipo iOS. */
+function cxToggle(on: boolean): string {
+  return `pressable flex h-7 w-12 shrink-0 items-center rounded-full px-1 transition-colors ${
+    on ? 'bg-brand' : 'bg-line2'
+  }`;
 }

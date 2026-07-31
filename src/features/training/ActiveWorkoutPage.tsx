@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronDown, Flag, Plus, Timer, Trash2, TrendingUp, X } from 'lucide-react';
+import { BookOpen, Check, ChevronDown, Flag, Plus, Timer, Trash2, TrendingUp, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Sheet } from '@/components/ui/Sheet';
 import { Segmented } from '@/components/ui/Field';
 import { EmptyState } from '@/components/ui/Misc';
 import { ExercisePickerSheet } from './ExercisePickerSheet';
+import { TechniqueSheet } from '@/features/exercises/TechniqueSheet';
 import { estimate1RM, personalRecords, workoutVolume } from '@/domain/training';
 import { formatDuration } from '@/lib/date';
 import { cx, haptic } from '@/lib/utils';
@@ -31,6 +32,7 @@ export default function ActiveWorkoutPage() {
   const prs = useMemo(() => personalRecords(history), [history]);
 
   const [picking, setPicking] = useState(false);
+  const [techniqueFor, setTechniqueFor] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [rating, setRating] = useState(3);
   const [elapsed, setElapsed] = useState(0);
@@ -117,6 +119,13 @@ export default function ActiveWorkoutPage() {
                     )}
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      onClick={() => setTechniqueFor(ex.exerciseId)}
+                      className="pressable flex h-8 items-center gap-1 rounded-lg bg-surface2 px-2 text-[11px] font-medium text-brand"
+                    >
+                      <BookOpen size={13} />
+                      Ver tecnica
+                    </button>
                     {ex.restSeconds && (
                       <button
                         onClick={() => startRest(ex.restSeconds!)}
@@ -255,6 +264,13 @@ export default function ActiveWorkoutPage() {
       </main>
 
       <ExercisePickerSheet open={picking} onClose={() => setPicking(false)} onPick={addExercise} />
+
+      {/* La guia se abre encima: el entrenamiento sigue montado detras */}
+      <TechniqueSheet
+        exerciseId={techniqueFor}
+        onClose={() => setTechniqueFor(null)}
+        sequence={active.exercises.map((x) => ({ id: x.exerciseId, name: x.exerciseName }))}
+      />
 
       {/* ------------------------------------------------------- terminar -- */}
       <Sheet

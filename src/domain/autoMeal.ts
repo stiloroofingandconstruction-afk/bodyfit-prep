@@ -5,6 +5,7 @@
  * haga falta) y deja que el solver calcule los gramos exactos.
  */
 import { solvePortions, type PortionInput, type SolveResult } from './solver';
+import { round1 } from './macros';
 import type { Food, Macros } from './types';
 
 export interface MealSuggestion {
@@ -138,6 +139,98 @@ export function suggestMeals(remaining: Partial<Macros>, options: SuggestOptions
 
   // La mejor precision primero
   return out.sort((a, b) => b.result.accuracy - a.result.accuracy);
+}
+
+/* ----------------------------------------------------- planear el dia --- */
+
+export interface DayPlanOptions extends SuggestOptions {
+  /** Numero de comidas en las que repartir el objetivo. */
+  meals: number;
+  /** Fraccion extra de carbohidratos alrededor del entrenamiento (0–0.4). */
+  carbAroundTraining?: number;
+  /** Indice de la comida pre-entreno (0 = primera). */
+  trainingMealIndex?: number;
+}
+
+export interface PlannedMeal {
+  index: number;
+  label: string;
+  target: Macros;
+  result: SolveResult;
+}
+
+/**
+ * Genera un dia completo repartiendo los macros restantes entre N comidas.
+ *
+ * Reparto:
+ *  - La proteina se distribuye a partes iguales: es lo que mejor funciona para
+ *    la sintesis proteica y lo mas facil de cumplir.
+ *  - Los carbohidratos pueden concentrarse alrededor del entrenamiento.
+ *  - La grasa se reparte de forma uniforme, algo menor en la comida pre-entreno.
+ */
+export function planDay(remaining: Partial<Macros>, options: DayPlanOptions): PlannedMeal[] {
+  const meals = Math.max(1, Math.min(8, options.meals));
+  const carbShift = Math.max(0, Math.min(0.4, options.carbAroundTraining ?? 0));
+  const trainingIndex = options.trainingMealIndex ?? Math.min(meals - 1, 1);
+
+  const total = {
+    kcal: Math.max(0, remaining.kcal ?? 0),
+    protein: Math.max(0, remaining.protein ?? 0),
+    carbs: Math.max(0, remaining.carbs ?? 0),
+    fat: Math.max(0, remaining.fat ?? 0),
+    fiber: Math.max(0, remaining.fiber ?? 0),
+  };
+
+  // Pesos de carbohidrato por comida: mas alrededor del entrenamiento
+  const carbWeights = Array.from({ length: meals }, (_, i) => {
+    if (meals === 1) return 1;
+    const near = Math.abs(i - trainingIndex) <= 1;
+    return near ? 1 + carbShift : Math.max(0.2, 1 - carbShift);
+  });
+  const carbSum = carbWeights.reduce((a, b) => a + b, 0);
+
+  const out: PlannedMeal[] = [];
+  const used = new Set<string>(options.exclude ?? []);
+
+  for (let i = 0; i < meals; i++) {
+    const carbShare = carbWeights[i] / carbSum;
+    const fatShare = i === trainingIndex ? 0.6 / meals : (1 + 0.4 / (meals - 1 || 1)) / meals;
+
+    const target: Macros = {
+      kcal: 0, // se deriva de los macros
+      protein: round1(total.protein / meals),
+      carbs: round1(total.carbs * carbShare),
+      fat: round1(total.fat * Math.min(1, fatShare)),
+      fiber: round1(total.fiber / meals),
+    };
+    target.kcal = round1(target.protein * 4 + target.carbs * 4 + target.fat * 9);
+
+    const [best] = suggestMeals(target, {
+      ...options,
+      exclude: [...used],
+      count: 1,
+      offset: i,
+    });
+
+    if (!best) continue;
+    for (const p of best.result.portions) used.add(p.food.id);
+
+    out.push({
+      index: i,
+      label: mealLabel(i, meals, i === trainingIndex),
+      target,
+      result: best.result,
+    });
+  }
+
+  return out;
+}
+
+function mealLabel(i: number, total: number, isTraining: boolean): string {
+  if (isTraining) return `Comida ${i + 1} · alrededor del entreno`;
+  if (i === 0) return 'Comida 1 · primera del dia';
+  if (i === total - 1) return `Comida ${i + 1} · ultima del dia`;
+  return `Comida ${i + 1}`;
 }
 
 /* -------------------------------------------------------- complementos -- */

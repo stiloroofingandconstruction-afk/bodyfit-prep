@@ -1,20 +1,34 @@
 import { NavLink } from 'react-router-dom';
-import { Dumbbell, Home, Settings, TrendingUp, UtensilsCrossed } from 'lucide-react';
+import { Dumbbell, Home, Settings, Trophy, TrendingUp, UtensilsCrossed } from 'lucide-react';
 import { cx, haptic } from '@/lib/utils';
+import { useSettingsStore } from '@/store/settingsStore';
 
-const TABS = [
+const BASE_TABS = [
   { to: '/', label: 'Inicio', Icon: Home, end: true },
   { to: '/nutricion', label: 'Nutricion', Icon: UtensilsCrossed },
   { to: '/entrenamiento', label: 'Entreno', Icon: Dumbbell },
-  { to: '/cuerpo', label: 'Progreso', Icon: TrendingUp },
-  { to: '/ajustes', label: 'Ajustes', Icon: Settings },
 ];
 
 export function TabBar() {
+  const competitionMode = useSettingsStore((s) => s.competitionMode);
+
+  /*
+   * Con el modo competencia activo, la cuarta pestana pasa a ser el hub de prep:
+   * es donde se vive el dia a dia de una preparacion. Progreso sigue accesible
+   * desde ahi y desde el dashboard, y Ajustes nunca desaparece.
+   */
+  const tabs = [
+    ...BASE_TABS,
+    competitionMode
+      ? { to: '/competencia', label: 'Prep', Icon: Trophy }
+      : { to: '/cuerpo', label: 'Progreso', Icon: TrendingUp },
+    { to: '/ajustes', label: 'Ajustes', Icon: Settings },
+  ];
+
   return (
     <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-line bg-base/85 backdrop-blur-xl">
       <div className="mx-auto flex max-w-lg">
-        {TABS.map(({ to, label, Icon, end }) => (
+        {tabs.map(({ to, label, Icon, end }) => (
           <NavLink
             key={to}
             to={to}

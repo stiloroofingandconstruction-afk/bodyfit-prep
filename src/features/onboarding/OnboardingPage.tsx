@@ -8,17 +8,35 @@ import { toISODate } from '@/lib/date';
 import { cx } from '@/lib/utils';
 import { DEFAULT_PROFILE, useProfileStore } from '@/store/profileStore';
 import { useBodyStore } from '@/store/bodyStore';
+import { usePrepStore } from '@/store/prepStore';
+import { useSettingsStore, type Experience } from '@/store/settingsStore';
+import { addDays } from '@/lib/date';
 import type { ActivityLevel, Goal, Profile, Sex } from '@/domain/types';
+import type { Division } from '@/domain/competition';
+import type { WeightUnit } from '@/domain/units';
 
-const STEPS = ['Bienvenida', 'Tus datos', 'Objetivo', 'Macros'];
+const STEPS = ['Bienvenida', 'Uso', 'Tus datos', 'Objetivo', 'Macros'];
 
 export default function OnboardingPage() {
   const complete = useProfileStore((s) => s.completeOnboarding);
   const upsertBody = useBodyStore((s) => s.upsert);
+  const updateSettings = useSettingsStore((s) => s.update);
+  const setUnits = useSettingsStore((s) => s.setUnits);
+  const createPrep = usePrepStore((s) => s.createPrep);
 
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<Profile>(DEFAULT_PROFILE);
   const [weight, setWeight] = useState(80);
+
+  /* Competencia */
+  const [purpose, setPurpose] = useState<'recreativo' | 'competencia'>('recreativo');
+  const [experience, setExperience] = useState<Experience>('intermedio');
+  const [trainingDays, setTrainingDays] = useState(4);
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
+  const [showName, setShowName] = useState('');
+  const [division, setDivision] = useState<Division>("Men's Physique");
+  const [showDate, setShowDate] = useState(addDays(toISODate(), 112));
+  const [discomforts, setDiscomforts] = useState('');
 
   const set = (patch: Partial<Profile>) => setDraft((d) => ({ ...d, ...patch }));
   const targets = computeTargets(draft, weight);
@@ -26,6 +44,29 @@ export default function OnboardingPage() {
   const finish = () => {
     complete({ ...draft, startWeight: weight });
     upsertBody({ date: toISODate(), weight });
+
+    setUnits({ weightUnit });
+    updateSettings({
+      experience,
+      trainingDaysPerWeek: trainingDays,
+      competitionMode: purpose === 'competencia',
+      division,
+      discomforts: discomforts.split(',').map((s) => s.trim()).filter(Boolean),
+    });
+
+    // Solo se crea la competencia si el usuario dio una fecha; todo es omitible
+    if (purpose === 'competencia' && showName.trim()) {
+      createPrep({
+        showName: showName.trim(),
+        federation: 'Otra',
+        division,
+        category: '',
+        showDate,
+        prepStartDate: toISODate(),
+        startWeight: weight,
+        status: 'activo',
+      });
+    }
   };
 
   return (
@@ -80,6 +121,109 @@ export default function OnboardingPage() {
         )}
 
         {step === 1 && (
+          <div className="fade-enter space-y-5">
+            <div>
+              <h2 className="text-[26px] leading-tight font-bold">¿Para que la usas?</h2>
+              <p className="mt-1 text-[14px] text-muted">
+                Puedes cambiarlo cuando quieras. Todas las preguntas son opcionales.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              {(
+                [
+                  ['recreativo', 'Entrenamiento personal', 'Fuerza, salud y composicion corporal'],
+                  ['competencia', 'Preparacion para competir', 'Cuenta atras, posing, peak week y dia del show'],
+                ] as ['recreativo' | 'competencia', string, string][]
+              ).map(([value, title, desc]) => (
+                <button
+                  key={value}
+                  onClick={() => setPurpose(value)}
+                  className={cx(
+                    'pressable w-full rounded-2xl border p-4 text-left transition-colors',
+                    purpose === value ? 'border-brand bg-brand/10' : 'border-line bg-surface',
+                  )}
+                >
+                  <p className={cx('text-[16px] font-semibold', purpose === value && 'text-brand')}>
+                    {title}
+                  </p>
+                  <p className="mt-0.5 text-[13px] text-muted">{desc}</p>
+                </button>
+              ))}
+            </div>
+
+            {purpose === 'competencia' && (
+              <div className="space-y-4 rounded-2xl border border-line bg-surface p-4">
+                <div>
+                  <Label hint="puedes dejarlo vacio">Nombre del show</Label>
+                  <Input
+                    value={showName}
+                    onChange={(e) => setShowName(e.target.value)}
+                    placeholder="Mi primera competencia"
+                  />
+                </div>
+                <div>
+                  <Label>Division</Label>
+                  <Select value={division} onChange={(e) => setDivision(e.target.value as Division)}>
+                    {(
+                      [
+                        "Men's Physique", 'Classic Physique', 'Bodybuilding',
+                        'Bikini', 'Wellness', 'Figure', 'Womens Physique',
+                      ] as Division[]
+                    ).map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label>Fecha del show</Label>
+                  <Input type="date" value={showDate} onChange={(e) => setShowDate(e.target.value)} />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <Label>Nivel de experiencia</Label>
+              <Select value={experience} onChange={(e) => setExperience(e.target.value as Experience)}>
+                <option value="principiante">Principiante</option>
+                <option value="intermedio">Intermedio</option>
+                <option value="avanzado">Avanzado</option>
+                <option value="competidor">Competidor</option>
+              </Select>
+            </div>
+
+            <div>
+              <Label hint={`${trainingDays} dias`}>Dias de entrenamiento por semana</Label>
+              <Slider value={trainingDays} onChange={setTrainingDays} min={1} max={7} step={1} labels={['1', '4', '7']} />
+            </div>
+
+            <div>
+              <Label>Unidades de peso</Label>
+              <Segmented
+                value={weightUnit}
+                onChange={setWeightUnit}
+                options={[
+                  { value: 'kg', label: 'Kilogramos' },
+                  { value: 'lb', label: 'Libras' },
+                ]}
+              />
+            </div>
+
+            <div>
+              <Label hint="opcional, separadas por comas">Molestias o zonas a cuidar</Label>
+              <Input
+                value={discomforts}
+                onChange={(e) => setDiscomforts(e.target.value)}
+                placeholder="lumbar, hombro derecho"
+              />
+              <p className="mt-1.5 text-[11px] text-faint">
+                La biblioteca marca la carga lumbar de cada ejercicio y propone alternativas.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
           <div className="fade-enter space-y-5">
             <div>
               <h2 className="text-[26px] leading-tight font-bold">Tus datos</h2>
@@ -144,7 +288,7 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {step === 2 && (
+        {step === 3 && (
           <div className="fade-enter space-y-5">
             <div>
               <h2 className="text-[26px] leading-tight font-bold">¿Que buscas?</h2>
@@ -202,7 +346,7 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <div className="fade-enter space-y-5">
             <div>
               <h2 className="text-[26px] leading-tight font-bold">Tus macros</h2>

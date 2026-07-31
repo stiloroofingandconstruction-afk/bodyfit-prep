@@ -1,9 +1,16 @@
 # BodyFit Prep
 
-Aplicación de bodybuilding, nutrición inteligente y seguimiento físico.
+Aplicación de bodybuilding, nutrición inteligente, seguimiento físico y **preparación completa para competir**.
 PWA instalable en iPhone desde Safari, funciona sin conexión y se comporta como una app nativa.
 
 > Proyecto independiente. No comparte código, datos ni dependencias con ningún otro proyecto.
+
+## Aviso
+
+BodyFit Prep es una herramienta de **planificación y seguimiento**. No sustituye la atención médica
+ni la valoración de un entrenador cualificado. No recomienda sustancias, diuréticos ni protocolos de
+deshidratación, y no automatiza manipulaciones de agua o sodio. Todos los datos se guardan
+únicamente en el dispositivo.
 
 ## Arranque
 
@@ -149,6 +156,61 @@ táctil inmediata en cada pulsación.
 Instalación: Safari → Compartir → Añadir a pantalla de inicio.
 Los iconos se generan con `scripts/generate-icons.mjs`, un codificador PNG
 escrito a mano sobre `zlib` — sin dependencias de imagen.
+
+## Suite de competencia
+
+| Módulo | Ruta | Qué hace |
+|---|---|---|
+| Competencia | `/competencia` | Cuenta atrás, fase del prep, proyección y hub de módulos |
+| Registro diario | `/diario` | Peso en ayunas, sueño, hambre, energía, estrés, digestión, pasos y cardio |
+| Cardio y pasos | `/cardio` | Plan semanal, sesiones, objetivo de pasos |
+| Posing | `/posing` | Poses por división, temporizador por pose y descanso, historial |
+| Fotos | `/fotos` | 5 ángulos, comparación lado a lado y superposición deslizante |
+| Check-in | `/checkin` | Medidas, resumen automático y motor de recomendaciones |
+| Peak week | `/competencia/peak-week` | Checklist de rutina y logística |
+| Día del show | `/competencia/dia-del-show` | Cronograma y qué llevar, funciona offline |
+| Post-show | `/competencia/post-show` | Transición calórica escalonada y seguimiento |
+| Ejercicios | `/ejercicios` | 98 ejercicios con guía de técnica completa |
+| Informes | `/informes` | CSV, JSON y resumen para el coach |
+
+### Fases del prep
+
+Se derivan de las semanas restantes: preparación inicial (17+), pérdida progresiva (16–9),
+fase avanzada (8–5), últimas cuatro semanas (4–2), peak week (1), día del show (0), post-show.
+
+### Motor de recomendaciones
+
+Deliberadamente conservador. Reglas duras, verificadas por tests:
+
+1. Solo razona sobre la **media móvil de 7 días**, nunca sobre un peso suelto.
+2. Mínimo 7 días de datos; con menos, no propone nada.
+3. La **adherencia se revisa antes que las calorías**: por debajo del 80% no toca nada.
+4. Los recortes se limitan a **150 kcal**, las subidas a 200 kcal, el cardio a ±60 min/semana.
+5. "Mantener" es una recomendación válida y frecuente.
+6. Con tres señales de fatiga simultáneas, prioriza recuperar.
+7. **Nunca aplica nada sola**: el usuario acepta, rechaza o modifica, con los datos y el
+   razonamiento siempre visibles.
+
+### Biblioteca de ejercicios
+
+98 ejercicios con `id`, alias, músculo principal y secundarios, equipo, dificultad, patrón de
+movimiento, preparación, ejecución paso a paso, respiración, tempo, rango de movimiento, errores
+comunes, seguridad, consejos de hipertrofia y fuerza, contraindicaciones, sustituciones,
+regresiones, progresiones y etiquetas.
+
+La técnica se compone en dos niveles: contenido escrito a mano para los ejercicios principales, más
+plantillas por patrón de movimiento que garantizan que **ningún ejercicio quede sin guía completa**.
+Todo el contenido es original.
+
+Cada ejercicio declara su **carga lumbar** (baja/moderada/alta). Los de carga alta muestran un aviso
+y alternativas concretas — verificado por test: los 6 ejercicios de carga alta tienen alternativas.
+
+### Vídeo
+
+`ExerciseVideo` soporta MP4 y WebM propios o un id de YouTube que configures tú. **Cero bytes se
+descargan hasta que pulsas reproducir.** Sin vídeo muestra la guía escrita y un marcador
+profesional; sin conexión lo indica en vez de fallar. La app no incrusta vídeos de terceros por su
+cuenta: los enlaces ajenos desaparecen y pueden tener copyright.
 
 ## Estado actual
 

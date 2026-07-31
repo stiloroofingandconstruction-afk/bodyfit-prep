@@ -4,6 +4,7 @@ import { cx } from '@/lib/utils';
 const TABS = [
   { to: '/cuerpo', label: 'Cuerpo' },
   { to: '/checkin', label: 'Check-in' },
+  { to: '/fotos', label: 'Fotos' },
   { to: '/historial', label: 'Historial' },
 ];
 

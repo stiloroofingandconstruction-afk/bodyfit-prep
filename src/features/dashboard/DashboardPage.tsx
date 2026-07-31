@@ -6,6 +6,7 @@ import { Card, SectionTitle } from '@/components/ui/Card';
 import { Stat } from '@/components/ui/Misc';
 import { LineChart } from '@/components/ui/Chart';
 import { MacroSummary } from '@/features/nutrition/MacroSummary';
+import { CompetitionDashboard } from './CompetitionDashboard';
 import { SmartMealSheet } from '@/features/nutrition/SmartMealSheet';
 import { FoodSearchSheet } from '@/features/nutrition/FoodSearchSheet';
 import { WeightSheet } from '@/features/body/WeightSheet';
@@ -23,6 +24,7 @@ import {
   useWorkouts,
 } from '@/store/selectors';
 import { useTrainingStore } from '@/store/trainingStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -37,6 +39,7 @@ export default function DashboardPage() {
   const weight = useCurrentWeight();
   const active = useTrainingStore((s) => s.active);
   const startWorkout = useTrainingStore((s) => s.startWorkout);
+  const competitionMode = useSettingsStore((s) => s.competitionMode);
 
   const [smart, setSmart] = useState<'plan' | 'auto' | null>(null);
   const [adding, setAdding] = useState(false);
@@ -67,8 +70,12 @@ export default function DashboardPage() {
       />
 
       <Page>
+        {/* En modo competencia el panel de prep va primero: es el contexto
+            desde el que se leen todos los demas numeros. */}
+        {competitionMode && <CompetitionDashboard />}
+
         {/* --------------------------------------------------- macros hoy */}
-        <Link to="/nutricion" className="block">
+        <Link to="/nutricion" className={competitionMode ? 'mt-3 block' : 'block'}>
           <Card className="pressable">
             <MacroSummary consumed={consumed} target={target} />
           </Card>
