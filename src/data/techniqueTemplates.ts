@@ -12,9 +12,15 @@
  */
 import type { Exercise, ExerciseTechnique, MovementPattern } from '@/domain/types';
 
+/** Forma que devuelven las plantillas: la guia sin los campos transversales. */
+type BaseTemplate = Omit<
+  ExerciseTechnique,
+  'summary' | 'startPosition' | 'warningSigns' | 'warnings' | 'authored' | 'lumbarAdaptation'
+>;
+
 /* ─────────────────────────────────────── plantillas por patron ────────── */
 
-const PATTERN_TEMPLATE: Record<MovementPattern, (ex: Exercise) => ExerciseTechnique> = {
+const PATTERN_TEMPLATE: Record<MovementPattern, (ex: Exercise) => BaseTemplate> = {
   'empuje-horizontal': (ex) => ({
     setup: [
       'Apoya los pies firmes en el suelo y junta ligeramente las escapulas.',
@@ -301,7 +307,103 @@ const PATTERN_TEMPLATE: Record<MovementPattern, (ex: Exercise) => ExerciseTechni
   }),
 };
 
-/** Genera la tecnica de un ejercicio a partir de su patron de movimiento. */
+/* ─────────────────────────── campos transversales por patron ──────────── */
+
+interface Extras {
+  summary: string;
+  startPosition: string[];
+  warningSigns: string[];
+  warnings: string[];
+}
+
+const PATTERN_EXTRAS: Record<MovementPattern, Extras> = {
+  'empuje-horizontal': {
+    summary: 'Baja controlado con los codos a unos 45 grados del torso y empuja sin perder la posicion de los hombros.',
+    startPosition: ['Escapulas juntas y deprimidas, pecho alto, pies firmes en el suelo.'],
+    warningSigns: ['Los codos se abren a 90 grados.', 'Los hombros se adelantan al bajar.'],
+    warnings: ['No busques el fallo con barra sin seguros o sin companero.'],
+  },
+  'empuje-vertical': {
+    summary: 'Empuja hacia arriba con el torso rigido: la lumbar no debe arquearse para ganar recorrido.',
+    startPosition: ['Carga a la altura de la clavicula, costillas abajo, gluteos apretados.'],
+    warningSigns: ['La lumbar se arquea al empujar.', 'La carga viaja hacia delante en vez de hacia arriba.'],
+    warnings: ['Con poca movilidad de hombro, usa agarre neutro o cambia a maquina.'],
+  },
+  'traccion-horizontal': {
+    summary: 'Empieza el tiron con la escapula, no con el brazo, y manten el torso completamente quieto.',
+    startPosition: ['Pecho alto, hombros abajo, brazos extendidos con estiramiento en la espalda.'],
+    warningSigns: ['El torso se balancea en cada repeticion.', 'Solo se doblan los codos, la escapula no se mueve.'],
+    warnings: ['En las versiones sin apoyo, la fatiga lumbar suele llegar antes que la de la espalda alta.'],
+  },
+  'traccion-vertical': {
+    summary: 'Baja los hombros antes de doblar los codos y lleva los codos hacia las costillas.',
+    startPosition: ['Colgado o sentado con los brazos extendidos y los hombros sin encogerse.'],
+    warningSigns: ['El cuerpo se balancea para completar la repeticion.', 'La barbilla se estira hacia la barra.'],
+    warnings: ['Nada de tras nuca: exige una rotacion externa que pocos hombros toleran.'],
+  },
+  sentadilla: {
+    summary: 'Baja con cadera y rodillas a la vez manteniendo la espalda neutra, y sube con pecho y cadera al mismo ritmo.',
+    startPosition: ['De pie, pies a la anchura de los hombros, abdomen apretado con aire dentro.'],
+    warningSigns: ['La cadera sube antes que el pecho.', 'La pelvis se retroverse abajo.', 'Las rodillas colapsan hacia dentro.'],
+    warnings: ['Trabaja siempre dentro de un rack con los seguros a la altura correcta.'],
+  },
+  bisagra: {
+    summary: 'La cadera va hacia atras, la espalda no se mueve: el rango lo marca el isquiotibial, no la columna.',
+    startPosition: ['De pie, carga pegada al cuerpo, espalda neutra de la cabeza a la pelvis.'],
+    warningSigns: ['La zona lumbar se redondea al bajar.', 'La espalda se hiperextiende arriba.'],
+    warnings: ['Es el patron que mas exige a la columna: la tecnica manda sobre el peso.'],
+  },
+  zancada: {
+    summary: 'Baja vertical, torso erguido y empuja con el talon de la pierna delantera.',
+    startPosition: ['Paso adelantado con la rodilla trasera lista para bajar comoda.'],
+    warningSigns: ['El torso se va hacia delante.', 'La rodilla delantera se desplaza hacia dentro.'],
+    warnings: ['Domina el equilibrio con peso corporal antes de cargar.'],
+  },
+  aislamiento: {
+    summary: 'Solo se mueve la articulacion implicada: sin impulso y con recorrido completo.',
+    startPosition: ['Segmento alineado con el eje de la carga y el resto del cuerpo estable.'],
+    warningSigns: ['Aparece impulso del torso.', 'El recorrido se acorta en las ultimas repeticiones.'],
+    warnings: ['El objetivo es tension, no peso maximo.'],
+  },
+  'core-antiextension': {
+    summary: 'El trabajo es impedir que la lumbar se arquee, no mover el tronco.',
+    startPosition: ['Costillas abajo, pelvis neutra, gluteos activos.'],
+    warningSigns: ['La cadera cae.', 'Aparece sensacion en la lumbar en vez de en el abdomen.'],
+    warnings: ['Si notas la zona lumbar, acorta la palanca antes de anadir tiempo.'],
+  },
+  'core-antirotacion': {
+    summary: 'Se trata de resistir la rotacion manteniendo caderas y hombros al frente.',
+    startPosition: ['Base estable, manos en el pecho, cadera y hombros alineados.'],
+    warningSigns: ['La cadera gira con la carga.', 'Las costillas se abren.'],
+    warnings: ['Carga ligera: es control, no fuerza.'],
+  },
+  movilidad: {
+    summary: 'Entra en el rango de forma progresiva y respira: la tension basta, el dolor no.',
+    startPosition: ['Posicion comoda y estable antes de empezar el recorrido.'],
+    warningSigns: ['Aparece dolor agudo.', 'Se aguanta la respiracion.'],
+    warnings: ['Nunca fuerces con rebotes.'],
+  },
+  cardio: {
+    summary: 'Intensidad sostenible, postura erguida y sin colgarte de los agarres.',
+    startPosition: ['Maquina ajustada a tu altura, 3–5 minutos suaves de entrada.'],
+    warningSigns: ['Te apoyas en el manillar.', 'No puedes mantener la postura.'],
+    warnings: ['Para si notas mareo o dolor en el pecho.'],
+  },
+  transporte: {
+    summary: 'Carga firme, tronco rigido y pasos cortos: la carga no debe inclinarte.',
+    startPosition: ['De pie con la carga a los lados, hombros abajo y pecho alto.'],
+    warningSigns: ['El tronco se inclina a un lado.', 'Los hombros se encogen.'],
+    warnings: ['Suelta la carga doblando las rodillas, nunca desde la espalda.'],
+  },
+};
+
+/**
+ * Genera la tecnica de un ejercicio a partir de su patron de movimiento.
+ * Sirve de red de seguridad: garantiza que ningun ejercicio quede sin guia
+ * completa aunque no tenga contenido escrito a mano.
+ */
 export function templateFor(ex: Exercise): ExerciseTechnique {
-  return PATTERN_TEMPLATE[ex.pattern](ex);
+  const base = PATTERN_TEMPLATE[ex.pattern](ex);
+  const extras = PATTERN_EXTRAS[ex.pattern];
+  return { ...extras, ...base, authored: false };
 }

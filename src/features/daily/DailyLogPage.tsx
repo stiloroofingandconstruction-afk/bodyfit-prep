@@ -8,7 +8,8 @@ import { Stat } from '@/components/ui/Misc';
 import { LineChart } from '@/components/ui/Chart';
 import { PROJECTION_LABEL, PROJECTION_TONE } from '@/domain/competition';
 import { addDays, friendlyDate, today } from '@/lib/date';
-import { cx, fmtSigned } from '@/lib/utils';
+import { cx } from '@/lib/utils';
+import { useUnits } from '@/lib/useUnits';
 import { usePrepStore } from '@/store/prepStore';
 import { useActivityStore } from '@/store/activityStore';
 import { useCurrentWeight, useProjection, useReadiness, useWeightTrend } from '@/store/selectors';
@@ -34,6 +35,7 @@ export default function DailyLogPage() {
   const trend = useWeightTrend();
   const projection = useProjection();
   const currentWeight = useCurrentWeight();
+  const u = useUnits();
 
   const existing = useMemo(() => readiness.find((r) => r.date === date), [readiness, date]);
   const savedSteps = useMemo(
@@ -116,20 +118,24 @@ export default function DailyLogPage() {
         {/* ───────────────────────────────────── tendencia */}
         <Card>
           <div className="mb-3 grid grid-cols-3 gap-3">
-            <Stat label="Media 7 dias" value={trend.avg7 != null ? trend.avg7.toFixed(1) : '—'} unit="kg" />
+            <Stat label="Media 7 dias" value={trend.avg7 != null ? u.numWeight(trend.avg7) : '—'} unit={u.w} />
             <Stat
               label="Cambio semanal"
-              value={trend.weekChange != null ? fmtSigned(trend.weekChange) : '—'}
-              unit="kg"
+              value={trend.weekChange != null ? u.fmtWeightDelta(trend.weekChange).replace(` ${u.w}`, '') : '—'}
+              unit={u.w}
             />
             <Stat
               label="Ritmo"
-              value={trend.weekPct != null ? fmtSigned(trend.weekPct) : '—'}
+              value={trend.weekPct != null ? `${trend.weekPct > 0 ? '+' : ''}${trend.weekPct.toFixed(1)}` : '—'}
               unit="%/sem"
             />
           </div>
 
-          <LineChart data={chartData} height={150} unit=" kg" />
+          <LineChart
+            data={chartData.map((p) => ({ ...p, value: u.toDisplayWeight(p.value) }))}
+            height={150}
+            unit={` ${u.w}`}
+          />
 
           <p className="mt-2 flex gap-2 text-[11px] text-faint">
             <Info size={12} className="mt-0.5 shrink-0" />
@@ -152,10 +158,20 @@ export default function DailyLogPage() {
           <SectionTitle>Peso en ayunas</SectionTitle>
           <Card>
             <div className="mb-3 text-center">
-              <span className="text-[44px] leading-none font-bold tabular">{weight.toFixed(1)}</span>
-              <span className="ml-1 text-[18px] text-faint">kg</span>
+              <span className="text-[44px] leading-none font-bold tabular">
+                {u.numWeight(weight)}
+              </span>
+              <span className="ml-1 text-[18px] text-faint">{u.w}</span>
             </div>
-            <Stepper value={weight} onChange={setWeight} step={0.1} min={30} max={300} decimals={1} suffix="kg" />
+            <Stepper
+              value={u.toDisplayWeight(weight)}
+              onChange={(v) => setWeight(u.toCanonicalWeight(v))}
+              step={u.weightStep}
+              min={u.weightRange.min}
+              max={u.weightRange.max}
+              decimals={1}
+              suffix={u.w}
+            />
             <div className="mt-3">
               <Label hint="misma hora cada dia">Hora de la medicion</Label>
               <Input type="time" value={weighTime} onChange={(e) => setWeighTime(e.target.value)} />

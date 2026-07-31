@@ -13,7 +13,8 @@ import { WeightSheet } from '@/features/body/WeightSheet';
 import { ema, weeklyTrend, weightSeries } from '@/domain/body';
 import { workoutSetCount, workoutVolume } from '@/domain/training';
 import { friendlyDate, greeting, startOfWeek, today } from '@/lib/date';
-import { cx, fmtSigned } from '@/lib/utils';
+import { cx } from '@/lib/utils';
+import { useUnits } from '@/lib/useUnits';
 import { useProfile } from '@/store/profileStore';
 import {
   useCheckins,
@@ -40,6 +41,7 @@ export default function DashboardPage() {
   const active = useTrainingStore((s) => s.active);
   const startWorkout = useTrainingStore((s) => s.startWorkout);
   const competitionMode = useSettingsStore((s) => s.competitionMode);
+  const u = useUnits();
 
   const [smart, setSmart] = useState<'plan' | 'auto' | null>(null);
   const [adding, setAdding] = useState(false);
@@ -127,7 +129,7 @@ export default function DashboardPage() {
                     <div className="min-w-0">
                       <p className="truncate text-[15px] font-medium">{w.name}</p>
                       <p className="text-[12px] tabular text-faint">
-                        {workoutSetCount(w)} series · {Math.round(workoutVolume(w))} kg
+                        {workoutSetCount(w)} series · {u.numWeight(workoutVolume(w), 0)} {u.w}
                       </p>
                     </div>
                     <span className="shrink-0 rounded-full bg-brand/15 px-2.5 py-1 text-[11px] font-semibold text-brand">
@@ -151,11 +153,11 @@ export default function DashboardPage() {
           </SectionTitle>
           <Card>
             <div className="mb-3 flex items-end justify-between">
-              <Stat label="Actual" value={weight.toFixed(1)} unit="kg" />
+              <Stat label="Actual" value={u.numWeight(weight)} unit={u.w} />
               <Stat
                 label="Tendencia semanal"
-                value={fmtSigned(trend)}
-                unit="kg"
+                value={u.fmtWeightDelta(trend).replace(` ${u.w}`, '')}
+                unit={u.w}
                 tone={
                   trend === 0
                     ? 'text-muted'
@@ -165,14 +167,14 @@ export default function DashboardPage() {
                 }
               />
               {profile.goalWeight && (
-                <Stat label="Objetivo" value={profile.goalWeight.toFixed(1)} unit="kg" />
+                <Stat label="Objetivo" value={u.numWeight(profile.goalWeight)} unit={u.w} />
               )}
             </div>
             <LineChart
-              data={series}
-              overlay={smoothed}
+              data={series.map((p) => ({ ...p, value: u.toDisplayWeight(p.value) }))}
+              overlay={smoothed.map((p) => ({ ...p, value: u.toDisplayWeight(p.value) }))}
               height={140}
-              unit=" kg"
+              unit={` ${u.w}`}
             />
             <p className="mt-2 text-center text-[11px] text-faint">
               La linea punteada es la media movil: filtra el ruido diario de agua y glucogeno

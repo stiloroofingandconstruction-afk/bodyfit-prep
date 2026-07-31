@@ -8,6 +8,7 @@ import { EmptyState, Stat } from '@/components/ui/Misc';
 import { LineChart } from '@/components/ui/Chart';
 import { addDays, friendlyDate, today } from '@/lib/date';
 import { cx } from '@/lib/utils';
+import { useUnits } from '@/lib/useUnits';
 import { alive } from '@/store/persist';
 import { usePrepStore } from '@/store/prepStore';
 import { useActivePrep, useTargets } from '@/store/selectors';
@@ -27,6 +28,7 @@ export default function PostShowPage() {
   const entries = usePrepStore((s) => s.postShowEntries);
   const savePostShow = usePrepStore((s) => s.savePostShow);
   const logPostShow = usePrepStore((s) => s.logPostShow);
+  const u = useUnits();
 
   const plan = useMemo(
     () => (prep ? alive(plans).find((p) => p.prepId === prep.id) : undefined),
@@ -170,7 +172,7 @@ export default function PostShowPage() {
                 inputMode="decimal"
                 value={weight || ''}
                 onChange={(e) => setWeight(Number(e.target.value) || 0)}
-                suffix="kg"
+                suffix={u.w}
                 placeholder="—"
               />
             </div>
@@ -263,14 +265,18 @@ export default function PostShowPage() {
                         ).toFixed(1)}`
                       : '—'
                   }
-                  unit="kg"
+                  unit={u.w}
                 />
                 <Stat
                   label="Desde"
                   value={log[0] ? friendlyDate(log[0].date).slice(0, 10) : '—'}
                 />
               </div>
-              <LineChart data={weightSeries} height={150} unit=" kg" />
+              <LineChart
+                data={weightSeries.map((p) => ({ ...p, value: u.toDisplayWeight(p.value) }))}
+                height={150}
+                unit={` ${u.w}`}
+              />
             </Card>
           </div>
         )}

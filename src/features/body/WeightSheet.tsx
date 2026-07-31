@@ -3,19 +3,29 @@ import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { Label, Stepper } from '@/components/ui/Field';
 import { friendlyDate, today } from '@/lib/date';
+import { useUnits } from '@/lib/useUnits';
 import { useBodyStore } from '@/store/bodyStore';
 import { useCurrentWeight } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
 
-/** Registro rapido de peso. Es la accion mas frecuente: dos toques y fuera. */
+/**
+ * Registro rapido de peso.
+ *
+ * El estado local vive en la unidad que ve el usuario; la conversion a kg
+ * ocurre una sola vez, al guardar. Asi no hay redondeos encadenados.
+ */
 export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const current = useCurrentWeight();
+  const currentKg = useCurrentWeight();
   const upsert = useBodyStore((s) => s.upsert);
-  const [weight, setWeight] = useState(current);
+  const u = useUnits();
+
+  const [shown, setShown] = useState(() => u.toDisplayWeight(currentKg));
 
   useEffect(() => {
-    if (open) setWeight(current);
-  }, [open, current]);
+    if (open) setShown(u.toDisplayWeight(currentKg));
+  }, [open, currentKg, u]);
+
+  const quickSteps = u.weightUnit === 'kg' ? [-1, -0.5, 0.5, 1] : [-2, -1, 1, 2];
 
   return (
     <Sheet
@@ -28,8 +38,9 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
           size="lg"
           block
           onClick={() => {
-            upsert({ date: today(), weight });
-            toast(`${weight.toFixed(1)} kg registrados`);
+            const kg = u.toCanonicalWeight(shown);
+            upsert({ date: today(), weight: kg });
+            toast(`${u.fmtWeight(kg)} registrados`);
             onClose();
           }}
         >
@@ -39,15 +50,23 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
     >
       <Label hint={friendlyDate(today())}>Peso corporal</Label>
       <div className="my-4 text-center">
-        <span className="text-[56px] leading-none font-bold tabular">{weight.toFixed(1)}</span>
-        <span className="ml-1 text-[20px] text-faint">kg</span>
+        <span className="text-[56px] leading-none font-bold tabular">{shown.toFixed(1)}</span>
+        <span className="ml-1 text-[20px] text-faint">{u.w}</span>
       </div>
-      <Stepper value={weight} onChange={setWeight} step={0.1} min={30} max={300} decimals={1} suffix="kg" />
+      <Stepper
+        value={shown}
+        onChange={setShown}
+        step={u.weightStep}
+        min={u.weightRange.min}
+        max={u.weightRange.max}
+        decimals={1}
+        suffix={u.w}
+      />
       <div className="mt-3 flex justify-center gap-2">
-        {[-1, -0.5, 0.5, 1].map((d) => (
+        {quickSteps.map((d) => (
           <button
             key={d}
-            onClick={() => setWeight((w) => Math.round((w + d) * 10) / 10)}
+            onClick={() => setShown((w) => Math.round((w + d) * 10) / 10)}
             className="pressable rounded-full border border-line bg-surface2 px-3 py-1.5 text-[13px] text-muted tabular"
           >
             {d > 0 ? `+${d}` : d}
@@ -55,7 +74,8 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
         ))}
       </div>
       <p className="mt-4 text-center text-[12px] text-faint">
-        Pesate siempre igual: en ayunas, despues del bano y sin ropa. La comparacion vale mas que el numero.
+        Pesate siempre igual: en ayunas, despues del bano y sin ropa. La comparacion vale mas que el
+        numero.
       </p>
     </Sheet>
   );

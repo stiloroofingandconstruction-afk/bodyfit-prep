@@ -6,6 +6,7 @@ import { ACTIVITY_LABEL } from '@/domain/energy';
 import { computeTargets } from '@/domain/energy';
 import { toISODate } from '@/lib/date';
 import { cx } from '@/lib/utils';
+import { makeUnits } from '@/lib/useUnits';
 import { DEFAULT_PROFILE, useProfileStore } from '@/store/profileStore';
 import { useBodyStore } from '@/store/bodyStore';
 import { usePrepStore } from '@/store/prepStore';
@@ -37,6 +38,10 @@ export default function OnboardingPage() {
   const [division, setDivision] = useState<Division>("Men's Physique");
   const [showDate, setShowDate] = useState(addDays(toISODate(), 112));
   const [discomforts, setDiscomforts] = useState('');
+
+  // El onboarding aun no ha guardado la preferencia, asi que construye el API
+  // de unidades con lo que el usuario acaba de elegir en el paso anterior.
+  const u = makeUnits(weightUnit, weightUnit === 'kg' ? 'cm' : 'in');
 
   const set = (patch: Partial<Profile>) => setDraft((d) => ({ ...d, ...patch }));
   const targets = computeTargets(draft, weight);
@@ -262,17 +267,28 @@ export default function OnboardingPage() {
               <div>
                 <Label>Altura</Label>
                 <Input
-                  inputMode="numeric"
-                  value={draft.heightCm}
-                  onChange={(e) => set({ heightCm: Number(e.target.value) || 0 })}
-                  suffix="cm"
+                  inputMode="decimal"
+                  value={u.numLength(draft.heightCm, u.lengthUnit === 'cm' ? 0 : 1)}
+                  onChange={(e) =>
+                    set({ heightCm: u.toCanonicalLength(Number(e.target.value) || 0) })
+                  }
+                  suffix={u.l}
                 />
               </div>
             </div>
 
             <div>
-              <Label hint={`${weight.toFixed(1)} kg`}>Peso actual</Label>
-              <Slider value={weight} onChange={setWeight} min={40} max={180} step={0.5} labels={['40', '110', '180']} />
+              <Label hint={u.fmtWeight(weight)}>Peso actual</Label>
+              <Slider
+                value={u.toDisplayWeight(weight)}
+                onChange={(v) => setWeight(u.toCanonicalWeight(v))}
+                min={u.weightUnit === 'kg' ? 40 : 88}
+                max={u.weightUnit === 'kg' ? 180 : 397}
+                step={u.weightUnit === 'kg' ? 0.5 : 1}
+                labels={
+                  u.weightUnit === 'kg' ? ['40', '110', '180'] : ['88', '242', '397']
+                }
+              />
             </div>
 
             <div>
@@ -321,7 +337,7 @@ export default function OnboardingPage() {
 
             {draft.goal !== 'mantenimiento' && (
               <div>
-                <Label hint={`${((weight * draft.paceWeekPct) / 100).toFixed(2)} kg/semana`}>Ritmo</Label>
+                <Label hint={`${u.fmtWeight((weight * draft.paceWeekPct) / 100, 2)}/semana`}>Ritmo</Label>
                 <Slider
                   value={draft.paceWeekPct}
                   onChange={(v) => set({ paceWeekPct: v })}
@@ -337,9 +353,12 @@ export default function OnboardingPage() {
               <Label hint="opcional">Peso objetivo</Label>
               <Input
                 inputMode="decimal"
-                value={draft.goalWeight ?? ''}
-                onChange={(e) => set({ goalWeight: Number(e.target.value) || undefined })}
-                suffix="kg"
+                value={draft.goalWeight != null ? u.numWeight(draft.goalWeight) : ''}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  set({ goalWeight: v > 0 ? u.toCanonicalWeight(v) : undefined });
+                }}
+                suffix={u.w}
                 placeholder="—"
               />
             </div>
@@ -377,25 +396,35 @@ export default function OnboardingPage() {
             </div>
 
             <div>
-              <Label hint={`${draft.proteinPerKg} g/kg`}>Proteina por kilo</Label>
+              <Label
+                hint={`${u.toDisplayPerWeight(draft.proteinPerKg).toFixed(2)} ${u.perW}`}
+              >
+                Proteina por unidad de peso
+              </Label>
               <Slider
-                value={draft.proteinPerKg}
-                onChange={(v) => set({ proteinPerKg: v })}
-                min={1.2}
-                max={3}
-                step={0.1}
-                labels={['1.2', '2.1', '3.0']}
+                value={u.toDisplayPerWeight(draft.proteinPerKg)}
+                onChange={(v) => set({ proteinPerKg: u.toCanonicalPerWeight(v) })}
+                {...u.perWeightRange(1.2, 3)}
+                labels={[
+                  u.toDisplayPerWeight(1.2).toFixed(2),
+                  u.toDisplayPerWeight(2.1).toFixed(2),
+                  u.toDisplayPerWeight(3).toFixed(2),
+                ]}
               />
             </div>
             <div>
-              <Label hint={`${draft.fatPerKg} g/kg`}>Grasa por kilo</Label>
+              <Label hint={`${u.toDisplayPerWeight(draft.fatPerKg).toFixed(2)} ${u.perW}`}>
+                Grasa por unidad de peso
+              </Label>
               <Slider
-                value={draft.fatPerKg}
-                onChange={(v) => set({ fatPerKg: v })}
-                min={0.5}
-                max={1.5}
-                step={0.05}
-                labels={['0.5', '1.0', '1.5']}
+                value={u.toDisplayPerWeight(draft.fatPerKg)}
+                onChange={(v) => set({ fatPerKg: u.toCanonicalPerWeight(v) })}
+                {...u.perWeightRange(0.5, 1.5)}
+                labels={[
+                  u.toDisplayPerWeight(0.5).toFixed(2),
+                  u.toDisplayPerWeight(1).toFixed(2),
+                  u.toDisplayPerWeight(1.5).toFixed(2),
+                ]}
               />
             </div>
 

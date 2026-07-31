@@ -9,6 +9,8 @@ interface Props {
   onClose: () => void;
   /** Ids en el orden de la sesion, para navegar sin salir del entrenamiento. */
   sequence?: { id: string; name: string }[];
+  /** Sustituye el ejercicio en la sesion en curso y cierra la hoja. */
+  onSubstitute?: (fromId: string, toId: string) => void;
 }
 
 /**
@@ -17,7 +19,7 @@ interface Props {
  * Se abre desde el entrenamiento activo con "Ver tecnica": el entrenamiento
  * sigue montado detras, asi que no se pierde ninguna serie registrada.
  */
-export function TechniqueSheet({ exerciseId, onClose, sequence = [] }: Props) {
+export function TechniqueSheet({ exerciseId, onClose, sequence = [], onSubstitute }: Props) {
   const [override, setOverride] = useState<string | null>(null);
   const currentId = override ?? exerciseId;
   const exercise = currentId ? EXERCISE_BY_ID.get(currentId) : undefined;
@@ -42,6 +44,15 @@ export function TechniqueSheet({ exerciseId, onClose, sequence = [] }: Props) {
         prevLabel={prev?.name}
         nextLabel={next?.name}
         onSelect={(id) => setOverride(id)}
+        onBackToWorkout={close}
+        {...(onSubstitute && exerciseId
+          ? {
+              onSubstitute: (toId: string) => {
+                onSubstitute(exerciseId, toId);
+                close();
+              },
+            }
+          : {})}
       />
     </Sheet>
   );

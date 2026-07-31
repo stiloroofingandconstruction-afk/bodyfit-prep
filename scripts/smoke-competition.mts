@@ -19,6 +19,7 @@ import { EXERCISES, EXERCISE_BY_ID, lumbarAlternativesFor, searchExercises } fro
 import { FOODS } from '../src/data/foods';
 import { posesFor, POSES } from '../src/data/poses';
 import { coachReport, toCSV, weightCSV } from '../src/services/exports';
+import { makeUnits } from '../src/lib/useUnits';
 import { DAY_TYPE_FACTOR } from '../src/domain/prepTypes';
 
 export function runCompetitionTests(
@@ -332,9 +333,11 @@ export function runCompetitionTests(
   check('el CSV escapa comillas', csv.includes('"z""w"'));
   check('el CSV lleva BOM para Excel', csv.charCodeAt(0) === 0xfeff);
 
+  const units = makeUnits('kg', 'cm');
   const wcsv = weightCSV(
     [{ id: '1', createdAt: '', updatedAt: '', date: '2026-03-01', weight: 85.2, weighTime: '07:00' }],
     [{ id: '2', createdAt: '', updatedAt: '', date: '2026-03-02', weight: 85.0, waist: 82 }],
+    units,
   );
   check('el CSV de peso incluye la cabecera', wcsv.includes('fecha,peso_kg,hora'));
   check('el CSV de peso incluye ambas fuentes', wcsv.includes('2026-03-01') && wcsv.includes('2026-03-02'));
@@ -362,6 +365,7 @@ export function runCompetitionTests(
     strength: 4,
     measurements: [{ label: 'Cintura', value: 82 }],
     photos: 4,
+    units,
   });
   check('el informe incluye el peso medio', report.includes('85.2'));
   check('el informe incluye la adherencia', report.includes('92%'));

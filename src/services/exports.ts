@@ -7,6 +7,19 @@
 import type { FoodEntry, Workout, BodyMeasurement, WeeklyCheckin } from '@/domain/types';
 import type { DailyReadiness } from '@/domain/competition';
 import type { CardioSession, StepEntry } from '@/domain/prepTypes';
+import type { UnitsApi } from '@/lib/useUnits';
+
+/**
+ * Unidades usadas al exportar.
+ *
+ * Los CSV llevan la unidad EN LA CABECERA (`peso_lb`, `cintura_in`) para que el
+ * archivo sea autoexplicativo: quien lo abra dentro de un ano sabe que esta
+ * leyendo sin tener que adivinar.
+ */
+export type ExportUnits = Pick<
+  UnitsApi,
+  'w' | 'l' | 'numWeight' | 'numLength' | 'fmtWeight' | 'fmtLength' | 'toDisplayWeight' | 'weightUnit'
+>;
 
 /** Escapa un campo CSV segun RFC 4180. */
 function cell(value: unknown): string {
@@ -23,6 +36,7 @@ export function toCSV(headers: string[], rows: unknown[][]): string {
 export function weightCSV(
   readiness: DailyReadiness[],
   measurements: BodyMeasurement[],
+  u: ExportUnits,
 ): string {
   const byDate = new Map<string, { weight?: number; time?: string; notes?: string; waist?: number }>();
   for (const m of measurements) {
@@ -34,8 +48,14 @@ export function weightCSV(
   }
   const rows = [...byDate.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([date, v]) => [date, v.weight ?? '', v.time ?? '', v.waist ?? '', v.notes ?? '']);
-  return toCSV(['fecha', 'peso_kg', 'hora', 'cintura_cm', 'notas'], rows);
+    .map(([date, v]) => [
+      date,
+      v.weight != null ? u.numWeight(v.weight) : '',
+      v.time ?? '',
+      v.waist != null ? u.numLength(v.waist) : '',
+      v.notes ?? '',
+    ]);
+  return toCSV([`fecha`, `peso_${u.w}`, 'hora', `cintura_${u.l}`, 'notas'], rows);
 }
 
 export function nutritionCSV(entries: FoodEntry[]): string {
@@ -59,31 +79,34 @@ export function nutritionCSV(entries: FoodEntry[]): string {
   );
 }
 
-export function workoutsCSV(workouts: Workout[]): string {
+export function workoutsCSV(workouts: Workout[], u: ExportUnits): string {
   const rows: unknown[][] = [];
   for (const w of workouts) {
     for (const ex of w.exercises) {
       ex.sets.forEach((s, i) => {
-        rows.push([w.date, w.name, ex.exerciseName, i + 1, s.weight, s.reps, s.rpe ?? '', s.type]);
+        rows.push([
+          w.date, w.name, ex.exerciseName, i + 1,
+          u.numWeight(s.weight), s.reps, s.rpe ?? '', s.type,
+        ]);
       });
     }
   }
   rows.sort((a, b) => String(a[0]).localeCompare(String(b[0])));
   return toCSV(
-    ['fecha', 'sesion', 'ejercicio', 'serie', 'peso_kg', 'repeticiones', 'rpe', 'tipo'],
+    ['fecha', 'sesion', 'ejercicio', 'serie', `peso_${u.w}`, 'repeticiones', 'rpe', 'tipo'],
     rows,
   );
 }
 
-export function checkinsCSV(checkins: WeeklyCheckin[]): string {
+export function checkinsCSV(checkins: WeeklyCheckin[], u: ExportUnits): string {
   const rows = checkins
     .slice()
     .sort((a, b) => a.weekStart.localeCompare(b.weekStart))
     .map((c) => [
       c.weekStart,
-      c.avgWeight,
-      c.weightChange,
-      c.waist ?? '',
+      u.numWeight(c.avgWeight),
+      u.numWeight(c.weightChange, 2),
+      c.waist != null ? u.numLength(c.waist) : '',
       c.adherence,
       c.energy,
       c.sleep,
@@ -96,7 +119,7 @@ export function checkinsCSV(checkins: WeeklyCheckin[]): string {
     ]);
   return toCSV(
     [
-      'semana', 'peso_medio_kg', 'cambio_kg', 'cintura_cm', 'adherencia_pct',
+      'semana', `peso_medio_${u.w}`, `cambio_${u.w}`, `cintura_${u.l}`, 'adherencia_pct',
       'energia', 'sueno', 'hambre', 'estres', 'entrenos', 'kcal_medias',
       'ajuste_kcal', 'notas',
     ],
@@ -141,6 +164,8 @@ export interface CoachReportInput {
   measurements: { label: string; value: number }[];
   photos: number;
   notes?: string;
+  /** Unidades en las que se escribe el informe. */
+  units: ExportUnits;
 }
 
 /**
@@ -150,8 +175,9 @@ export interface CoachReportInput {
  * cualquier app de notas, y se imprime legible.
  */
 export function coachReport(input: CoachReportInput): string {
-  const n = (v: number | null, unit = '', decimals = 1) =>
-    v == null ? 'sin datos' : `${v.toFixed(decimals)}${unit}`;
+  const u = input.units;
+  const n = (v: number | null, decimals = 1) =>
+    v == null ? 'sin datos' : u.fmtWeight(v, decimals);
   const s = (v: number | null) => (v == null ? 'sin datos' : `${v.toFixed(1)}/5`);
 
   const lines: string[] = [];
@@ -164,12 +190,14 @@ export function coachReport(input: CoachReportInput): string {
   lines.push('');
 
   lines.push('## Peso');
-  lines.push(`- Media de 7 dias: ${n(input.avgWeight, ' kg')}`);
-  lines.push(`- Semana anterior: ${n(input.prevAvgWeight, ' kg')}`);
+  lines.push(`- Media de 7 dias: ${n(input.avgWeight)}`);
+  lines.push(`- Semana anterior: ${n(input.prevAvgWeight)}`);
   lines.push(
-    `- Cambio: ${input.weekChange == null ? 'sin datos' : `${input.weekChange > 0 ? '+' : ''}${input.weekChange.toFixed(2)} kg`} (${
-      input.weekPct == null ? '—' : `${input.weekPct > 0 ? '+' : ''}${input.weekPct.toFixed(1)}%`
-    })`,
+    `- Cambio: ${
+      input.weekChange == null
+        ? 'sin datos'
+        : `${input.weekChange > 0 ? '+' : ''}${u.numWeight(input.weekChange, 2)} ${u.w}`
+    } (${input.weekPct == null ? '—' : `${input.weekPct > 0 ? '+' : ''}${input.weekPct.toFixed(1)}%`})`,
   );
   lines.push('');
 
@@ -198,7 +226,7 @@ export function coachReport(input: CoachReportInput): string {
 
   if (input.measurements.length) {
     lines.push('## Medidas');
-    for (const m of input.measurements) lines.push(`- ${m.label}: ${m.value} cm`);
+    for (const m of input.measurements) lines.push(`- ${m.label}: ${u.fmtLength(m.value)}`);
     lines.push('');
   }
 

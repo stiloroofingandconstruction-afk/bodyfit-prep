@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Film, Play, WifiOff } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, Film, Play, WifiOff } from 'lucide-react';
+import { fmtDuration } from '@/domain/media';
 import { cx } from '@/lib/utils';
 import type { ExerciseMedia } from '@/domain/types';
 
@@ -77,60 +78,101 @@ export function ExerciseVideo({ media, title, className }: Props) {
   /* Antes de pulsar: solo el poster. Cero bytes de video descargados. */
   if (!playing) {
     return (
-      <button
-        onClick={() => setPlaying(true)}
-        aria-label={`Reproducir video de ${title}`}
-        className={cx(
-          'group relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-2xl border border-line bg-surface2',
-          className,
-        )}
-      >
-        {media?.videoPoster ? (
-          <img
-            src={media.videoPoster}
-            alt=""
-            className="absolute inset-0 size-full object-cover opacity-70"
-            loading="lazy"
-          />
-        ) : null}
-        <span className="pressable relative flex size-16 items-center justify-center rounded-full bg-brand text-base shadow-lg">
-          <Play size={26} className="ml-1" fill="currentColor" />
-        </span>
-        <span className="absolute bottom-2 left-3 text-[11px] text-muted">
-          {hasFile ? 'Video propio' : 'YouTube'}
-        </span>
-      </button>
+      <div className={className}>
+        <button
+          onClick={() => setPlaying(true)}
+          aria-label={`Reproducir video de ${title}`}
+          className="group relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-2xl border border-line bg-surface2"
+        >
+          {media?.videoPoster ? (
+            <img
+              src={media.videoPoster}
+              alt=""
+              className="absolute inset-0 size-full object-cover opacity-70"
+              loading="lazy"
+            />
+          ) : null}
+          <span className="pressable relative flex size-16 items-center justify-center rounded-full bg-brand text-base shadow-lg">
+            <Play size={26} className="ml-1" fill="currentColor" />
+          </span>
+
+          <span className="absolute bottom-2 left-3 flex items-center gap-1.5 rounded-md bg-black/55 px-1.5 py-0.5 text-[11px] text-white backdrop-blur">
+            {media?.verified && <BadgeCheck size={11} className="text-brand" />}
+            {hasFile ? 'Video propio' : 'YouTube'}
+            {media?.durationSeconds != null && ` · ${fmtDuration(media.durationSeconds)}`}
+          </span>
+        </button>
+
+        <MediaMeta media={media} />
+      </div>
     );
   }
 
-  /* Reproduciendo */
+  /*
+   * Reproduciendo. Sin `autoPlay`: el usuario ya pulso una vez, y dispararlo
+   * solo provoca reproducciones accidentales con sonido en el movil.
+   */
   if (hasFile) {
     return (
-      <video
-        controls
-        autoPlay
-        playsInline
-        preload="none"
-        poster={media?.videoPoster}
-        onError={() => setFailed(true)}
-        aria-label={`Video de ${title}`}
-        className={cx('aspect-video w-full rounded-2xl border border-line bg-black', className)}
-      >
-        {media?.videoWebmUrl && <source src={media.videoWebmUrl} type="video/webm" />}
-        {media?.videoUrl && <source src={media.videoUrl} type="video/mp4" />}
-        Tu navegador no puede reproducir este video.
-      </video>
+      <div className={className}>
+        <video
+          controls
+          playsInline
+          preload="metadata"
+          poster={media?.videoPoster}
+          onError={() => setFailed(true)}
+          aria-label={`Video de ${title}`}
+          className="aspect-video w-full rounded-2xl border border-line bg-black"
+        >
+          {media?.videoWebmUrl && <source src={media.videoWebmUrl} type="video/webm" />}
+          {media?.videoUrl && <source src={media.videoUrl} type="video/mp4" />}
+          Tu navegador no puede reproducir este video.
+        </video>
+        <MediaMeta media={media} />
+      </div>
     );
   }
 
   return (
-    <iframe
-      src={`https://www.youtube-nocookie.com/embed/${media!.youtubeId}?autoplay=1&rel=0&modestbranding=1`}
-      title={`Video de ${title}`}
-      allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-      loading="lazy"
-      className={cx('aspect-video w-full rounded-2xl border border-line bg-black', className)}
-    />
+    <div className={className}>
+      <iframe
+        src={`https://www.youtube-nocookie.com/embed/${media!.youtubeId}?rel=0&modestbranding=1&playsinline=1`}
+        title={`Video de ${title}`}
+        allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        loading="lazy"
+        className="aspect-video w-full rounded-2xl border border-line bg-black"
+      />
+      <MediaMeta media={media} />
+    </div>
+  );
+}
+
+/**
+ * Pie del video: fuente, licencia, fecha de revision y estado de verificacion.
+ * Si el usuario no marco el video como verificado, se avisa de forma explicita.
+ */
+function MediaMeta({ media }: { media?: ExerciseMedia }) {
+  if (!media) return null;
+  const playable = media.videoUrl || media.videoWebmUrl || media.youtubeId;
+  if (!playable) return null;
+
+  const bits = [
+    media.source && `Fuente: ${media.source}`,
+    media.license && `Licencia: ${media.license}`,
+    media.reviewedAt && `Revisado: ${media.reviewedAt}`,
+  ].filter(Boolean);
+
+  return (
+    <div className="mt-1.5 space-y-1.5">
+      {bits.length > 0 && <p className="px-1 text-[11px] text-faint">{bits.join(' · ')}</p>}
+      {!media.verified && (
+        <p className="flex items-start gap-1.5 rounded-lg border border-carbs/25 bg-carbs/8 px-2 py-1.5 text-[11px] text-carbs">
+          <AlertTriangle size={11} className="mt-0.5 shrink-0" />
+          Video sin verificar. Confirma que tienes permiso o licencia para usarlo y marcalo como
+          verificado en Ajustes → Videos.
+        </p>
+      )}
+    </div>
   );
 }

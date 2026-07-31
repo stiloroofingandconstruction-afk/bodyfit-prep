@@ -6,7 +6,8 @@ import { Stat } from '@/components/ui/Misc';
 import { Ring } from '@/components/ui/Ring';
 import { PROJECTION_LABEL, PROJECTION_TONE } from '@/domain/competition';
 import { startOfWeek, today, weekRange } from '@/lib/date';
-import { cx, fmtSigned } from '@/lib/utils';
+import { cx } from '@/lib/utils';
+import { useUnits } from '@/lib/useUnits';
 import { alive } from '@/store/persist';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -39,6 +40,7 @@ export function CompetitionDashboard() {
   const workouts = useWorkouts();
   const entries = useNutritionStore((s) => s.entries);
   const stepGoal = useSettingsStore((s) => s.stepGoal);
+  const u = useUnits();
   const { consumed } = useDayNutrition(today());
 
   const weekStart = startOfWeek(today());
@@ -134,21 +136,21 @@ export function CompetitionDashboard() {
         </SectionTitle>
         <Card>
           <div className="grid grid-cols-4 gap-2">
-            <Stat label="Media 7d" value={trend.avg7 != null ? trend.avg7.toFixed(1) : '—'} unit="kg" />
+            <Stat label="Media 7d" value={trend.avg7 != null ? u.numWeight(trend.avg7) : '—'} unit={u.w} />
             <Stat
               label="Semanal"
-              value={trend.weekChange != null ? fmtSigned(trend.weekChange) : '—'}
-              unit="kg"
+              value={trend.weekChange != null ? u.fmtWeightDelta(trend.weekChange).replace(` ${u.w}`, '') : '—'}
+              unit={u.w}
             />
             <Stat
               label="Ritmo"
-              value={trend.weekPct != null ? fmtSigned(trend.weekPct) : '—'}
+              value={trend.weekPct != null ? `${trend.weekPct > 0 ? '+' : ''}${trend.weekPct.toFixed(1)}` : '—'}
               unit="%"
             />
             <Stat
               label="Total"
-              value={trend.avg7 != null ? fmtSigned(trend.avg7 - prep.startWeight) : '—'}
-              unit="kg"
+              value={trend.avg7 != null ? u.fmtWeightDelta(trend.avg7 - prep.startWeight).replace(` ${u.w}`, '') : '—'}
+              unit={u.w}
             />
           </div>
 

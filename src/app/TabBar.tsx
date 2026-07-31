@@ -1,16 +1,20 @@
 import { NavLink } from 'react-router-dom';
 import { Dumbbell, Home, Settings, Trophy, TrendingUp, UtensilsCrossed } from 'lucide-react';
 import { cx, haptic } from '@/lib/utils';
+import { t } from '@/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
-
-const BASE_TABS = [
-  { to: '/', label: 'Inicio', Icon: Home, end: true },
-  { to: '/nutricion', label: 'Nutricion', Icon: UtensilsCrossed },
-  { to: '/entrenamiento', label: 'Entreno', Icon: Dumbbell },
-];
 
 export function TabBar() {
   const competitionMode = useSettingsStore((s) => s.competitionMode);
+  // Leer el idioma suscribe el componente: al cambiarlo, las etiquetas se
+  // actualizan al instante sin recargar.
+  useSettingsStore((s) => s.locale);
+
+  const BASE_TABS = [
+    { to: '/', label: t('nav.home'), Icon: Home, end: true },
+    { to: '/nutricion', label: t('nav.nutrition'), Icon: UtensilsCrossed },
+    { to: '/entrenamiento', label: t('nav.training'), Icon: Dumbbell },
+  ];
 
   /*
    * Con el modo competencia activo, la cuarta pestana pasa a ser el hub de prep:
@@ -20,9 +24,9 @@ export function TabBar() {
   const tabs = [
     ...BASE_TABS,
     competitionMode
-      ? { to: '/competencia', label: 'Prep', Icon: Trophy }
-      : { to: '/cuerpo', label: 'Progreso', Icon: TrendingUp },
-    { to: '/ajustes', label: 'Ajustes', Icon: Settings },
+      ? { to: '/competencia', label: t('nav.prep'), Icon: Trophy }
+      : { to: '/cuerpo', label: t('nav.progress'), Icon: TrendingUp },
+    { to: '/ajustes', label: t('nav.settings'), Icon: Settings },
   ];
 
   return (

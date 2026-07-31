@@ -12,6 +12,7 @@ import { compareMetrics, DIRECTION_TONE, type MetricComparison } from '@/domain/
 import { PROJECTION_LABEL, PROJECTION_TONE } from '@/domain/competition';
 import { addDays, shortDate, startOfWeek, today, weekRange } from '@/lib/date';
 import { cx, fmtSigned } from '@/lib/utils';
+import { useUnits } from '@/lib/useUnits';
 import { alive } from '@/store/persist';
 import { useProfile, useProfileStore } from '@/store/profileStore';
 import { useCheckinStore } from '@/store/checkinStore';
@@ -65,6 +66,7 @@ export default function CheckinPage() {
   const upsertBody = useBodyStore((s) => s.upsert);
   const saveRecommendation = usePrepStore((s) => s.saveRecommendation);
   const recommendations = usePrepStore((s) => s.recommendations);
+  const u = useUnits();
 
   const weekStart = startOfWeek(today());
   const prevStart = addDays(weekStart, -7);
@@ -241,7 +243,7 @@ export default function CheckinPage() {
     const patch: Record<string, number> = {};
     for (const f of MEASURE_FIELDS) {
       const n = Number(measures[f.key]);
-      if (n > 0) patch[f.key] = n;
+      if (n > 0) patch[f.key] = u.toCanonicalLength(n);
     }
     if (Object.keys(patch).length) upsertBody({ date: today(), ...patch });
 
@@ -298,11 +300,11 @@ export default function CheckinPage() {
         {/* ─────────────────────────── datos de la semana */}
         <Card>
           <div className="grid grid-cols-3 gap-3">
-            <Stat label="Media 7 dias" value={trend.avg7 != null ? trend.avg7.toFixed(1) : '—'} unit="kg" />
+            <Stat label="Media 7 dias" value={trend.avg7 != null ? u.numWeight(trend.avg7) : '—'} unit={u.w} />
             <Stat
               label="Cambio"
-              value={trend.weekChange != null ? fmtSigned(trend.weekChange) : '—'}
-              unit="kg"
+              value={trend.weekChange != null ? u.fmtWeightDelta(trend.weekChange).replace(` ${u.w}`, '') : '—'}
+              unit={u.w}
             />
             <Stat label="Entrenos" value={stats.workouts} sub={stats.avgKcal ? `${stats.avgKcal} kcal/dia` : undefined} />
           </div>
@@ -352,7 +354,7 @@ export default function CheckinPage() {
                   <Label
                     hint={
                       latestMeasurement?.[f.key] != null
-                        ? `antes ${latestMeasurement[f.key]}`
+                        ? `antes ${u.numLength(latestMeasurement[f.key] as number)}`
                         : undefined
                     }
                   >
@@ -362,7 +364,7 @@ export default function CheckinPage() {
                     inputMode="decimal"
                     value={measures[f.key] ?? ''}
                     onChange={(e) => setMeasures((v) => ({ ...v, [f.key]: e.target.value }))}
-                    suffix="cm"
+                    suffix={u.l}
                     placeholder="—"
                   />
                 </div>
@@ -503,10 +505,10 @@ export default function CheckinPage() {
                 <div key={c.id} className="rounded-2xl border border-line bg-surface px-3.5 py-3">
                   <div className="flex items-center justify-between">
                     <p className="text-[14px] font-medium">Semana del {shortDate(c.weekStart)}</p>
-                    <span className="text-[13px] tabular text-muted">{c.avgWeight.toFixed(1)} kg</span>
+                    <span className="text-[13px] tabular text-muted">{u.fmtWeight(c.avgWeight)}</span>
                   </div>
                   <p className="mt-0.5 text-[12px] tabular text-faint">
-                    {fmtSigned(c.weightChange)} kg · {c.adherence}% adherencia ·{' '}
+                    {u.fmtWeightDelta(c.weightChange)} · {c.adherence}% adherencia ·{' '}
                     {c.workoutsCompleted} entrenos
                     {c.kcalAdjustment ? ` · ${fmtSigned(c.kcalAdjustment)} kcal` : ''}
                   </p>

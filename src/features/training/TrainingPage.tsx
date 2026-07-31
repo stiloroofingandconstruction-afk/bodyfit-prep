@@ -17,6 +17,7 @@ import {
 } from '@/domain/training';
 import { addDays, dayInitial, friendlyDate, startOfWeek, today, weekRange } from '@/lib/date';
 import { useRoutines, useWorkouts } from '@/store/selectors';
+import { useUnits } from '@/lib/useUnits';
 import { useTrainingStore } from '@/store/trainingStore';
 import type { Routine } from '@/domain/types';
 
@@ -27,6 +28,7 @@ export default function TrainingPage() {
   const active = useTrainingStore((s) => s.active);
   const startWorkout = useTrainingStore((s) => s.startWorkout);
   const [routine, setRoutine] = useState<Routine | null>(null);
+  const u = useUnits();
 
   const week = useMemo(() => weekRange(startOfWeek(today())), []);
   const weekVolume = useMemo(
@@ -123,7 +125,10 @@ export default function TrainingPage() {
         <div className="mt-5">
           <SectionTitle>Volumen de la semana</SectionTitle>
           <Card>
-            <BarChart data={weekVolume} unit=" kg" />
+            <BarChart
+              data={weekVolume.map((d) => ({ ...d, value: u.toDisplayWeight(d.value) }))}
+              unit={` ${u.w}`}
+            />
           </Card>
         </div>
 
@@ -166,7 +171,7 @@ export default function TrainingPage() {
                     key={pr.exerciseId}
                     label={pr.exerciseName}
                     value={`${pr.weight}×${pr.reps}`}
-                    sub={`${pr.e1rm} kg de 1RM`}
+                    sub={`${u.fmtWeight(pr.e1rm)} de 1RM`}
                   />
                 ))}
               </div>
@@ -191,7 +196,7 @@ export default function TrainingPage() {
                     <span className="shrink-0 text-[12px] text-faint">{friendlyDate(w.date)}</span>
                   </div>
                   <p className="mt-0.5 text-[12px] tabular text-faint">
-                    {workoutSetCount(w)} series · {Math.round(workoutVolume(w))} kg
+                    {workoutSetCount(w)} series · {u.numWeight(workoutVolume(w), 0)} {u.w}
                     {workoutDurationMin(w) != null && ` · ${workoutDurationMin(w)} min`}
                   </p>
                 </div>

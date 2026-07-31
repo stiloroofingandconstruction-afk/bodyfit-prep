@@ -18,6 +18,11 @@ import type {
   MuscleGroup,
 } from '@/domain/types';
 import { templateFor } from './techniqueTemplates';
+import { AUTHORED_UPPER } from './techniqueAuthoredA';
+import { AUTHORED_LOWER } from './techniqueAuthoredB';
+
+/** Guias escritas individualmente para los ejercicios principales. */
+const AUTHORED: Record<string, ExerciseTechnique> = { ...AUTHORED_UPPER, ...AUTHORED_LOWER };
 
 interface Opts {
   secondary?: MuscleGroup[];
@@ -935,6 +940,18 @@ e('abdominales', 'Abdominales', 'core', 'peso corporal', false, 'aislamiento', {
     ],
   },
 });
+e('mcgill-curl-up', 'McGill curl-up', 'core', 'peso corporal', false, 'core-antiextension', {
+  difficulty: 'principiante',
+  aliases: ['curl up', 'mcgill', 'abdominal seguro'],
+  tags: ['core', 'lumbar-amable', 'rehabilitacion'],
+});
+e('hip-hinge-drill', 'Bisagra de cadera con baston', 'femoral', 'peso corporal', false, 'bisagra', {
+  secondary: ['gluteo', 'espalda'],
+  difficulty: 'principiante',
+  aliases: ['hip hinge', 'bisagra', 'drill de bisagra'],
+  prog: ['peso-muerto-rumano'],
+  tags: ['movilidad', 'aprendizaje', 'lumbar-amable', 'rehabilitacion', 'calentamiento'],
+});
 e('rueda-abdominal', 'Rueda abdominal', 'core', 'otro', false, 'core-antiextension', {
   difficulty: 'avanzado',
   aliases: ['ab wheel'],
@@ -1043,16 +1060,42 @@ e('farmer-walk', 'Paseo del granjero', 'antebrazo', 'mancuerna', true, 'transpor
   secondary: ['core', 'espalda'],
   aliases: ['farmer walk', 'paseo granjero'],
   lumbar: 'moderado',
+  subs: ['curl-martillo'],
+  lumbarSafe: ['curl-martillo', 'plancha', 'pallof-press'],
   tags: ['agarre', 'core'],
+  tech: {
+    safety: [
+      'Sostener carga alta caminando exige al tronco: manten los hombros abajo y el abdomen firme.',
+      'Con lumbar sensible, reduce la carga y la distancia antes que la tecnica.',
+    ],
+  },
 });
 
 /* ══════════════════════════════════════════════════════════════════════ */
 
 /** Catalogo final: metadatos + guia de tecnica completa. */
-export const EXERCISES: Exercise[] = raw.map((base) => ({
-  ...base,
-  technique: { ...templateFor(base as Exercise), ...(OVERRIDES[base.id] ?? {}) },
-}));
+/**
+ * Prioridad de la guia de tecnica:
+ *   1. AUTHORED — escrita individualmente para ese ejercicio.
+ *   2. plantilla del patron de movimiento + los retoques declarados en `tech`.
+ *
+ * Asi ningun ejercicio se queda sin guia completa, y los principales tienen
+ * contenido especifico en lugar de generico.
+ */
+export const EXERCISES: Exercise[] = raw.map((base) => {
+  const authored = AUTHORED[base.id];
+  return {
+    ...base,
+    technique: authored ?? {
+      ...templateFor(base as Exercise),
+      ...(OVERRIDES[base.id] ?? {}),
+      authored: false,
+    },
+  };
+});
+
+/** Ids con guia escrita individualmente. */
+export const AUTHORED_IDS: ReadonlySet<string> = new Set(Object.keys(AUTHORED));
 
 export const EXERCISE_BY_ID: ReadonlyMap<string, Exercise> = new Map(
   EXERCISES.map((x) => [x.id, x]),

@@ -22,6 +22,7 @@ import { Stat } from '@/components/ui/Misc';
 import { ACTIVITY_LABEL, ageFrom, bmr, tdee } from '@/domain/energy';
 import { clearAll, exportAll, importAll } from '@/services/storage';
 import { download } from '@/lib/utils';
+import { useUnits } from '@/lib/useUnits';
 import { toISODate } from '@/lib/date';
 import { useProfile, useProfileStore } from '@/store/profileStore';
 import { useNutritionStore } from '@/store/nutritionStore';
@@ -29,7 +30,7 @@ import { useSettingsStore, type Experience } from '@/store/settingsStore';
 import { useActivePrep, useCurrentWeight, useTargets } from '@/store/selectors';
 import { alive } from '@/store/persist';
 import { toast } from '@/store/uiStore';
-import { LOCALE_LABEL, type Locale } from '@/i18n';
+import { LOCALE_LABEL, t, type Locale } from '@/i18n';
 import { EXERCISE_BY_ID } from '@/data/exercises';
 import type { ActivityLevel, Goal, Sex } from '@/domain/types';
 import type { WeightUnit, LengthUnit } from '@/domain/units';
@@ -45,6 +46,7 @@ export default function SettingsPage() {
   const prep = useActivePrep();
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const u = useUnits();
 
   const maintenance = tdee(profile, weight);
   const basal = Math.round(bmr(profile, weight));
@@ -133,19 +135,24 @@ export default function SettingsPage() {
               <div>
                 <Label>Altura</Label>
                 <Input
-                  inputMode="numeric"
-                  value={profile.heightCm}
-                  onChange={(e) => update({ heightCm: Number(e.target.value) || 0 })}
-                  suffix="cm"
+                  inputMode="decimal"
+                  value={u.numLength(profile.heightCm, u.lengthUnit === 'cm' ? 0 : 1)}
+                  onChange={(e) =>
+                    update({ heightCm: u.toCanonicalLength(Number(e.target.value) || 0) })
+                  }
+                  suffix={u.l}
                 />
               </div>
               <div>
                 <Label hint="opcional">Peso objetivo</Label>
                 <Input
                   inputMode="decimal"
-                  value={profile.goalWeight ?? ''}
-                  onChange={(e) => update({ goalWeight: Number(e.target.value) || undefined })}
-                  suffix="kg"
+                  value={profile.goalWeight != null ? u.numWeight(profile.goalWeight) : ''}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    update({ goalWeight: v > 0 ? u.toCanonicalWeight(v) : undefined });
+                  }}
+                  suffix={u.w}
                   placeholder="—"
                 />
               </div>
@@ -183,7 +190,7 @@ export default function SettingsPage() {
 
             {profile.goal !== 'mantenimiento' && (
               <div className="mt-4">
-                <Label hint={`${profile.paceWeekPct}% / semana ≈ ${((weight * profile.paceWeekPct) / 100).toFixed(2)} kg`}>
+                <Label hint={`${profile.paceWeekPct}% / semana ≈ ${u.fmtWeight((weight * profile.paceWeekPct) / 100, 2)}`}>
                   Ritmo
                 </Label>
                 <Slider
@@ -217,29 +224,37 @@ export default function SettingsPage() {
 
             <div className="space-y-5">
               <div>
-                <Label hint={`${profile.proteinPerKg} g/kg → ${Math.round(weight * profile.proteinPerKg)} g`}>
+                <Label
+                  hint={`${u.toDisplayPerWeight(profile.proteinPerKg).toFixed(u.weightUnit === 'kg' ? 1 : 2)} ${u.perW} → ${Math.round(weight * profile.proteinPerKg)} g`}
+                >
                   Proteina
                 </Label>
                 <Slider
-                  value={profile.proteinPerKg}
-                  onChange={(v) => update({ proteinPerKg: v })}
-                  min={1.2}
-                  max={3}
-                  step={0.1}
-                  labels={['1.2', '2.1', '3.0']}
+                  value={u.toDisplayPerWeight(profile.proteinPerKg)}
+                  onChange={(v) => update({ proteinPerKg: u.toCanonicalPerWeight(v) })}
+                  {...u.perWeightRange(1.2, 3)}
+                  labels={[
+                    u.toDisplayPerWeight(1.2).toFixed(2),
+                    u.toDisplayPerWeight(2.1).toFixed(2),
+                    u.toDisplayPerWeight(3).toFixed(2),
+                  ]}
                 />
               </div>
               <div>
-                <Label hint={`${profile.fatPerKg} g/kg → ${Math.round(weight * profile.fatPerKg)} g`}>
+                <Label
+                  hint={`${u.toDisplayPerWeight(profile.fatPerKg).toFixed(2)} ${u.perW} → ${Math.round(weight * profile.fatPerKg)} g`}
+                >
                   Grasa
                 </Label>
                 <Slider
-                  value={profile.fatPerKg}
-                  onChange={(v) => update({ fatPerKg: v })}
-                  min={0.5}
-                  max={1.5}
-                  step={0.05}
-                  labels={['0.5', '1.0', '1.5']}
+                  value={u.toDisplayPerWeight(profile.fatPerKg)}
+                  onChange={(v) => update({ fatPerKg: u.toCanonicalPerWeight(v) })}
+                  {...u.perWeightRange(0.5, 1.5)}
+                  labels={[
+                    u.toDisplayPerWeight(0.5).toFixed(2),
+                    u.toDisplayPerWeight(1).toFixed(2),
+                    u.toDisplayPerWeight(1.5).toFixed(2),
+                  ]}
                 />
               </div>
               <div>
@@ -266,7 +281,7 @@ export default function SettingsPage() {
               <Stat label="Mantenimiento" value={maintenance} unit="kcal" />
             </div>
             <p className="mt-2 text-[11px] text-faint">
-              Mifflin-St Jeor sobre {weight.toFixed(1)} kg. Los carbohidratos se calculan con lo que
+              Mifflin-St Jeor sobre {u.fmtWeight(weight)}. Los carbohidratos se calculan con lo que
               sobra tras fijar proteina y grasa.
             </p>
           </Card>
@@ -306,13 +321,10 @@ export default function SettingsPage() {
                   onChange={(v: Locale) => settings.setLocaleSetting(v)}
                   options={(Object.keys(LOCALE_LABEL) as Locale[]).map((l) => ({
                     value: l,
-                    label: LOCALE_LABEL[l],
+                    label: l === 'en' ? `${LOCALE_LABEL[l]} (parcial)` : LOCALE_LABEL[l],
                   }))}
                 />
-                <p className="mt-1.5 text-[11px] text-faint">
-                  La app esta completa en espanol. El ingles cubre la navegacion y los modulos de
-                  competencia; el resto se ira traduciendo.
-                </p>
+                <p className="mt-1.5 text-[11px] text-faint">{t('units.englishPartial')}</p>
               </div>
             </div>
           </Card>

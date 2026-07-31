@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Input, Label, Select } from '@/components/ui/Field';
 import { addDays, today } from '@/lib/date';
 import { useCurrentWeight } from '@/store/selectors';
+import { useUnits } from '@/lib/useUnits';
 import { usePrepStore } from '@/store/prepStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { toast } from '@/store/uiStore';
@@ -32,6 +33,7 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
   const updatePrep = usePrepStore((s) => s.updatePrep);
   const setCompetitionMode = useSettingsStore((s) => s.update);
   const currentWeight = useCurrentWeight();
+  const u = useUnits();
 
   const [showName, setShowName] = useState('');
   const [federation, setFederation] = useState<Federation>('NPC');
@@ -56,17 +58,17 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
       setCategory(existing.category);
       setShowDate(existing.showDate);
       setPrepStartDate(existing.prepStartDate);
-      setStartWeight(String(existing.startWeight));
-      setTargetWeight(existing.targetWeight ? String(existing.targetWeight) : '');
+      setStartWeight(u.numWeight(existing.startWeight));
+      setTargetWeight(existing.targetWeight ? u.numWeight(existing.targetWeight) : '');
       setStartBf(existing.startBodyFat ? String(existing.startBodyFat) : '');
       setTargetBf(existing.targetBodyFat ? String(existing.targetBodyFat) : '');
       setCoach(existing.coach ?? '');
       setNotes(existing.notes ?? '');
       setStatus(existing.status);
     } else {
-      setStartWeight(currentWeight.toFixed(1));
+      setStartWeight(u.numWeight(currentWeight));
     }
-  }, [open, existing, currentWeight]);
+  }, [open, existing, currentWeight, u]);
 
   const valid = showName.trim().length >= 2 && showDate > prepStartDate && Number(startWeight) > 0;
 
@@ -78,8 +80,8 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
       category: category.trim(),
       showDate,
       prepStartDate,
-      startWeight: Number(startWeight),
-      ...(targetWeight ? { targetWeight: Number(targetWeight) } : {}),
+      startWeight: u.toCanonicalWeight(Number(startWeight)),
+      ...(targetWeight ? { targetWeight: u.toCanonicalWeight(Number(targetWeight)) } : {}),
       ...(startBf ? { startBodyFat: Number(startBf) } : {}),
       ...(targetBf ? { targetBodyFat: Number(targetBf) } : {}),
       ...(coach.trim() ? { coach: coach.trim() } : {}),
@@ -166,7 +168,7 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
               inputMode="decimal"
               value={startWeight}
               onChange={(e) => setStartWeight(e.target.value)}
-              suffix="kg"
+              suffix={u.w}
             />
           </div>
           <div>
@@ -175,7 +177,7 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
               inputMode="decimal"
               value={targetWeight}
               onChange={(e) => setTargetWeight(e.target.value)}
-              suffix="kg"
+              suffix={u.w}
               placeholder="—"
             />
           </div>

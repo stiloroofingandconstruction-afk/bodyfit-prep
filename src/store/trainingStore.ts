@@ -16,6 +16,8 @@ interface TrainingState {
   startWorkout: (name: string, routineId?: string, dayIndex?: number) => void;
   addExercise: (exerciseId: string) => void;
   removeExercise: (workoutExerciseId: string) => void;
+  /** Cambia el ejercicio de un hueco conservando las series ya registradas. */
+  replaceExercise: (workoutExerciseId: string, newExerciseId: string) => void;
   reorderExercise: (workoutExerciseId: string, direction: -1 | 1) => void;
   addSet: (workoutExerciseId: string, seed?: Partial<WorkoutSet>) => void;
   updateSet: (workoutExerciseId: string, setId: string, patch: Partial<WorkoutSet>) => void;
@@ -88,6 +90,30 @@ export const useTrainingStore = create<TrainingState>()(
             }
           : s,
       ),
+
+    /**
+     * Sustituye el ejercicio manteniendo el hueco y las series.
+     * Se usa cuando el usuario cambia a una alternativa mas segura a mitad de
+     * sesion: no tiene sentido perder lo ya registrado.
+     */
+    replaceExercise: (workoutExerciseId, newExerciseId) =>
+      set((s) => {
+        if (!s.active) return s;
+        return {
+          active: {
+            ...s.active,
+            exercises: s.active.exercises.map((e) =>
+              e.id === workoutExerciseId
+                ? {
+                    ...e,
+                    exerciseId: newExerciseId,
+                    exerciseName: EXERCISE_BY_ID.get(newExerciseId)?.name ?? newExerciseId,
+                  }
+                : e,
+            ),
+          },
+        };
+      }),
 
     reorderExercise: (workoutExerciseId, direction) =>
       set((s) => {

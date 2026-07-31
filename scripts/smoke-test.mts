@@ -15,6 +15,7 @@ import { analyzeCheckin } from '../src/domain/checkin';
 import { navyBodyFat } from '../src/domain/body';
 import { estimate1RM } from '../src/domain/training';
 import { runCompetitionTests } from './smoke-competition.mts';
+import { runUnitsTests } from './smoke-units.mts';
 import type { Profile } from '../src/domain/types';
 
 setCatalog(FOODS);
@@ -229,6 +230,9 @@ console.log(`   ${FOODS.length} alimentos en la base local`);
 
 /* ============================== SUITE DE COMPETENCIA ================== */
 runCompetitionTests(check, line);
+
+/* ======================= UNIDADES, TECNICA, VIDEO, I18N ============== */
+runUnitsTests(check, line);
 
 /* ---------------------------------------------------------------------- */
 console.log(`\n${failures === 0 ? 'TODO CORRECTO' : `${failures} COMPROBACIONES FALLIDAS`}\n`);

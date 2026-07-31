@@ -12,6 +12,7 @@ import { weightSeries } from '@/domain/body';
 import { workoutSetCount, workoutVolume } from '@/domain/training';
 import { addDays, dayInitial, friendlyDate, fromISODate, monthName, toISODate, today } from '@/lib/date';
 import { cx } from '@/lib/utils';
+import { useUnits } from '@/lib/useUnits';
 import { alive } from '@/store/persist';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { useMeasurements, useTargets, useWorkouts } from '@/store/selectors';
@@ -21,6 +22,7 @@ export default function HistoryPage() {
   const workouts = useWorkouts();
   const measurements = useMeasurements();
   const target = useTargets();
+  const u = useUnits();
 
   const [cursor, setCursor] = useState(() => {
     const d = fromISODate(today());
@@ -176,7 +178,10 @@ export default function HistoryPage() {
         <div className="mt-5">
           <SectionTitle>Peso</SectionTitle>
           <Card>
-            <LineChart data={weights} unit=" kg" />
+            <LineChart
+              data={weights.map((p) => ({ ...p, value: u.toDisplayWeight(p.value) }))}
+              unit={` ${u.w}`}
+            />
           </Card>
         </div>
       </Page>
@@ -192,6 +197,7 @@ function DaySheet({ date, onClose }: { date: string | null; onClose: () => void 
   const entries = useNutritionStore((s) => s.entries);
   const workouts = useWorkouts();
   const target = useTargets();
+  const u = useUnits();
 
   const dayEntries = useMemo(
     () => (date ? alive(entries).filter((e) => e.date === date) : []),
@@ -215,7 +221,7 @@ function DaySheet({ date, onClose }: { date: string | null; onClose: () => void 
             <div key={w.id} className="mb-1.5 rounded-2xl border border-line bg-surface2 px-3.5 py-3">
               <p className="text-[15px] font-medium">{w.name}</p>
               <p className="text-[12px] tabular text-faint">
-                {workoutSetCount(w)} series · {Math.round(workoutVolume(w))} kg
+                {workoutSetCount(w)} series · {u.numWeight(workoutVolume(w), 0)} {u.w}
               </p>
               <div className="mt-2 space-y-0.5">
                 {w.exercises.map((ex) => (

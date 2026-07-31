@@ -135,8 +135,12 @@ export type LumbarLoad = 'bajo' | 'moderado' | 'alto';
 
 /** Guia de tecnica. Contenido propio, sin material de terceros. */
 export interface ExerciseTechnique {
-  /** Preparacion inicial. */
+  /** Resumen de una frase: lo que hay que retener si solo lees una linea. */
+  summary: string;
+  /** Preparacion: material, alturas, agarres. */
   setup: string[];
+  /** Posicion inicial exacta antes de la primera repeticion. */
+  startPosition: string[];
   /** Ejecucion paso a paso. */
   execution: string[];
   breathing: string;
@@ -144,11 +148,19 @@ export interface ExerciseTechnique {
   /** Tempo sugerido, formato excentrica-pausa-concentrica-pausa. */
   tempo: string;
   commonMistakes: string[];
+  /** Senales observables de que la tecnica se esta rompiendo. */
+  warningSigns: string[];
   safety: string[];
   hypertrophy: string[];
   strength: string[];
+  /** Advertencias especificas del ejercicio. */
+  warnings: string[];
   /** Contraindicaciones generales, no consejo medico. */
   contraindications: string[];
+  /** Como adaptarlo con sensibilidad lumbar. Ausente si no aplica. */
+  lumbarAdaptation?: string;
+  /** true cuando la guia esta escrita a mano para este ejercicio concreto. */
+  authored?: boolean;
 }
 
 /**
@@ -166,6 +178,19 @@ export interface ExerciseMedia {
   videoPoster?: string;
   /** Imagen estatica ilustrativa. */
   imageUrl?: string;
+  /** Duracion aproximada en segundos. */
+  durationSeconds?: number;
+  /** Autor o canal de origen. */
+  source?: string;
+  /** Licencia o permiso bajo el que se usa. */
+  license?: string;
+  /** Fecha en la que se reviso el enlace, YYYY-MM-DD. */
+  reviewedAt?: string;
+  /**
+   * El usuario confirma que reviso la fuente y tiene permiso o licencia.
+   * Sin esto, la app muestra un aviso de "sin verificar".
+   */
+  verified?: boolean;
 }
 
 export interface Exercise {

@@ -12,7 +12,8 @@ import { WeightSheet } from './WeightSheet';
 import { bmi, bodyFatCategory, ema, leanMass, navyBodyFat, weeklyTrend, weightSeries } from '@/domain/body';
 import { compressImage, deletePhoto, photoURL, putPhoto } from '@/services/blobStore';
 import { friendlyDate, shortDate, today } from '@/lib/date';
-import { fmtSigned, uid } from '@/lib/utils';
+import { uid } from '@/lib/utils';
+import { useUnits } from '@/lib/useUnits';
 import { useProfile } from '@/store/profileStore';
 import { useBodyStore } from '@/store/bodyStore';
 import { useCurrentWeight, useMeasurements } from '@/store/selectors';
@@ -26,6 +27,7 @@ export default function BodyPage() {
   const measurements = useMeasurements();
   const weight = useCurrentWeight();
   const remove = useBodyStore((s) => s.remove);
+  const u = useUnits();
 
   const [range, setRange] = useState<Range>('90');
   const [weighing, setWeighing] = useState(false);
@@ -76,11 +78,11 @@ export default function BodyPage() {
         {/* -------------------------------------------------------- peso */}
         <Card className="mt-3">
           <div className="mb-3 flex items-center justify-between">
-            <Stat label="Peso actual" value={weight.toFixed(1)} unit="kg" />
+            <Stat label="Peso actual" value={u.numWeight(weight)} unit={u.w} />
             <Stat
               label="Tendencia"
-              value={fmtSigned(trend)}
-              unit="kg/sem"
+              value={u.fmtWeightDelta(trend).replace(` ${u.w}`, '')}
+              unit={`${u.w}/sem`}
               tone={
                 trend === 0
                   ? 'text-muted'
@@ -89,7 +91,7 @@ export default function BodyPage() {
                     : 'text-amber'
               }
             />
-            <Stat label="Cambio total" value={fmtSigned(totalChange)} unit="kg" />
+            <Stat label="Cambio total" value={u.fmtWeightDelta(totalChange).replace(` ${u.w}`, '')} unit={u.w} />
           </div>
 
           <Segmented
@@ -103,7 +105,12 @@ export default function BodyPage() {
             ]}
           />
 
-          <LineChart data={filtered} overlay={smoothed} height={170} unit=" kg" />
+          <LineChart
+            data={filtered.map((p) => ({ ...p, value: u.toDisplayWeight(p.value) }))}
+            overlay={smoothed.map((p) => ({ ...p, value: u.toDisplayWeight(p.value) }))}
+            height={170}
+            unit={` ${u.w}`}
+          />
         </Card>
 
         {/* ---------------------------------------------- composicion */}
@@ -120,8 +127,8 @@ export default function BodyPage() {
               />
               <Stat
                 label="Masa magra"
-                value={bodyFat != null ? leanMass(weight, bodyFat).toFixed(1) : '—'}
-                unit="kg"
+                value={bodyFat != null ? u.numWeight(leanMass(weight, bodyFat)) : '—'}
+                unit={u.w}
               />
               <Stat label="IMC" value={bmi(weight, profile.heightCm).toFixed(1)} />
             </div>
@@ -153,11 +160,11 @@ export default function BodyPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-[15px] font-medium tabular">
-                      {m.weight != null ? `${m.weight.toFixed(1)} kg` : 'Medidas'}
+                      {m.weight != null ? u.fmtWeight(m.weight) : 'Medidas'}
                     </p>
                     <p className="text-[12px] text-faint">
                       {friendlyDate(m.date)}
-                      {m.waist ? ` · cintura ${m.waist} cm` : ''}
+                      {m.waist ? ` · cintura ${u.fmtLength(m.waist)}` : ''}
                     </p>
                   </div>
                   <button
@@ -203,23 +210,25 @@ function MeasurementSheet({
   latest?: BodyMeasurement;
 }) {
   const upsert = useBodyStore((s) => s.upsert);
+  const u = useUnits();
   const [values, setValues] = useState<Record<string, string>>({});
 
+  // Los campos se rellenan en la unidad del usuario y se convierten al guardar
   useEffect(() => {
     if (!open) return;
     const seed: Record<string, string> = {};
     for (const f of FIELDS) {
       const v = latest?.[f.key];
-      if (typeof v === 'number') seed[f.key] = String(v);
+      if (typeof v === 'number') seed[f.key] = u.numLength(v);
     }
     setValues(seed);
-  }, [open, latest]);
+  }, [open, latest, u]);
 
   const save = () => {
     const patch: Record<string, number> = {};
     for (const f of FIELDS) {
       const n = Number(values[f.key]);
-      if (n > 0) patch[f.key] = n;
+      if (n > 0) patch[f.key] = u.toCanonicalLength(n);
     }
     upsert({ date: today(), ...patch });
     toast('Medidas guardadas');
@@ -239,7 +248,8 @@ function MeasurementSheet({
       }
     >
       <p className="mb-4 text-[13px] text-muted">
-        En centimetros. Mide siempre a la misma hora y sin tensar el musculo.
+        En {u.lengthUnit === 'cm' ? 'centimetros' : 'pulgadas'}. Mide siempre a la misma hora y
+        sin tensar el musculo.
       </p>
       <div className="grid grid-cols-2 gap-3">
         {FIELDS.map((f) => (
@@ -250,7 +260,7 @@ function MeasurementSheet({
               value={values[f.key] ?? ''}
               onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
               placeholder="0"
-              suffix="cm"
+              suffix={u.l}
             />
           </div>
         ))}

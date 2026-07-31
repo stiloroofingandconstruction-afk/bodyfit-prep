@@ -10,6 +10,7 @@ import { TechniqueSheet } from '@/features/exercises/TechniqueSheet';
 import { estimate1RM, personalRecords, workoutVolume } from '@/domain/training';
 import { formatDuration } from '@/lib/date';
 import { cx, haptic } from '@/lib/utils';
+import { useUnits } from '@/lib/useUnits';
 import { useTrainingStore } from '@/store/trainingStore';
 import { useWorkouts } from '@/store/selectors';
 import { useUIStore } from '@/store/uiStore';
@@ -21,12 +22,14 @@ export default function ActiveWorkoutPage() {
   const active = useTrainingStore((s) => s.active);
   const addExercise = useTrainingStore((s) => s.addExercise);
   const removeExercise = useTrainingStore((s) => s.removeExercise);
+  const replaceExercise = useTrainingStore((s) => s.replaceExercise);
   const addSet = useTrainingStore((s) => s.addSet);
   const updateSet = useTrainingStore((s) => s.updateSet);
   const removeSet = useTrainingStore((s) => s.removeSet);
   const finishWorkout = useTrainingStore((s) => s.finishWorkout);
   const discardWorkout = useTrainingStore((s) => s.discardWorkout);
   const startRest = useUIStore((s) => s.startRest);
+  const u = useUnits();
 
   const history = useWorkouts();
   const prs = useMemo(() => personalRecords(history), [history]);
@@ -79,7 +82,8 @@ export default function ActiveWorkoutPage() {
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[17px] leading-tight font-bold">{active.name}</h1>
             <p className="text-[12px] tabular text-muted">
-              {formatDuration(elapsed)} · {doneSets}/{totalSets} series · {Math.round(volume)} kg de volumen
+              {formatDuration(elapsed)} · {doneSets}/{totalSets} series ·{' '}
+              {u.numWeight(volume, 0)} {u.w} de volumen
             </p>
           </div>
           <Button variant="primary" size="sm" onClick={() => setFinishing(true)}>
@@ -114,7 +118,7 @@ export default function ActiveWorkoutPage() {
                     {pr && (
                       <p className="mt-0.5 flex items-center gap-1 text-[11px] text-faint">
                         <TrendingUp size={11} />
-                        Record: {pr.weight} kg × {pr.reps} ({pr.e1rm} kg 1RM)
+                        Record: {u.numWeight(pr.weight)} {u.w} × {pr.reps} ({u.fmtWeight(pr.e1rm)} 1RM)
                       </p>
                     )}
                   </div>
@@ -148,7 +152,7 @@ export default function ActiveWorkoutPage() {
                 <div className="px-3 py-2">
                   <div className="mb-1 grid grid-cols-[2rem_1fr_1fr_2.5rem_2rem] items-center gap-2 px-1 text-[10px] tracking-wider text-faint uppercase">
                     <span>Serie</span>
-                    <span className="text-center">kg</span>
+                    <span className="text-center">{u.w}</span>
                     <span className="text-center">Reps</span>
                     <span className="text-center">1RM</span>
                     <span />
@@ -182,10 +186,13 @@ export default function ActiveWorkoutPage() {
                           {set.type === 'calentamiento' ? 'C' : i + 1}
                         </button>
 
+                        {/* El peso se edita en la unidad del usuario y se guarda en kg */}
                         <NumInput
-                          value={set.weight}
-                          onChange={(v) => updateSet(ex.id, set.id, { weight: v })}
-                          step={2.5}
+                          value={u.toDisplayWeight(set.weight)}
+                          onChange={(v) =>
+                            updateSet(ex.id, set.id, { weight: u.toCanonicalWeight(v) })
+                          }
+                          step={u.weightUnit === 'kg' ? 2.5 : 5}
                         />
                         <NumInput
                           value={set.reps}
@@ -199,7 +206,7 @@ export default function ActiveWorkoutPage() {
                             isPR ? 'font-bold text-brand' : 'text-faint',
                           )}
                         >
-                          {e1rm > 0 ? Math.round(e1rm) : '—'}
+                          {e1rm > 0 ? u.numWeight(e1rm, 0) : '—'}
                         </span>
 
                         <button
@@ -270,6 +277,12 @@ export default function ActiveWorkoutPage() {
         exerciseId={techniqueFor}
         onClose={() => setTechniqueFor(null)}
         sequence={active.exercises.map((x) => ({ id: x.exerciseId, name: x.exerciseName }))}
+        onSubstitute={(fromId, toId) => {
+          const slot = active.exercises.find((x) => x.exerciseId === fromId);
+          if (!slot) return;
+          replaceExercise(slot.id, toId);
+          toast('Ejercicio sustituido. Las series registradas se conservan.');
+        }}
       />
 
       {/* ------------------------------------------------------- terminar -- */}
@@ -286,7 +299,7 @@ export default function ActiveWorkoutPage() {
               const done = finishWorkout(rating);
               setFinishing(false);
               if (done) {
-                toast(`Entreno guardado · ${Math.round(workoutVolume(done))} kg de volumen`);
+                toast(`Entreno guardado · ${u.numWeight(workoutVolume(done), 0)} ${u.w} de volumen`);
                 navigate('/entrenamiento', { replace: true });
               }
             }}
@@ -299,7 +312,7 @@ export default function ActiveWorkoutPage() {
           <div className="grid grid-cols-3 gap-2 text-center">
             <Box label="Duracion" value={formatDuration(elapsed)} />
             <Box label="Series" value={`${doneSets}`} />
-            <Box label="Volumen" value={`${Math.round(volume)} kg`} />
+            <Box label="Volumen" value={`${u.numWeight(volume, 0)} ${u.w}`} />
           </div>
 
           <div>

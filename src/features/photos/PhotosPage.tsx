@@ -11,6 +11,7 @@ import { ANGLE_LABEL, type PhotoAngle, type ProgressPhoto } from '@/domain/prepT
 import { compressImage, photoURL, putPhoto } from '@/services/blobStore';
 import { shortDate, today } from '@/lib/date';
 import { cx, uid } from '@/lib/utils';
+import { useUnits } from '@/lib/useUnits';
 import { usePhotoStore } from '@/store/photoStore';
 import { useActivePrep, useCountdown, useCurrentWeight, usePhotos } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
@@ -52,6 +53,7 @@ export default function PhotosPage() {
   const prep = useActivePrep();
   const cd = useCountdown();
 
+  const u = useUnits();
   const [angle, setAngle] = useState<PhotoAngle | null>(null);
   const [comparing, setComparing] = useState(false);
 
@@ -160,6 +162,7 @@ export default function PhotosPage() {
                   )}
                   <span className="absolute inset-x-1 bottom-1 truncate rounded-md bg-black/60 px-1 py-0.5 text-center text-[9px] backdrop-blur">
                     {shortDate(p.date)}
+                    {p.weight != null && ` · ${u.numWeight(p.weight)}${u.w}`}
                     {p.prepWeek != null && ` · S-${p.prepWeek}`}
                   </span>
                   <button
@@ -184,6 +187,7 @@ export default function PhotosPage() {
 /* ─────────────────────────────────────────────────────────── comparacion */
 
 function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: () => void }) {
+  const u = useUnits();
   const [angle, setAngle] = useState<PhotoAngle>(photos[0]?.angle ?? 'frente');
 
   const ofAngle = useMemo(
@@ -233,7 +237,7 @@ function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: (
                 {ofAngle.map((p) => (
                   <option key={p.id} value={p.id}>
                     {shortDate(p.date)}
-                    {p.weight ? ` · ${p.weight.toFixed(1)} kg` : ''}
+                    {p.weight ? ` · ${u.numWeight(p.weight)}${u.w}` : ''}
                   </option>
                 ))}
               </Select>
@@ -244,7 +248,7 @@ function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: (
                 {ofAngle.map((p) => (
                   <option key={p.id} value={p.id}>
                     {shortDate(p.date)}
-                    {p.weight ? ` · ${p.weight.toFixed(1)} kg` : ''}
+                    {p.weight ? ` · ${u.numWeight(p.weight)}${u.w}` : ''}
                   </option>
                 ))}
               </Select>
@@ -302,7 +306,7 @@ function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: (
                 <span className="text-muted">Diferencia de peso</span>
                 <span className="tabular font-semibold">
                   {left.weight != null && right.weight != null
-                    ? `${(right.weight - left.weight > 0 ? '+' : '')}${(right.weight - left.weight).toFixed(1)} kg`
+                    ? u.fmtWeightDelta(right.weight - left.weight)
                     : '—'}
                 </span>
               </div>
@@ -331,6 +335,7 @@ function Framed({
   url?: string;
   label: string;
 }) {
+  const units = useUnits();
   return (
     <div>
       <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl border border-line bg-surface2">
@@ -345,7 +350,7 @@ function Framed({
       </div>
       <p className="mt-1 text-center text-[11px] text-faint">
         {photo ? shortDate(photo.date) : '—'}
-        {photo?.weight != null && ` · ${photo.weight.toFixed(1)} kg`}
+        {photo?.weight != null && ` · ${units.numWeight(photo.weight)}${units.w}`}
       </p>
     </div>
   );

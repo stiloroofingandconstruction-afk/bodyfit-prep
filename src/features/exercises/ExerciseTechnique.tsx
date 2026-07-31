@@ -1,21 +1,29 @@
 import { useMemo } from 'react';
-import { AlertTriangle, ChevronLeft, ChevronRight, Shield, Star, TrendingUp } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  ChevronLeft,
+  ChevronRight,
+  Repeat2,
+  Shield,
+  Star,
+  TrendingUp,
+} from 'lucide-react';
 import { Card, SectionTitle } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Misc';
 import { ExerciseVideo } from '@/components/ui/ExerciseVideo';
 import {
   DIFFICULTY_LABEL,
   EXERCISE_BY_ID,
-  LUMBAR_LABEL,
-  LUMBAR_TONE,
   MUSCLE_LABEL,
   PATTERN_LABEL,
-  lumbarAlternativesFor,
   relatedExercises,
 } from '@/data/exercises';
+import { LumbarNotice } from './LumbarNotice';
+import { t } from '@/i18n';
 import { bestSet, estimate1RM, isWorkingSet } from '@/domain/training';
 import { shortDate } from '@/lib/date';
 import { cx } from '@/lib/utils';
+import { useUnits } from '@/lib/useUnits';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useWorkouts } from '@/store/selectors';
 import type { Exercise } from '@/domain/types';
@@ -28,6 +36,10 @@ interface Props {
   prevLabel?: string;
   nextLabel?: string;
   onSelect?: (id: string) => void;
+  /** Sustituir este ejercicio en la sesion en curso. */
+  onSubstitute?: (id: string) => void;
+  /** Volver al entrenamiento activo. */
+  onBackToWorkout?: () => void;
 }
 
 /**
@@ -43,9 +55,14 @@ export function ExerciseTechnique({
   prevLabel,
   nextLabel,
   onSelect,
+  onSubstitute,
+  onBackToWorkout,
 }: Props) {
   const workouts = useWorkouts();
+  // Suscribe al idioma para que los titulos cambien al instante
+  useSettingsStore((s) => s.locale);
   const customMedia = useSettingsStore((s) => s.exerciseMedia[exercise.id]);
+  const u = useUnits();
   const media = customMedia ?? exercise.media;
   const tech = exercise.technique;
 
@@ -82,7 +99,6 @@ export function ExerciseTechnique({
   const subs = relatedExercises(exercise, 'substitutions');
   const regs = relatedExercises(exercise, 'regressions');
   const progs = relatedExercises(exercise, 'progressions');
-  const lumbarAlts = exercise.lumbarLoad !== 'bajo' ? lumbarAlternativesFor(exercise) : [];
 
   return (
     <div className="space-y-5">
@@ -108,6 +124,16 @@ export function ExerciseTechnique({
         </div>
       )}
 
+      {onBackToWorkout && (
+        <button
+          onClick={onBackToWorkout}
+          className="pressable flex w-full items-center justify-center gap-2 rounded-2xl border border-brand/30 bg-brand/12 py-2.5 text-[14px] font-medium text-brand"
+        >
+          <ArrowLeftRight size={15} />
+          {t('exercise.backToWorkout')}
+        </button>
+      )}
+
       {/* ───────────────────────────────────────────────── cabecera */}
       <div>
         <h2 className="text-[22px] leading-tight font-bold">{exercise.name}</h2>
@@ -122,76 +148,79 @@ export function ExerciseTechnique({
         </p>
       </div>
 
+      {/* ───────────────────────────────────── resumen rapido */}
+      <div className="rounded-2xl border border-brand/25 bg-brand/8 p-3.5">
+        <p className="mb-1 text-[11px] font-semibold tracking-wider text-brand uppercase">
+          {t('exercise.summary')}
+        </p>
+        <p className="text-[14px] leading-snug text-ink">{exercise.technique.summary}</p>
+      </div>
+
       {/* ───────────────────────────────────────────────── video */}
       <ExerciseVideo media={media} title={exercise.name} />
 
-      {/* ───────────────────────────────────── aviso de carga lumbar */}
-      {exercise.lumbarLoad !== 'bajo' && (
-        <Card
-          className={cx(
-            'border',
-            exercise.lumbarLoad === 'alto' ? 'border-rose/30 bg-rose/8' : 'border-carbs/30 bg-carbs/8',
-          )}
-        >
-          <div className="flex gap-3">
-            <AlertTriangle
-              size={18}
-              className={cx('mt-0.5 shrink-0', LUMBAR_TONE[exercise.lumbarLoad])}
-            />
-            <div className="min-w-0">
-              <p className={cx('text-[14px] font-semibold', LUMBAR_TONE[exercise.lumbarLoad])}>
-                {LUMBAR_LABEL[exercise.lumbarLoad]}
-              </p>
-              <p className="mt-1 text-[13px] text-muted">
-                {exercise.lumbarLoad === 'alto'
-                  ? 'Este ejercicio exige mucho a la zona lumbar. Si tienes sensibilidad en la espalda baja, estas alternativas trabajan lo mismo con mucha menos carga sobre la columna.'
-                  : 'Carga moderada sobre la zona lumbar. Si notas molestias, prueba estas alternativas.'}
-              </p>
-              {lumbarAlts.length > 0 && (
-                <div className="mt-2.5 flex flex-wrap gap-1.5">
-                  {lumbarAlts.map((alt) => (
-                    <Chip key={alt.id} onClick={onSelect ? () => onSelect(alt.id) : undefined}>
-                      {alt.name}
-                    </Chip>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </Card>
-      )}
+      {/* ───────────────────────────────────── seguridad lumbar */}
+      <LumbarNotice exercise={exercise} onSelect={onSubstitute ?? onSelect} />
 
       {/* ───────────────────────────────────────────────── tecnica */}
-      <StepList title="Preparacion" items={tech.setup} numbered />
-      <StepList title="Ejecucion paso a paso" items={tech.execution} numbered />
+      <StepList title={t('exercise.setup')} items={tech.setup} numbered />
+      <StepList title={t('exercise.startPosition')} items={tech.startPosition} numbered />
+      <StepList title={t('exercise.execution')} items={tech.execution} numbered />
 
       <Card>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Line label="Respiracion" value={tech.breathing} />
-          <Line label="Tempo" value={tech.tempo} />
-          <Line label="Rango de movimiento" value={tech.rangeOfMotion} />
+          <Line label={t('exercise.breathing')} value={tech.breathing} />
+          <Line label={t('exercise.tempo')} value={tech.tempo} />
+          <Line label={t('exercise.rom')} value={tech.rangeOfMotion} />
         </div>
       </Card>
 
-      <StepList title="Errores comunes" items={tech.commonMistakes} tone="text-carbs" />
-      <StepList title="Seguridad" items={tech.safety} tone="text-sky" icon={<Shield size={13} />} />
-      <StepList title="Para hipertrofia" items={tech.hypertrophy} tone="text-brand" />
-      <StepList title="Para fuerza" items={tech.strength} tone="text-violet" />
+      <StepList title={t('exercise.mistakes')} items={tech.commonMistakes} tone="text-carbs" />
+      <StepList
+        title={t('exercise.warningSigns')}
+        items={tech.warningSigns}
+        tone="text-rose"
+        footer="Si aparece cualquiera de estas senales, termina la serie: seguir sumando repeticiones solo consolida el error."
+      />
+      <StepList
+        title={t('exercise.safety')}
+        items={tech.safety}
+        tone="text-sky"
+        icon={<Shield size={13} />}
+      />
+      <StepList title={t('exercise.warnings')} items={tech.warnings} tone="text-carbs" />
+      <StepList title={t('exercise.hypertrophy')} items={tech.hypertrophy} tone="text-brand" />
+      <StepList title={t('exercise.strength')} items={tech.strength} tone="text-violet" />
       {tech.contraindications.length > 0 && (
         <StepList
-          title="Contraindicaciones generales"
+          title={t('exercise.contraindications')}
           items={tech.contraindications}
           tone="text-rose"
-          footer="Informacion general, no consejo medico. Ante dolor o sintomas, consulta con un profesional."
+          footer={t('exercise.notMedicalAdvice')}
         />
       )}
 
       {/* ───────────────────────────────────────── variantes */}
       {(subs.length > 0 || regs.length > 0 || progs.length > 0) && (
         <div>
-          <SectionTitle>Variantes</SectionTitle>
+          <SectionTitle>{t('exercise.variants')}</SectionTitle>
           <Card>
             <div className="space-y-3">
+              {onSubstitute && subs.length > 0 && (
+                <div className="rounded-xl border border-line/60 bg-surface2/60 p-2.5">
+                  <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-brand uppercase">
+                    <Repeat2 size={12} />
+                    {t('exercise.substituteHere')}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {subs.map((s) => (
+                      <Chip key={s.id} onClick={() => onSubstitute(s.id)}>
+                        {s.name}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+              )}
               <Related title="Sustituciones" list={subs} onSelect={onSelect} />
               <Related title="Regresiones (mas facil)" list={regs} onSelect={onSelect} />
               <Related title="Progresiones (mas dificil)" list={progs} onSelect={onSelect} />
@@ -202,7 +231,7 @@ export function ExerciseTechnique({
 
       {/* ───────────────────────────────────────── historial */}
       <div>
-        <SectionTitle>Tu historial</SectionTitle>
+        <SectionTitle>{t('exercise.history')}</SectionTitle>
         <Card>
           {history.length === 0 ? (
             <p className="py-3 text-center text-[13px] text-faint">
@@ -212,17 +241,17 @@ export function ExerciseTechnique({
             <>
               <div className="mb-3 grid grid-cols-3 gap-3 border-b border-line pb-3">
                 <Mini
-                  label="Ultimo peso"
-                  value={last ? `${Math.max(...last.sets.map((s) => s.weight))} kg` : '—'}
+                  label={t('exercise.lastWeight')}
+                  value={last ? u.fmtWeight(Math.max(...last.sets.map((s) => s.weight))) : '—'}
                 />
                 <Mini
-                  label="Mejor serie"
+                  label={t('exercise.bestSet')}
                   value={pr ? `${pr.weight}×${pr.reps}` : '—'}
                   icon={<Star size={11} className="text-brand" />}
                 />
                 <Mini
                   label="Record (1RM)"
-                  value={pr ? `${pr.e1rm} kg` : '—'}
+                  value={pr ? u.fmtWeight(pr.e1rm) : '—'}
                   icon={<TrendingUp size={11} className="text-brand" />}
                 />
               </div>

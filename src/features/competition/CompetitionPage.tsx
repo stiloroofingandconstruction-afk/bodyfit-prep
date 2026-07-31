@@ -23,7 +23,8 @@ import { Ring } from '@/components/ui/Ring';
 import { PrepSetupSheet } from './PrepSetupSheet';
 import { PROJECTION_LABEL, PROJECTION_TONE } from '@/domain/competition';
 import { friendlyDate, startOfWeek, today } from '@/lib/date';
-import { cx, fmtSigned } from '@/lib/utils';
+import { cx } from '@/lib/utils';
+import { useUnits } from '@/lib/useUnits';
 import {
   useActivePrep,
   useCountdown,
@@ -52,6 +53,7 @@ export default function CompetitionPage() {
   const projection = useProjection();
   const week = useWeekActivity(startOfWeek(today()));
   const competitionMode = useSettingsStore((s) => s.competitionMode);
+  const u = useUnits();
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -145,18 +147,18 @@ export default function CompetitionPage() {
             <div className="mb-3 grid grid-cols-3 gap-3">
               <Stat
                 label="Media 7 dias"
-                value={trend.avg7 != null ? trend.avg7.toFixed(1) : '—'}
-                unit="kg"
+                value={trend.avg7 != null ? u.numWeight(trend.avg7) : '—'}
+                unit={u.w}
               />
               <Stat
                 label="Cambio semanal"
-                value={trend.weekChange != null ? fmtSigned(trend.weekChange) : '—'}
-                unit="kg"
+                value={trend.weekChange != null ? u.fmtWeightDelta(trend.weekChange).replace(` ${u.w}`, '') : '—'}
+                unit={u.w}
               />
               <Stat
                 label="Objetivo"
-                value={prep.targetWeight ? prep.targetWeight.toFixed(1) : '—'}
-                unit="kg"
+                value={prep.targetWeight ? u.numWeight(prep.targetWeight) : '—'}
+                unit={u.w}
               />
             </div>
 

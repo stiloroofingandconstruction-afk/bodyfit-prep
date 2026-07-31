@@ -15,6 +15,7 @@ import {
 import { exportAll } from '@/services/storage';
 import { startOfWeek, today, weekRange } from '@/lib/date';
 import { download } from '@/lib/utils';
+import { useUnits } from '@/lib/useUnits';
 import { alive } from '@/store/persist';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { useActivityStore } from '@/store/activityStore';
@@ -48,6 +49,7 @@ export default function ReportsPage() {
   const prep = useActivePrep();
   const cd = useCountdown();
 
+  const u = useUnits();
   const weekStart = startOfWeek(today());
   const week = useWeekActivity(weekStart);
   const [preview, setPreview] = useState<string | null>(null);
@@ -95,17 +97,18 @@ export default function ReportsPage() {
       strength: null,
       measurements: measures,
       photos: photos.filter((p) => p.date >= weekStart).length,
+      units: u,
     });
-  }, [profile.name, prep, cd, weekStart, trend, targets, entries, readiness, week, workouts, measurements, photos]);
+  }, [profile.name, prep, cd, weekStart, trend, targets, entries, readiness, week, workouts, measurements, photos, u]);
 
   const stamp = today();
 
   const EXPORTS = [
     {
       label: 'Peso y medidas',
-      detail: 'CSV con peso diario, hora, cintura y notas',
+      detail: `CSV con peso diario (${u.w}), hora, cintura (${u.l}) y notas`,
       file: `bodyfit-peso-${stamp}.csv`,
-      make: () => weightCSV(readiness, measurements),
+      make: () => weightCSV(readiness, measurements, u),
       type: 'text/csv',
     },
     {
@@ -119,14 +122,14 @@ export default function ReportsPage() {
       label: 'Entrenamientos',
       detail: 'CSV con cada serie: peso, repeticiones y tipo',
       file: `bodyfit-entrenos-${stamp}.csv`,
-      make: () => workoutsCSV(workouts),
+      make: () => workoutsCSV(workouts, u),
       type: 'text/csv',
     },
     {
       label: 'Check-ins',
       detail: 'CSV con el historico semanal completo',
       file: `bodyfit-checkins-${stamp}.csv`,
-      make: () => checkinsCSV(checkins),
+      make: () => checkinsCSV(checkins, u),
       type: 'text/csv',
     },
     {
@@ -148,7 +151,8 @@ export default function ReportsPage() {
         <Card>
           <p className="text-[13px] text-muted">
             Genera el resumen de la semana en curso con peso medio, ritmo, macros, adherencia,
-            cardio, pasos, sensaciones y medidas. Listo para pegar en un mensaje o imprimir.
+            cardio, pasos, sensaciones y medidas. Se escribe en tus unidades ({u.w} y {u.l}) y esta
+            listo para pegar en un mensaje o imprimir.
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Button variant="primary" onClick={() => setPreview(report)}>

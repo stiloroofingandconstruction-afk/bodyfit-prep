@@ -112,6 +112,68 @@ export const es = {
   'exercise.bestSet': 'Mejor serie',
   'exercise.noVideo': 'Sin video configurado',
 
+  /* pantallas */
+  'screen.dashboard': 'Inicio',
+  'screen.nutrition': 'Nutricion',
+  'screen.training': 'Entrenamiento',
+  'screen.body': 'Progreso',
+  'screen.checkin': 'Check-in semanal',
+  'screen.history': 'Historial',
+  'screen.photos': 'Fotos de progreso',
+  'screen.settings': 'Ajustes',
+  'screen.exercises': 'Ejercicios',
+  'screen.reports': 'Informes y exportacion',
+  'screen.reminders': 'Recordatorios',
+  'screen.videos': 'Videos de ejercicios',
+  'screen.peakWeek': 'Peak week',
+  'screen.showDay': 'Dia del show',
+  'screen.postShow': 'Post-show',
+
+  /* unidades */
+  'units.title': 'Unidades e idioma',
+  'units.weight': 'Peso',
+  'units.length': 'Longitud',
+  'units.kg': 'Kilogramos',
+  'units.lb': 'Libras',
+  'units.cm': 'Centimetros',
+  'units.in': 'Pulgadas',
+  'units.language': 'Idioma',
+  'units.englishPartial':
+    'El ingles cubre la navegacion, los modulos de competencia y la pantalla de tecnica. El resto de pantallas sigue en espanol.',
+
+  /* tecnica */
+  'exercise.summary': 'En una linea',
+  'exercise.startPosition': 'Posicion inicial',
+  'exercise.warningSigns': 'Senales de mala tecnica',
+  'exercise.warnings': 'Advertencias',
+  'exercise.contraindications': 'Contraindicaciones generales',
+  'exercise.lumbarAdaptation': 'Como adaptarlo',
+  'exercise.backToWorkout': 'Volver al entrenamiento',
+  'exercise.substituteHere': 'Sustituir en esta sesion',
+  'exercise.avoidForNow': 'Evitar por ahora',
+  'exercise.avoiding': 'Marcado para evitar por ahora',
+  'exercise.lumbarLow': 'Carga lumbar baja',
+  'exercise.lumbarModerate': 'Carga lumbar moderada',
+  'exercise.lumbarHigh': 'Carga lumbar alta',
+  'exercise.whenToReduce': 'Cuando reducir carga',
+  'exercise.saferAlternatives': 'Alternativas mas estables',
+  'exercise.variants': 'Variantes',
+  'exercise.notMedicalAdvice':
+    'Informacion general de entrenamiento, no consejo medico. Ante dolor persistente, consulta con un profesional sanitario.',
+
+  /* video */
+  'video.unverified': 'Video sin verificar',
+  'video.source': 'Fuente',
+  'video.license': 'Licencia',
+  'video.reviewed': 'Revisado',
+  'video.verified': 'Verificado',
+  'video.markVerified': 'Marcar como verificado',
+  'video.export': 'Exportar configuracion',
+  'video.import': 'Importar configuracion',
+  'video.noVideoConfigured': 'Sin video configurado',
+  'video.offline': 'Sin conexion',
+  'video.writtenGuideAvailable': 'La guia escrita sigue disponible',
+
   /* avisos */
   'disclaimer.short': 'Esta app no sustituye la atencion medica.',
   'disclaimer.medical':

@@ -12,6 +12,7 @@ import {
   searchExercises,
 } from '@/data/exercises';
 import { cx } from '@/lib/utils';
+import { useSettingsStore } from '@/store/settingsStore';
 import type { Difficulty, MuscleGroup } from '@/domain/types';
 
 export default function ExerciseLibraryPage() {
@@ -20,6 +21,7 @@ export default function ExerciseLibraryPage() {
   const [muscle, setMuscle] = useState<MuscleGroup | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [lumbarOnly, setLumbarOnly] = useState(false);
+  const avoided = useSettingsStore((s) => s.avoidedExercises);
 
   const results = useMemo(() => {
     let list = query.trim() ? searchExercises(query, 300) : EXERCISES;
@@ -106,6 +108,9 @@ export default function ExerciseLibraryPage() {
                             <span className={cx('ml-1.5', LUMBAR_TONE[ex.lumbarLoad])}>
                               · lumbar {ex.lumbarLoad}
                             </span>
+                          )}
+                          {avoided.includes(ex.id) && (
+                            <span className="ml-1.5 text-rose">· evitando</span>
                           )}
                         </p>
                       </div>
