@@ -65,17 +65,24 @@ export default function PhotosPage() {
 
   const onPick = async (file: File | undefined, targetAngle: PhotoAngle) => {
     if (!file) return;
-    const blob = await compressImage(file);
-    const blobId = uid('photo');
-    await putPhoto(blobId, blob);
-    addPhoto({
-      date: today(),
-      angle: targetAngle,
-      blobId,
-      weight,
-      ...(prep && cd ? { prepWeek: Math.max(0, cd.weeksOut) } : {}),
-    });
-    toast(`Foto de ${ANGLE_LABEL[targetAngle].toLowerCase()} guardada`);
+    // Sin este try/catch, un fallo al procesar la imagen dejaba al usuario sin
+    // foto y sin ningun aviso: parecia que la app se habia quedado colgada.
+    try {
+      const blob = await compressImage(file);
+      const blobId = uid('photo');
+      await putPhoto(blobId, blob);
+      addPhoto({
+        date: today(),
+        angle: targetAngle,
+        blobId,
+        weight,
+        ...(prep && cd ? { prepWeek: Math.max(0, cd.weeksOut) } : {}),
+      });
+      toast(`Foto de ${ANGLE_LABEL[targetAngle].toLowerCase()} guardada`);
+    } catch (err) {
+      console.error('[fotos] fallo al guardar', err);
+      toast('No se pudo guardar la foto. Intentalo de nuevo.', 'error');
+    }
   };
 
   return (
@@ -233,7 +240,7 @@ function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: (
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Antes</Label>
-              <Select value={leftId} onChange={(e) => setLeftId(e.target.value)}>
+              <Select aria-label="Foto anterior" value={leftId} onChange={(e) => setLeftId(e.target.value)}>
                 {ofAngle.map((p) => (
                   <option key={p.id} value={p.id}>
                     {shortDate(p.date)}
@@ -244,7 +251,7 @@ function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: (
             </div>
             <div>
               <Label>Ahora</Label>
-              <Select value={rightId} onChange={(e) => setRightId(e.target.value)}>
+              <Select aria-label="Foto actual" value={rightId} onChange={(e) => setRightId(e.target.value)}>
                 {ofAngle.map((p) => (
                   <option key={p.id} value={p.id}>
                     {shortDate(p.date)}
@@ -288,7 +295,8 @@ function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: (
               max={100}
               value={slider}
               onChange={(e) => setSlider(Number(e.target.value))}
-              aria-label="Control de comparacion"
+              aria-label="Control deslizante de comparacion de fotos"
+              aria-valuetext={`${slider}%`}
               className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full outline-none [&::-webkit-slider-thumb]:size-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-brand"
               style={{
                 background: `linear-gradient(to right, var(--color-line) ${slider}%, var(--color-brand) ${slider}%)`,

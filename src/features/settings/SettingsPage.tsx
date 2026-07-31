@@ -123,6 +123,7 @@ export default function SettingsPage() {
               <div>
                 <Label hint={`${ageFrom(profile.birthDate)} anos`}>Nacimiento</Label>
                 <Input
+                  aria-label="Fecha de nacimiento"
                   type="date"
                   value={profile.birthDate}
                   max={toISODate()}
@@ -135,6 +136,7 @@ export default function SettingsPage() {
               <div>
                 <Label>Altura</Label>
                 <Input
+                  aria-label="Altura"
                   inputMode="decimal"
                   value={u.numLength(profile.heightCm, u.lengthUnit === 'cm' ? 0 : 1)}
                   onChange={(e) =>
@@ -146,6 +148,7 @@ export default function SettingsPage() {
               <div>
                 <Label hint="opcional">Peso objetivo</Label>
                 <Input
+                  aria-label="Peso objetivo"
                   inputMode="decimal"
                   value={profile.goalWeight != null ? u.numWeight(profile.goalWeight) : ''}
                   onChange={(e) => {
@@ -161,6 +164,7 @@ export default function SettingsPage() {
             <div>
               <Label>Nivel de actividad</Label>
               <Select
+                aria-label="Nivel de actividad"
                 value={profile.activity}
                 onChange={(e) => update({ activity: e.target.value as ActivityLevel })}
               >
@@ -194,6 +198,7 @@ export default function SettingsPage() {
                   Ritmo
                 </Label>
                 <Slider
+                  aria-label="Ritmo de cambio de peso por semana"
                   value={profile.paceWeekPct}
                   onChange={(v) => update({ paceWeekPct: v })}
                   min={0.25}
@@ -230,6 +235,7 @@ export default function SettingsPage() {
                   Proteina
                 </Label>
                 <Slider
+                  aria-label="Proteina por unidad de peso corporal"
                   value={u.toDisplayPerWeight(profile.proteinPerKg)}
                   onChange={(v) => update({ proteinPerKg: u.toCanonicalPerWeight(v) })}
                   {...u.perWeightRange(1.2, 3)}
@@ -247,6 +253,7 @@ export default function SettingsPage() {
                   Grasa
                 </Label>
                 <Slider
+                  aria-label="Grasa por unidad de peso corporal"
                   value={u.toDisplayPerWeight(profile.fatPerKg)}
                   onChange={(v) => update({ fatPerKg: u.toCanonicalPerWeight(v) })}
                   {...u.perWeightRange(0.5, 1.5)}
@@ -338,6 +345,7 @@ export default function SettingsPage() {
               <div>
                 <Label>Nivel de experiencia</Label>
                 <Select
+                  aria-label="Nivel de experiencia"
                   value={settings.experience}
                   onChange={(e) => settings.update({ experience: e.target.value as Experience })}
                 >
@@ -350,6 +358,7 @@ export default function SettingsPage() {
               <div>
                 <Label hint={`${settings.trainingDaysPerWeek} dias`}>Dias de entrenamiento</Label>
                 <Slider
+                  aria-label="Dias de entrenamiento por semana"
                   value={settings.trainingDaysPerWeek}
                   onChange={(v) => settings.update({ trainingDaysPerWeek: v })}
                   min={1}
@@ -361,6 +370,7 @@ export default function SettingsPage() {
               <div>
                 <Label hint="separadas por comas">Molestias fisicas</Label>
                 <Input
+                  aria-label="Molestias fisicas"
                   value={settings.discomforts.join(', ')}
                   onChange={(e) =>
                     settings.update({

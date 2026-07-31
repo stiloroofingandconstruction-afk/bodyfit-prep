@@ -93,7 +93,7 @@ export const en: Partial<Record<keyof typeof es, string>> = {
 
   'exercise.technique': 'View technique',
   'exercise.setup': 'Setup',
-  'exercise.execution': 'Execution',
+  'exercise.execution': 'Step-by-step execution',
   'exercise.breathing': 'Breathing',
   'exercise.tempo': 'Tempo',
   'exercise.rom': 'Range of motion',

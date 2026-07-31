@@ -85,7 +85,7 @@ export function CustomFoodSheet({ open, onClose }: { open: boolean; onClose: () 
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Categoria</Label>
-            <Select value={category} onChange={(e) => setCategory(e.target.value as FoodCategory)}>
+            <Select aria-label="Categoria del alimento" value={category} onChange={(e) => setCategory(e.target.value as FoodCategory)}>
               {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
                 <option key={k} value={k}>
                   {v}

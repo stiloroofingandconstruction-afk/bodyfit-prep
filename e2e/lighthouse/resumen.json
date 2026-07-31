@@ -1,0 +1,56 @@
+[
+  {
+    "name": "inicio",
+    "route": "/",
+    "scores": {
+      "performance": 97,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 91
+    },
+    "metrics": {
+      "fcp": "2.0 s",
+      "lcp": "2.1 s",
+      "tbt": "0 ms",
+      "cls": "0",
+      "si": "2.0 s"
+    },
+    "failedA11y": []
+  },
+  {
+    "name": "nutricion",
+    "route": "/nutricion",
+    "scores": {
+      "performance": 97,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 91
+    },
+    "metrics": {
+      "fcp": "2.0 s",
+      "lcp": "2.1 s",
+      "tbt": "0 ms",
+      "cls": "0",
+      "si": "2.0 s"
+    },
+    "failedA11y": []
+  },
+  {
+    "name": "tecnica",
+    "route": "/ejercicios/sentadilla",
+    "scores": {
+      "performance": 97,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 91
+    },
+    "metrics": {
+      "fcp": "2.0 s",
+      "lcp": "2.1 s",
+      "tbt": "0 ms",
+      "cls": "0",
+      "si": "2.0 s"
+    },
+    "failedA11y": []
+  }
+]

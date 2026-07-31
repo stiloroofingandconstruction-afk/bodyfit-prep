@@ -60,6 +60,7 @@ export default function PosingPage() {
         <div className="mt-3">
           <Label>Division</Label>
           <Select
+            aria-label="Division de competencia"
             value={division}
             onChange={(e) => updateSettings({ division: e.target.value as Division })}
           >
@@ -225,7 +226,7 @@ function PosingTimer({ division, onClose }: { division: Division; onClose: () =>
           color={phase === 'hold' ? 'var(--color-brand)' : 'var(--color-sky)'}
           warnOver={false}
         >
-          <span className="text-[44px] leading-none font-bold tabular">{remaining}</span>
+          <span className="text-[44px] leading-[1.1] font-bold tabular">{remaining}</span>
           <span className="mt-1 text-[11px] tracking-wider text-faint uppercase">
             {phase === 'hold' ? 'Mantener' : 'Descanso'}
           </span>

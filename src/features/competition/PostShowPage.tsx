@@ -112,6 +112,7 @@ export default function PostShowPage() {
               <div>
                 <Label>Calorias de partida</Label>
                 <Input
+                  aria-label="Calorias de partida"
                   inputMode="numeric"
                   value={startKcal}
                   onChange={(e) => setStartKcal(Number(e.target.value) || 0)}
@@ -121,6 +122,7 @@ export default function PostShowPage() {
               <div>
                 <Label>Calorias objetivo</Label>
                 <Input
+                  aria-label="Calorias objetivo"
                   inputMode="numeric"
                   value={targetKcal}
                   onChange={(e) => setTargetKcal(Number(e.target.value) || 0)}
@@ -169,6 +171,7 @@ export default function PostShowPage() {
             <div className="mb-3">
               <Label>Peso</Label>
               <Input
+                aria-label="Peso"
                 inputMode="decimal"
                 value={weight || ''}
                 onChange={(e) => setWeight(Number(e.target.value) || 0)}
@@ -203,6 +206,7 @@ export default function PostShowPage() {
                 <Label hint={`${adherence}%`}>Adherencia</Label>
                 <input
                   type="range"
+                  aria-label="Adherencia"
                   min={0}
                   max={100}
                   step={5}

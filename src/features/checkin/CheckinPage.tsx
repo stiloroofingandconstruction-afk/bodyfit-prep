@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowRight, CalendarCheck, Camera, Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import { Page, PageHeader } from '@/components/ui/PageHeader';
-import { Card, SectionTitle } from '@/components/ui/Card';
+import { ActionLink, Card, SectionTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Label, Slider } from '@/components/ui/Field';
 import { EmptyState, Stat } from '@/components/ui/Misc';
@@ -375,13 +375,9 @@ export default function CheckinPage() {
 
         {/* ─────────────────────────── fotos */}
         <div className="mt-5">
-          <SectionTitle
-            action={
-              <a href="/fotos" className="text-[12px] text-brand">
-                Anadir
-              </a>
-            }
-          >
+          {/* ActionLink usa Link, no <a href>: un ancla recargaria toda la app
+              y se perderia el formulario del check-in a medio rellenar. */}
+          <SectionTitle action={<ActionLink to="/fotos">Anadir</ActionLink>}>
             Fotos de la semana
           </SectionTitle>
           <Card>
@@ -406,6 +402,7 @@ export default function CheckinPage() {
               <div>
                 <Label hint={`${adherence}%`}>Adherencia al plan</Label>
                 <Slider
+                  aria-label="Adherencia al plan"
                   value={adherence}
                   onChange={setAdherence}
                   min={0}

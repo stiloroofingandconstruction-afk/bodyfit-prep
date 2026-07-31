@@ -37,13 +37,41 @@ function tx<T>(mode: IDBTransactionMode, fn: (store: IDBObjectStore) => IDBReque
   );
 }
 
+/**
+ * Registro almacenado.
+ *
+ * IMPORTANTE: se guarda un ArrayBuffer, NO un Blob.
+ *
+ * WebKit — el motor de Safari, y por tanto el de cualquier navegador en iOS —
+ * falla al serializar Blobs dentro de IndexedDB con el error
+ * "Error preparing Blob/File data to be stored in object store". Como esta app
+ * se instala sobre todo en iPhone, guardar Blobs significaba perder todas las
+ * fotos de progreso justo en el dispositivo principal.
+ *
+ * Los ArrayBuffer se almacenan de forma fiable en todos los motores, asi que se
+ * guarda el contenido junto al tipo MIME y el Blob se reconstruye al leer.
+ */
+interface StoredPhoto {
+  type: string;
+  data: ArrayBuffer;
+}
+
 export async function putPhoto(id: string, blob: Blob): Promise<void> {
-  await tx('readwrite', (s) => s.put(blob, id));
+  const record: StoredPhoto = {
+    type: blob.type || 'image/jpeg',
+    data: await blob.arrayBuffer(),
+  };
+  await tx('readwrite', (s) => s.put(record, id));
 }
 
 export async function getPhoto(id: string): Promise<Blob | null> {
   try {
-    return (await tx<Blob | undefined>('readonly', (s) => s.get(id))) ?? null;
+    const stored = await tx<StoredPhoto | Blob | undefined>('readonly', (s) => s.get(id));
+    if (!stored) return null;
+    // Compatibilidad: entradas guardadas como Blob por versiones anteriores
+    if (stored instanceof Blob) return stored;
+    if (!('data' in stored)) return null;
+    return new Blob([stored.data], { type: stored.type });
   } catch {
     return null;
   }
@@ -67,22 +95,38 @@ export async function listPhotoIds(): Promise<string[]> {
  * Una foto de iPhone pasa de ~4 MB a ~200 KB sin perdida visible de detalle.
  */
 export async function compressImage(file: File, maxSide = 1280, quality = 0.82): Promise<Blob> {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
-  const w = Math.round(bitmap.width * scale);
-  const h = Math.round(bitmap.height * scale);
+  /*
+   * Si cualquier paso falla — un navegador sin createImageBitmap, un formato
+   * que el canvas no sabe decodificar, memoria insuficiente con una foto
+   * enorme — se guarda el archivo original. Perder la compresion es un mal
+   * menor; perder la foto del usuario, no.
+   */
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    const w = Math.max(1, Math.round(bitmap.width * scale));
+    const h = Math.max(1, Math.round(bitmap.height * scale));
 
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return file;
-  ctx.drawImage(bitmap, 0, 0, w, h);
-  bitmap.close();
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      bitmap.close();
+      return file;
+    }
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close();
 
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob ?? file), 'image/jpeg', quality);
-  });
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, 'image/jpeg', quality);
+    });
+    // Un JPEG mayor que el original no aporta nada
+    return blob && blob.size > 0 && blob.size < file.size ? blob : file;
+  } catch (err) {
+    console.warn('[fotos] no se pudo comprimir, se guarda el original', err);
+    return file;
+  }
 }
 
 /** URL de objeto para mostrar la foto. Recuerda revocarla al desmontar. */

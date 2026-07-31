@@ -256,7 +256,7 @@ function AddCardioSheet({
       <div className="space-y-4">
         <div>
           <Label>Tipo</Label>
-          <Select value={type} onChange={(e) => setType(e.target.value as CardioType)}>
+          <Select aria-label="Tipo de cardio" value={type} onChange={(e) => setType(e.target.value as CardioType)}>
             {TYPES.map((t) => (
               <option key={t} value={t}>{CARDIO_LABEL[t]}</option>
             ))}
@@ -337,7 +337,7 @@ function PlanSheet({
         </div>
         <div>
           <Label>Tipo</Label>
-          <Select value={type} onChange={(e) => setType(e.target.value as CardioType)}>
+          <Select aria-label="Tipo de cardio" value={type} onChange={(e) => setType(e.target.value as CardioType)}>
             {TYPES.map((t) => (
               <option key={t} value={t}>{CARDIO_LABEL[t]}</option>
             ))}

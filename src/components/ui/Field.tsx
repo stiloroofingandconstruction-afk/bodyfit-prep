@@ -121,6 +121,7 @@ export function Slider({
   max,
   step = 1,
   labels,
+  'aria-label': ariaLabel,
 }: {
   value: number;
   onChange: (v: number) => void;
@@ -128,6 +129,11 @@ export function Slider({
   max: number;
   step?: number;
   labels?: string[];
+  /**
+   * Nombre accesible. La etiqueta visual es un hermano, no un <label for>,
+   * asi que sin esto el control no tiene nombre para un lector de pantalla.
+   */
+  'aria-label'?: string;
 }) {
   const pct = ((value - min) / (max - min)) * 100;
   return (
@@ -138,10 +144,19 @@ export function Slider({
         max={max}
         step={step}
         value={value}
+        aria-label={ariaLabel}
+        aria-valuetext={String(value)}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-2 w-full cursor-pointer appearance-none rounded-full outline-none [&::-webkit-slider-thumb]:size-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-brand [&::-webkit-slider-thumb]:shadow-lg"
+        /*
+         * El elemento mide 28 px de alto para que el pulgar lo acierte, pero la
+         * barra visible sigue siendo de 8 px: `background-clip: content-box`
+         * pinta el degradado solo en la caja de contenido, y el padding vertical
+         * queda transparente formando el area tactil.
+         */
+        className="h-7 w-full cursor-pointer appearance-none rounded-full bg-clip-content py-2.5 outline-none [&::-webkit-slider-thumb]:size-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-brand [&::-webkit-slider-thumb]:shadow-lg"
         style={{
           background: `linear-gradient(to right, var(--color-brand) ${pct}%, var(--color-line) ${pct}%)`,
+          backgroundClip: 'content-box',
         }}
       />
       {labels && (

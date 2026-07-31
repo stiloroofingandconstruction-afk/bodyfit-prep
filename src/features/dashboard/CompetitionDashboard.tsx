@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertCircle, Footprints, PersonStanding, Timer, Trophy } from 'lucide-react';
-import { Card, SectionTitle } from '@/components/ui/Card';
+import { ActionLink, Card, SectionTitle } from '@/components/ui/Card';
 import { Stat } from '@/components/ui/Misc';
 import { Ring } from '@/components/ui/Ring';
 import { PROJECTION_LABEL, PROJECTION_TONE } from '@/domain/competition';
@@ -102,7 +102,9 @@ export function CompetitionDashboard() {
         <Card className="pressable">
           <div className="flex items-center gap-5">
             <Ring value={cd.elapsedDays} max={totalDays} size={112} stroke={10} warnOver={false}>
-              <span className="text-[30px] leading-none font-bold tabular">
+              {/* leading-[1.1] y no leading-none: con 30 px la caja de linea
+                  queda mas corta que el glifo y el numero se recorta. */}
+              <span className="text-[30px] leading-[1.1] font-bold tabular">
                 {Math.max(0, cd.daysOut)}
               </span>
               <span className="mt-0.5 text-[10px] tracking-wider text-faint uppercase">
@@ -127,9 +129,7 @@ export function CompetitionDashboard() {
       <div className="mt-3">
         <SectionTitle
           action={
-            <Link to="/diario" className="text-[12px] text-brand">
-              Registrar
-            </Link>
+            <ActionLink to="/diario">Registrar</ActionLink>
           }
         >
           Peso y ritmo
@@ -169,9 +169,7 @@ export function CompetitionDashboard() {
       <div className="mt-3">
         <SectionTitle
           action={
-            <Link to="/nutricion" className="text-[12px] text-brand">
-              Ver
-            </Link>
+            <ActionLink to="/nutricion">Ver</ActionLink>
           }
         >
           Objetivo de hoy

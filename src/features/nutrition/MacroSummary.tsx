@@ -18,7 +18,7 @@ export function MacroSummary({ consumed, target, compact }: Props) {
     <div>
       <div className="flex items-center gap-5">
         <Ring value={consumed.kcal} max={target.kcal} size={compact ? 104 : 124} stroke={compact ? 9 : 11}>
-          <span className="text-[26px] leading-none font-bold tabular">{Math.abs(left)}</span>
+          <span className="text-[26px] leading-[1.1] font-bold tabular">{Math.abs(left)}</span>
           <span className="mt-0.5 text-[10px] tracking-wider text-faint uppercase">
             {over ? 'kcal de mas' : 'kcal libres'}
           </span>

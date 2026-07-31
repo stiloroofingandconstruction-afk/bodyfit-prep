@@ -76,7 +76,9 @@ export default function OnboardingPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-base">
-      <div className="mx-auto w-full max-w-lg flex-1 px-5 pt-[max(2rem,env(safe-area-inset-top))] pb-6">
+      {/* <main> y no <div>: sin landmark principal, un lector de pantalla no
+          tiene forma de saltar directo al contenido. */}
+      <main className="mx-auto w-full max-w-lg flex-1 px-5 pt-[max(2rem,env(safe-area-inset-top))] pb-6">
         {/* Progreso */}
         <div className="mb-8 flex gap-1.5">
           {STEPS.map((s, i) => (
@@ -169,7 +171,7 @@ export default function OnboardingPage() {
                 </div>
                 <div>
                   <Label>Division</Label>
-                  <Select value={division} onChange={(e) => setDivision(e.target.value as Division)}>
+                  <Select aria-label="Division" value={division} onChange={(e) => setDivision(e.target.value as Division)}>
                     {(
                       [
                         "Men's Physique", 'Classic Physique', 'Bodybuilding',
@@ -189,7 +191,7 @@ export default function OnboardingPage() {
 
             <div>
               <Label>Nivel de experiencia</Label>
-              <Select value={experience} onChange={(e) => setExperience(e.target.value as Experience)}>
+              <Select aria-label="Nivel de experiencia" value={experience} onChange={(e) => setExperience(e.target.value as Experience)}>
                 <option value="principiante">Principiante</option>
                 <option value="intermedio">Intermedio</option>
                 <option value="avanzado">Avanzado</option>
@@ -199,7 +201,15 @@ export default function OnboardingPage() {
 
             <div>
               <Label hint={`${trainingDays} dias`}>Dias de entrenamiento por semana</Label>
-              <Slider value={trainingDays} onChange={setTrainingDays} min={1} max={7} step={1} labels={['1', '4', '7']} />
+              <Slider
+                aria-label="Dias de entrenamiento por semana"
+                value={trainingDays}
+                onChange={setTrainingDays}
+                min={1}
+                max={7}
+                step={1}
+                labels={['1', '4', '7']}
+              />
             </div>
 
             <div>
@@ -280,6 +290,7 @@ export default function OnboardingPage() {
             <div>
               <Label hint={u.fmtWeight(weight)}>Peso actual</Label>
               <Slider
+                aria-label="Peso actual"
                 value={u.toDisplayWeight(weight)}
                 onChange={(v) => setWeight(u.toCanonicalWeight(v))}
                 min={u.weightUnit === 'kg' ? 40 : 88}
@@ -293,7 +304,7 @@ export default function OnboardingPage() {
 
             <div>
               <Label>Nivel de actividad</Label>
-              <Select value={draft.activity} onChange={(e) => set({ activity: e.target.value as ActivityLevel })}>
+              <Select aria-label="Nivel de actividad" value={draft.activity} onChange={(e) => set({ activity: e.target.value as ActivityLevel })}>
                 {Object.entries(ACTIVITY_LABEL).map(([k, v]) => (
                   <option key={k} value={k}>
                     {v}
@@ -339,6 +350,7 @@ export default function OnboardingPage() {
               <div>
                 <Label hint={`${u.fmtWeight((weight * draft.paceWeekPct) / 100, 2)}/semana`}>Ritmo</Label>
                 <Slider
+                  aria-label="Ritmo de cambio de peso por semana"
                   value={draft.paceWeekPct}
                   onChange={(v) => set({ paceWeekPct: v })}
                   min={0.25}
@@ -376,7 +388,7 @@ export default function OnboardingPage() {
 
             <div className="rounded-3xl border border-line bg-surface p-5 text-center">
               <p className="text-[11px] tracking-wider text-faint uppercase">Objetivo diario</p>
-              <p className="mt-1 text-[44px] leading-none font-bold tabular text-brand">{targets.kcal}</p>
+              <p className="mt-1 text-[44px] leading-[1.1] font-bold tabular text-brand">{targets.kcal}</p>
               <p className="text-[12px] text-faint">kcal</p>
 
               <div className="mt-4 grid grid-cols-3 gap-2 border-t border-line pt-4">
@@ -402,6 +414,7 @@ export default function OnboardingPage() {
                 Proteina por unidad de peso
               </Label>
               <Slider
+                aria-label="Proteina por unidad de peso corporal"
                 value={u.toDisplayPerWeight(draft.proteinPerKg)}
                 onChange={(v) => set({ proteinPerKg: u.toCanonicalPerWeight(v) })}
                 {...u.perWeightRange(1.2, 3)}
@@ -417,6 +430,7 @@ export default function OnboardingPage() {
                 Grasa por unidad de peso
               </Label>
               <Slider
+                aria-label="Grasa por unidad de peso corporal"
                 value={u.toDisplayPerWeight(draft.fatPerKg)}
                 onChange={(v) => set({ fatPerKg: u.toCanonicalPerWeight(v) })}
                 {...u.perWeightRange(0.5, 1.5)}
@@ -433,7 +447,7 @@ export default function OnboardingPage() {
             </p>
           </div>
         )}
-      </div>
+      </main>
 
       <div className="safe-bottom mx-auto w-full max-w-lg px-5 pb-4">
         <div className="flex gap-2">

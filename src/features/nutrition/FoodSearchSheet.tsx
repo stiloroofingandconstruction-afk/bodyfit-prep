@@ -217,7 +217,7 @@ function GramsStep({
       <p className="text-center text-[13px] text-muted">¿Cuantos {food.unit === 'ml' ? 'mililitros' : 'gramos'}?</p>
 
       <div className="mt-2 mb-4 text-center">
-        <span className="text-[52px] leading-none font-bold tabular">{raw || '0'}</span>
+        <span className="text-[52px] leading-[1.1] font-bold tabular">{raw || '0'}</span>
         <span className="ml-1 text-[20px] text-faint">{food.unit}</span>
       </div>
 

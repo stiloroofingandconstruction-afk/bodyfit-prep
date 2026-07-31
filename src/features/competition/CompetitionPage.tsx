@@ -106,7 +106,7 @@ export default function CompetitionPage() {
         <Card>
           <div className="flex items-center gap-5">
             <Ring value={cd?.progressPct ?? 0} max={100} size={116} stroke={10} warnOver={false}>
-              <span className="text-[30px] leading-none font-bold tabular">
+              <span className="text-[30px] leading-[1.1] font-bold tabular">
                 {cd ? Math.max(0, cd.daysOut) : 0}
               </span>
               <span className="mt-0.5 text-[10px] tracking-wider text-faint uppercase">

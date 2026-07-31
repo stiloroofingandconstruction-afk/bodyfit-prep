@@ -2,10 +2,13 @@
 <html lang="es" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-    />
+    <!--
+      Sin `user-scalable=no` ni `maximum-scale`: bloquear el zoom impide que
+      quien tiene baja vision amplie el contenido, y ademas iOS lo ignora desde
+      hace anos. El zoom por doble toque se evita con `touch-action: manipulation`
+      en el CSS, que no penaliza la accesibilidad.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>BodyFit Prep</title>
     <meta name="description" content="Entrenamiento, nutricion inteligente y seguimiento fisico" />
 

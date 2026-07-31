@@ -158,7 +158,7 @@ export default function DailyLogPage() {
           <SectionTitle>Peso en ayunas</SectionTitle>
           <Card>
             <div className="mb-3 text-center">
-              <span className="text-[44px] leading-none font-bold tabular">
+              <span className="text-[44px] leading-[1.1] font-bold tabular">
                 {u.numWeight(weight)}
               </span>
               <span className="ml-1 text-[18px] text-faint">{u.w}</span>
@@ -174,7 +174,12 @@ export default function DailyLogPage() {
             />
             <div className="mt-3">
               <Label hint="misma hora cada dia">Hora de la medicion</Label>
-              <Input type="time" value={weighTime} onChange={(e) => setWeighTime(e.target.value)} />
+              <Input
+                aria-label="Hora de la medicion"
+                type="time"
+                value={weighTime}
+                onChange={(e) => setWeighTime(e.target.value)}
+              />
             </div>
           </Card>
         </div>

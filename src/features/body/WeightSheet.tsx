@@ -50,7 +50,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
     >
       <Label hint={friendlyDate(today())}>Peso corporal</Label>
       <div className="my-4 text-center">
-        <span className="text-[56px] leading-none font-bold tabular">{shown.toFixed(1)}</span>
+        <span className="text-[56px] leading-[1.1] font-bold tabular">{shown.toFixed(1)}</span>
         <span className="ml-1 text-[20px] text-faint">{u.w}</span>
       </div>
       <Stepper

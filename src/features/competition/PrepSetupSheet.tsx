@@ -125,7 +125,7 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Federacion</Label>
-            <Select value={federation} onChange={(e) => setFederation(e.target.value as Federation)}>
+            <Select aria-label="Federacion" value={federation} onChange={(e) => setFederation(e.target.value as Federation)}>
               {FEDERATIONS.map((f) => (
                 <option key={f} value={f}>{f}</option>
               ))}
@@ -133,7 +133,7 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
           </div>
           <div>
             <Label>Division</Label>
-            <Select value={division} onChange={(e) => setDivision(e.target.value as Division)}>
+            <Select aria-label="Division" value={division} onChange={(e) => setDivision(e.target.value as Division)}>
               {DIVISIONS.map((d) => (
                 <option key={d} value={d}>{d}</option>
               ))}
@@ -213,7 +213,7 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
 
         <div>
           <Label>Estado del prep</Label>
-          <Select value={status} onChange={(e) => setStatus(e.target.value as PrepStatus)}>
+          <Select aria-label="Estado del prep" value={status} onChange={(e) => setStatus(e.target.value as PrepStatus)}>
             {STATUSES.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}

@@ -9,3 +9,7 @@ dist-ssr
 !.env.example
 *.tsbuildinfo
 dev-dist
+
+e2e/.results
+playwright-report
+test-results

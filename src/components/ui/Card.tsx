@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { cx } from '@/lib/utils';
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
@@ -39,5 +40,22 @@ export function SectionTitle({ children, action }: { children: ReactNode; action
       <h2 className="text-xs font-semibold tracking-wider text-faint uppercase">{children}</h2>
       {action}
     </div>
+  );
+}
+
+/**
+ * Enlace de accion de una seccion ("Ver todo", "Registrar").
+ *
+ * El padding amplia el area tactil: un enlace de 18 px de alto es casi
+ * imposible de acertar con el pulgar en un movil, aunque el texto se lea bien.
+ */
+export function ActionLink({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Link
+      to={to}
+      className="pressable -my-2 -mr-2 rounded-lg px-2 py-2 text-[12px] font-medium text-brand"
+    >
+      {children}
+    </Link>
   );
 }

@@ -148,7 +148,7 @@ export default function RemindersPage() {
         <div className="space-y-4">
           <div>
             <Label>Tipo</Label>
-            <Select value={kind} onChange={(e) => setKind(e.target.value as ReminderKind)}>
+            <Select aria-label="Tipo de recordatorio" value={kind} onChange={(e) => setKind(e.target.value as ReminderKind)}>
               {KINDS.map((k) => (
                 <option key={k} value={k}>
                   {REMINDER_LABEL[k]}

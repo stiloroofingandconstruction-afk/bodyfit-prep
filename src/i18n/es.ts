@@ -95,7 +95,7 @@ export const es = {
   /* ejercicios */
   'exercise.technique': 'Ver tecnica',
   'exercise.setup': 'Preparacion',
-  'exercise.execution': 'Ejecucion',
+  'exercise.execution': 'Ejecucion paso a paso',
   'exercise.breathing': 'Respiracion',
   'exercise.tempo': 'Tempo',
   'exercise.rom': 'Rango de movimiento',

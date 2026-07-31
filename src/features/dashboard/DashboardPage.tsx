@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CalendarCheck, Dumbbell, Flame, Plus, Scale, Wand2 } from 'lucide-react';
 import { Page, PageHeader } from '@/components/ui/PageHeader';
-import { Card, SectionTitle } from '@/components/ui/Card';
+import { ActionLink, Card, SectionTitle } from '@/components/ui/Card';
 import { Stat } from '@/components/ui/Misc';
 import { LineChart } from '@/components/ui/Chart';
 import { MacroSummary } from '@/features/nutrition/MacroSummary';
@@ -10,7 +10,7 @@ import { CompetitionDashboard } from './CompetitionDashboard';
 import { SmartMealSheet } from '@/features/nutrition/SmartMealSheet';
 import { FoodSearchSheet } from '@/features/nutrition/FoodSearchSheet';
 import { WeightSheet } from '@/features/body/WeightSheet';
-import { ema, weeklyTrend, weightSeries } from '@/domain/body';
+import { ema } from '@/domain/body';
 import { workoutSetCount, workoutVolume } from '@/domain/training';
 import { friendlyDate, greeting, startOfWeek, today } from '@/lib/date';
 import { cx } from '@/lib/utils';
@@ -21,7 +21,9 @@ import {
   useCurrentWeight,
   useDayNutrition,
   useMeasurements,
+  useReadiness,
   useStreak,
+  useWeightTrend,
   useWorkouts,
 } from '@/store/selectors';
 import { useTrainingStore } from '@/store/trainingStore';
@@ -35,6 +37,7 @@ export default function DashboardPage() {
   const { consumed, target, remaining, entries } = useDayNutrition(date);
   const workouts = useWorkouts();
   const measurements = useMeasurements();
+  const readiness = useReadiness();
   const checkins = useCheckins();
   const streak = useStreak();
   const weight = useCurrentWeight();
@@ -49,8 +52,25 @@ export default function DashboardPage() {
 
   const todayWorkouts = workouts.filter((w) => w.date === date);
 
-  const series = useMemo(() => weightSeries(measurements), [measurements]);
-  const trend = useMemo(() => weeklyTrend(series.map((p) => ({ date: p.date, value: p.value }))), [series]);
+  /*
+   * La tendencia sale del MISMO selector que usa el panel de competencia y el
+   * check-in. Antes esta tarjeta calculaba la suya solo con las mediciones,
+   * ignorando el registro diario: el dashboard llegaba a mostrar "-0.8 kg" en
+   * el panel de prep y "0.0 kg" justo debajo, para el mismo periodo.
+   */
+  const weightTrendData = useWeightTrend();
+  const trend = weightTrendData.weekChange ?? 0;
+
+  // La grafica combina ambas fuentes, igual que la tendencia
+  const series = useMemo(() => {
+    const byDate = new Map<string, number>();
+    for (const m of measurements) if (typeof m.weight === 'number') byDate.set(m.date, m.weight);
+    for (const r of readiness) if (typeof r.weight === 'number') byDate.set(r.date, r.weight);
+    return [...byDate.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([d, value]) => ({ date: d, value }));
+  }, [measurements, readiness]);
+
   const smoothed = useMemo(() => ema(series), [series]);
 
   const weekStart = startOfWeek(date);
@@ -118,7 +138,7 @@ export default function DashboardPage() {
 
         {/* ------------------------------------------------------- entreno */}
         <div className="mt-5">
-          <SectionTitle action={<Link to="/entrenamiento" className="text-[12px] text-brand">Ver todo</Link>}>
+          <SectionTitle action={<ActionLink to="/entrenamiento">Ver todo</ActionLink>}>
             Entrenamiento de hoy
           </SectionTitle>
           <Card>
@@ -148,7 +168,7 @@ export default function DashboardPage() {
 
         {/* ---------------------------------------------------------- peso */}
         <div className="mt-5">
-          <SectionTitle action={<Link to="/cuerpo" className="text-[12px] text-brand">Ver todo</Link>}>
+          <SectionTitle action={<ActionLink to="/cuerpo">Ver todo</ActionLink>}>
             Peso corporal
           </SectionTitle>
           <Card>

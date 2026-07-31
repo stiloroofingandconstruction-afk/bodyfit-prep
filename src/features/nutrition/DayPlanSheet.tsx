@@ -150,6 +150,7 @@ export function DayPlanSheet({ open, onClose, remaining, date }: Props) {
               Carbohidratos alrededor del entreno
             </Label>
             <Slider
+              aria-label="Carbohidratos alrededor del entreno"
               value={carbShift}
               onChange={setCarbShift}
               min={0}

@@ -112,6 +112,7 @@ export default function ShowDayPage() {
               <div>
                 <Label>Recinto</Label>
                 <Input
+                  aria-label="Recinto"
                   value={plan.venue ?? ''}
                   onChange={(e) => updateShowDay(plan.id, { venue: e.target.value })}
                   placeholder="Teatro municipal"
@@ -120,6 +121,7 @@ export default function ShowDayPage() {
               <div>
                 <Label>Numero de competidor</Label>
                 <Input
+                  aria-label="Numero de competidor"
                   value={plan.competitorNumber ?? ''}
                   onChange={(e) => updateShowDay(plan.id, { competitorNumber: e.target.value })}
                   placeholder="—"
@@ -128,6 +130,7 @@ export default function ShowDayPage() {
               <div>
                 <Label>Hora de llegada</Label>
                 <Input
+                  aria-label="Hora de llegada"
                   type="time"
                   value={plan.arrivalTime ?? ''}
                   onChange={(e) => updateShowDay(plan.id, { arrivalTime: e.target.value })}
@@ -136,6 +139,7 @@ export default function ShowDayPage() {
               <div>
                 <Label>Registro</Label>
                 <Input
+                  aria-label="Hora de registro"
                   type="time"
                   value={plan.checkInTime ?? ''}
                   onChange={(e) => updateShowDay(plan.id, { checkInTime: e.target.value })}
@@ -144,6 +148,7 @@ export default function ShowDayPage() {
               <div>
                 <Label>Tanning</Label>
                 <Input
+                  aria-label="Hora del tanning"
                   type="time"
                   value={plan.tanningTime ?? ''}
                   onChange={(e) => updateShowDay(plan.id, { tanningTime: e.target.value })}
@@ -152,6 +157,7 @@ export default function ShowDayPage() {
               <div>
                 <Label>Hora de categoria</Label>
                 <Input
+                  aria-label="Hora de categoria"
                   type="time"
                   value={plan.categoryTime ?? ''}
                   onChange={(e) => updateShowDay(plan.id, { categoryTime: e.target.value })}
@@ -161,6 +167,7 @@ export default function ShowDayPage() {
             <div className="mt-3">
               <Label hint="titulo o archivo">Musica de la rutina</Label>
               <Input
+                aria-label="Musica de la rutina"
                 value={plan.music ?? ''}
                 onChange={(e) => updateShowDay(plan.id, { music: e.target.value })}
                 placeholder="—"
@@ -220,17 +227,20 @@ export default function ShowDayPage() {
 
           <div className="mt-2 flex gap-2">
             <Input
+              aria-label="Hora del nuevo punto del cronograma"
               type="time"
               value={newTime}
               onChange={(e) => setNewTime(e.target.value)}
               className="w-32 shrink-0"
             />
             <Input
+              aria-label="Descripcion del nuevo punto del cronograma"
               value={newLabel}
               onChange={(e) => setNewLabel(e.target.value)}
               placeholder="Anadir al cronograma"
             />
             <Button
+              aria-label="Anadir al cronograma"
               variant="secondary"
               disabled={!newLabel.trim()}
               onClick={() => {
