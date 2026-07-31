@@ -7,6 +7,7 @@ import { useUnits } from '@/lib/useUnits';
 import { useBodyStore } from '@/store/bodyStore';
 import { useCurrentWeight } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
+import { t } from '@/i18n';
 
 /**
  * Registro rapido de peso.
@@ -31,7 +32,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
     <Sheet
       open={open}
       onClose={onClose}
-      title="Peso de hoy"
+      title={t('body.todayWeight')}
       footer={
         <Button
           variant="primary"
@@ -40,15 +41,15 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
           onClick={() => {
             const kg = u.toCanonicalWeight(shown);
             upsert({ date: today(), weight: kg });
-            toast(`${u.fmtWeight(kg)} registrados`);
+            toast(t('body.weightLogged', { weight: u.fmtWeight(kg) }));
             onClose();
           }}
         >
-          Guardar
+          {t('common.save')}
         </Button>
       }
     >
-      <Label hint={friendlyDate(today())}>Peso corporal</Label>
+      <Label hint={friendlyDate(today())}>{t('body.bodyWeight')}</Label>
       <div className="my-4 text-center">
         <span className="text-[56px] leading-[1.1] font-bold tabular">{shown.toFixed(1)}</span>
         <span className="ml-1 text-[20px] text-faint">{u.w}</span>
@@ -74,8 +75,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
         ))}
       </div>
       <p className="mt-4 text-center text-[12px] text-faint">
-        Pesate siempre igual: en ayunas, despues del bano y sin ropa. La comparacion vale mas que el
-        numero.
+        {t('body.weighInNote')}
       </p>
     </Sheet>
   );

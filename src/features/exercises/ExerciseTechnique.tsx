@@ -222,8 +222,8 @@ export function ExerciseTechnique({
                 </div>
               )}
               <Related title="Sustituciones" list={subs} onSelect={onSelect} />
-              <Related title="Regresiones (mas facil)" list={regs} onSelect={onSelect} />
-              <Related title="Progresiones (mas dificil)" list={progs} onSelect={onSelect} />
+              <Related title={t('ex.regressionsEasier')} list={regs} onSelect={onSelect} />
+              <Related title={t('ex.progressionsHarder')} list={progs} onSelect={onSelect} />
             </div>
           </Card>
         </div>
@@ -235,7 +235,7 @@ export function ExerciseTechnique({
         <Card>
           {history.length === 0 ? (
             <p className="py-3 text-center text-[13px] text-faint">
-              Aun no has registrado este ejercicio
+              {t('ex.noHistory')}
             </p>
           ) : (
             <>

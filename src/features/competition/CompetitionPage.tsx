@@ -21,7 +21,8 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState, Stat } from '@/components/ui/Misc';
 import { Ring } from '@/components/ui/Ring';
 import { PrepSetupSheet } from './PrepSetupSheet';
-import { PROJECTION_LABEL, PROJECTION_TONE } from '@/domain/competition';
+import { ProjectionText } from './ProjectionText';
+import { phaseFocus, phaseLabel } from '@/i18n/labels';
 import { friendlyDate, startOfWeek, today } from '@/lib/date';
 import { cx } from '@/lib/utils';
 import { useUnits } from '@/lib/useUnits';
@@ -33,17 +34,18 @@ import {
   useWeightTrend,
 } from '@/store/selectors';
 import { useSettingsStore } from '@/store/settingsStore';
+import { t, type Dict } from '@/i18n';
 
-const LINKS = [
-  { to: '/diario', label: 'Registro diario', detail: 'Peso, sueno, energia y pasos', Icon: Sunrise },
-  { to: '/cardio', label: 'Cardio y pasos', detail: 'Plan semanal y seguimiento', Icon: Footprints },
-  { to: '/posing', label: 'Posing', detail: 'Sesiones, poses y temporizador', Icon: PersonStanding },
-  { to: '/fotos', label: 'Fotos de progreso', detail: 'Angulos y comparacion', Icon: Camera },
-  { to: '/checkin', label: 'Check-in semanal', detail: 'Resumen y recomendacion', Icon: CalendarCheck },
-  { to: '/competencia/peak-week', label: 'Peak week', detail: 'Checklist y logistica', Icon: ListChecks },
-  { to: '/competencia/dia-del-show', label: 'Dia del show', detail: 'Cronograma y checklist', Icon: Trophy },
-  { to: '/competencia/post-show', label: 'Post-show', detail: 'Transicion y seguimiento', Icon: Activity },
-  { to: '/informes', label: 'Informes y exportacion', detail: 'Resumen para tu coach', Icon: CalendarDays },
+const LINKS: { to: string; label: keyof Dict; detail: keyof Dict; Icon: typeof Sunrise }[] = [
+  { to: '/diario', label: 'comp.linkDaily', detail: 'comp.linkDailyDesc', Icon: Sunrise },
+  { to: '/cardio', label: 'cardio.title', detail: 'cardio.subtitle', Icon: Footprints },
+  { to: '/posing', label: 'posing.title', detail: 'comp.linkPosingDesc', Icon: PersonStanding },
+  { to: '/fotos', label: 'photos.title', detail: 'comp.linkPhotosDesc', Icon: Camera },
+  { to: '/checkin', label: 'screen.checkin', detail: 'comp.linkCheckinDesc', Icon: CalendarCheck },
+  { to: '/competencia/peak-week', label: 'screen.peakWeek', detail: 'comp.linkPeakDesc', Icon: ListChecks },
+  { to: '/competencia/dia-del-show', label: 'screen.showDay', detail: 'comp.linkShowDesc', Icon: Trophy },
+  { to: '/competencia/post-show', label: 'screen.postShow', detail: 'comp.linkPostDesc', Icon: Activity },
+  { to: '/informes', label: 'screen.reports', detail: 'comp.linkReportsDesc', Icon: CalendarDays },
 ];
 
 export default function CompetitionPage() {
@@ -60,23 +62,22 @@ export default function CompetitionPage() {
   if (!prep || !competitionMode) {
     return (
       <>
-        <PageHeader title="Competencia" subtitle="Preparacion para subir al escenario" />
+        <PageHeader title={t('prep.title')} subtitle={t('comp.subtitle')} />
         <Page>
           <EmptyState
             icon={<Trophy size={22} />}
-            title="Sin competencia activa"
-            description="Activa el modo competencia para tener cuenta atras, fases del prep, cardio, posing, peak week y dia del show."
+            title={t('prep.noPrep')}
+            description={t('comp.noPrepDesc')}
             action={
               <Button variant="primary" size="lg" onClick={() => setCreating(true)}>
                 <Sparkles size={17} />
-                Activar modo competencia
+                {t('prep.activate')}
               </Button>
             }
           />
           <Card className="mt-4">
             <p className="text-[13px] text-muted">
-              El modo competencia no cambia tus datos actuales: anade un seguimiento paralelo
-              orientado a la fecha del show. Puedes desactivarlo cuando quieras desde Ajustes.
+              {t('comp.parallelNote')}
             </p>
           </Card>
         </Page>
@@ -94,7 +95,7 @@ export default function CompetitionPage() {
           <button
             onClick={() => setEditing(true)}
             className="pressable flex size-9 items-center justify-center rounded-full bg-surface2 text-muted"
-            aria-label="Editar competencia"
+            aria-label={t('comp.editPrep')}
           >
             <Pencil size={16} />
           </button>
@@ -110,19 +111,23 @@ export default function CompetitionPage() {
                 {cd ? Math.max(0, cd.daysOut) : 0}
               </span>
               <span className="mt-0.5 text-[10px] tracking-wider text-faint uppercase">
-                {cd && cd.daysOut < 0 ? 'dias despues' : 'dias'}
+                {cd && cd.daysOut < 0 ? t('comp.daysAfter') : t('comp.days')}
               </span>
             </Ring>
 
             <div className="min-w-0 flex-1">
-              <p className={cx('text-[17px] font-bold', cd?.phase.tone)}>{cd?.phase.label}</p>
-              <p className="mt-1 text-[13px] text-muted">{cd?.phase.focus}</p>
+              <p className={cx('text-[17px] font-bold', cd?.phase.tone)}>
+                {cd ? phaseLabel(cd.phase) : ''}
+              </p>
+              <p className="mt-1 text-[13px] text-muted">{cd ? phaseFocus(cd.phase) : ''}</p>
               <p className="mt-2 text-[12px] tabular text-faint">
                 {cd && cd.weeksOut > 0
-                  ? `${cd.weeksOut} semanas${cd.extraDays ? ` y ${cd.extraDays} dias` : ''}`
+                  ? cd.extraDays
+                    ? t('comp.weeksAndDays', { weeks: cd.weeksOut, days: cd.extraDays })
+                    : t('comp.weeksLeft', { weeks: cd.weeksOut })
                   : cd?.daysOut === 0
-                    ? 'Hoy es el dia'
-                    : 'Show finalizado'}
+                    ? t('comp.todayIsTheDay')
+                    : t('comp.showFinished')}
                 {' · '}
                 {friendlyDate(prep.showDate)}
               </p>
@@ -131,8 +136,8 @@ export default function CompetitionPage() {
 
           <div className="mt-4 border-t border-line pt-3">
             <div className="mb-1.5 flex justify-between text-[11px] text-faint">
-              <span>Inicio {friendlyDate(prep.prepStartDate)}</span>
-              <span>{cd?.progressPct ?? 0}% del prep</span>
+              <span>{t('comp.startedOn', { date: friendlyDate(prep.prepStartDate) })}</span>
+              <span>{t('comp.prepProgress', { pct: cd?.progressPct ?? 0 })}</span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-line">
               <div className="h-full rounded-full bg-brand" style={{ width: `${cd?.progressPct ?? 0}%` }} />
@@ -142,21 +147,21 @@ export default function CompetitionPage() {
 
         {/* ─────────────────────────────────────────── estado */}
         <div className="mt-3">
-          <SectionTitle>Estado</SectionTitle>
+          <SectionTitle>{t('comp.state')}</SectionTitle>
           <Card>
             <div className="mb-3 grid grid-cols-3 gap-3">
               <Stat
-                label="Media 7 dias"
+                label={t('daily.avg7')}
                 value={trend.avg7 != null ? u.numWeight(trend.avg7) : '—'}
                 unit={u.w}
               />
               <Stat
-                label="Cambio semanal"
+                label={t('daily.weekChange')}
                 value={trend.weekChange != null ? u.fmtWeightDelta(trend.weekChange).replace(` ${u.w}`, '') : '—'}
                 unit={u.w}
               />
               <Stat
-                label="Objetivo"
+                label={t('home.target')}
                 value={prep.targetWeight ? u.numWeight(prep.targetWeight) : '—'}
                 unit={u.w}
               />
@@ -164,10 +169,7 @@ export default function CompetitionPage() {
 
             {projection && (
               <div className="rounded-2xl border border-line bg-surface2 p-3">
-                <p className={cx('text-[14px] font-semibold', PROJECTION_TONE[projection.status])}>
-                  {PROJECTION_LABEL[projection.status]}
-                </p>
-                <p className="mt-1 text-[13px] text-muted">{projection.explanation}</p>
+                <ProjectionText projection={projection} />
               </div>
             )}
           </Card>
@@ -175,19 +177,19 @@ export default function CompetitionPage() {
 
         {/* ─────────────────────────────────────────── semana */}
         <div className="mt-3">
-          <SectionTitle>Esta semana</SectionTitle>
+          <SectionTitle>{t('comp.thisWeek')}</SectionTitle>
           <Card>
             <div className="grid grid-cols-3 gap-3">
-              <Stat label="Cardio" value={week.cardioMinutes} unit="min" />
-              <Stat label="Pasos / dia" value={week.avgSteps || '—'} />
-              <Stat label="Posing" value={week.posingMinutes} unit="min" />
+              <Stat label={t('daily.cardio')} value={week.cardioMinutes} unit={t('cardio.min')} />
+              <Stat label={t('comp.stepsPerDay')} value={week.avgSteps || '—'} />
+              <Stat label={t('posing.title')} value={week.posingMinutes} unit={t('cardio.min')} />
             </div>
           </Card>
         </div>
 
         {/* ─────────────────────────────────────────── modulos */}
         <div className="mt-5">
-          <SectionTitle>Modulos del prep</SectionTitle>
+          <SectionTitle>{t('comp.modules')}</SectionTitle>
           <div className="space-y-1.5">
             {LINKS.map(({ to, label, detail, Icon }) => (
               <Link
@@ -199,8 +201,8 @@ export default function CompetitionPage() {
                   <Icon size={18} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-medium">{label}</p>
-                  <p className="truncate text-[12px] text-faint">{detail}</p>
+                  <p className="truncate text-[15px] font-medium">{t(label)}</p>
+                  <p className="truncate text-[12px] text-faint">{t(detail)}</p>
                 </div>
                 <ChevronRight size={17} className="shrink-0 text-faint" />
               </Link>
@@ -212,9 +214,7 @@ export default function CompetitionPage() {
           <div className="flex gap-2.5">
             <Info size={15} className="mt-0.5 shrink-0 text-faint" />
             <p className="text-[12px] text-faint">
-              BodyFit Prep es una herramienta de planificacion y seguimiento. No sustituye la
-              valoracion de un profesional sanitario ni de un entrenador cualificado. Tus datos se
-              guardan solo en este dispositivo.
+              {t('disclaimer.medical')} {t('disclaimer.local')}
             </p>
           </div>
         </Card>

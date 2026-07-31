@@ -10,6 +10,7 @@ import { cx, fmtNum, fmtSigned } from '@/lib/utils';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { useCatalog } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
+import { t } from '@/i18n';
 import type { Food, Macros, MealSlot } from '@/domain/types';
 
 interface Props {
@@ -21,6 +22,13 @@ interface Props {
   slot: MealSlot;
   date: string;
 }
+
+/** Macro que falta -> clave traducida, para el aviso del complemento. */
+const MACRO_KEY = {
+  protein: 'field.protein',
+  carbs: 'field.carbs',
+  fat: 'field.fat',
+} as const;
 
 interface Item {
   food: Food;
@@ -91,7 +99,7 @@ export function SmartMealSheet({ open, onClose, mode, remaining, slot, date }: P
     const found = parsed.filter((p) => p.food).map((p) => ({ food: p.food as Food, fixed: p.grams }));
     setItems(found);
     setUnresolved(parsed.filter((p) => !p.food).map((p) => p.raw));
-    if (!found.length) toast('No reconocimos ningun alimento en esa frase', 'warn');
+    if (!found.length) toast(t('nut.phraseNotRecognized'), 'warn');
   };
 
   const addFood = (food: Food) => {
@@ -106,11 +114,11 @@ export function SmartMealSheet({ open, onClose, mode, remaining, slot, date }: P
       .map((p) => ({ food: p.food, grams: p.grams, slot, date }));
     if (!payload.length) return;
     addEntries(payload);
-    toast(`${payload.length} alimentos registrados`);
+    toast(t('nut.entriesLogged', { n: payload.length }));
     onClose();
   };
 
-  const title = mode === 'plan' ? 'Quiero comer...' : 'Completar mis macros';
+  const title = mode === 'plan' ? t('nut.iWantToEat') : t('nut.completeMacrosTitle');
 
   return (
     <Sheet
@@ -122,7 +130,7 @@ export function SmartMealSheet({ open, onClose, mode, remaining, slot, date }: P
         solution && (
           <Button variant="primary" size="lg" block onClick={register}>
             <Check size={18} />
-            Registrar comida
+            {t('nut.logMeal')}
           </Button>
         )
       }
@@ -142,11 +150,11 @@ export function SmartMealSheet({ open, onClose, mode, remaining, slot, date }: P
               }
             }}
             rows={2}
-            placeholder="Quiero comer pollo, arroz y brocoli"
+            placeholder={t('nut.phrasePlaceholder')}
             className="w-full resize-none rounded-2xl border border-line bg-surface2 px-3.5 py-3 text-[15px] outline-none placeholder:text-faint focus:border-brand/60"
           />
           <div className="mt-2 flex flex-wrap gap-2">
-            {['Pollo, arroz y brocoli', 'Salmon con papa', 'Avena con whey y platano'].map((ex) => (
+            {[t('nut.example1'), t('nut.example2'), t('nut.example3')].map((ex) => (
               <Chip key={ex} onClick={() => setPhrase(ex)}>
                 {ex}
               </Chip>
@@ -154,12 +162,12 @@ export function SmartMealSheet({ open, onClose, mode, remaining, slot, date }: P
           </div>
           <Button variant="primary" block className="mt-3" onClick={analyze} disabled={!phrase.trim()}>
             <Sparkles size={17} />
-            Calcular gramos
+            {t('nut.calcGrams')}
           </Button>
 
           {unresolved.length > 0 && (
             <p className="mt-2 text-[12px] text-amber">
-              No reconocimos: {unresolved.join(', ')}
+              {t('nut.unrecognized', { list: unresolved.join(', ') })}
             </p>
           )}
         </div>
@@ -169,12 +177,12 @@ export function SmartMealSheet({ open, onClose, mode, remaining, slot, date }: P
       {mode === 'auto' && !picked && (
         <div className="mt-4 space-y-2">
           <div className="flex items-center justify-between px-1">
-            <p className="text-[13px] text-muted">Elige una comida para cerrar el dia</p>
+            <p className="text-[13px] text-muted">{t('nut.chooseMeal')}</p>
             <button
               onClick={() => setVariant((v) => v + 1)}
               className="pressable flex items-center gap-1 text-[13px] text-brand"
             >
-              <RefreshCw size={13} /> Otras
+              <RefreshCw size={13} /> {t('nut.otherOptions')}
             </button>
           </div>
 
@@ -199,7 +207,7 @@ export function SmartMealSheet({ open, onClose, mode, remaining, slot, date }: P
                         : 'bg-rose/15 text-rose',
                   )}
                 >
-                  {s.result.accuracy}% ajuste
+                  {t('nut.fitPct', { pct: s.result.accuracy })}
                 </span>
               </div>
               <p className="mt-1.5 text-[12px] text-muted">
@@ -214,7 +222,7 @@ export function SmartMealSheet({ open, onClose, mode, remaining, slot, date }: P
 
           {suggestions.length === 0 && (
             <p className="py-8 text-center text-[13px] text-faint">
-              Ya cubriste tus macros de hoy. No hay nada que completar.
+              {t('nut.macrosCovered')}
             </p>
           )}
         </div>
@@ -224,7 +232,7 @@ export function SmartMealSheet({ open, onClose, mode, remaining, slot, date }: P
       {solution && (
         <div className="mt-5">
           <div className="mb-2 flex items-center justify-between px-1">
-            <p className="text-xs font-semibold tracking-wider text-faint uppercase">Tu plato</p>
+            <p className="text-xs font-semibold tracking-wider text-faint uppercase">{t('nut.yourPlate')}</p>
             <span
               className={cx(
                 'rounded-full px-2 py-0.5 text-[11px] font-semibold',
@@ -235,7 +243,7 @@ export function SmartMealSheet({ open, onClose, mode, remaining, slot, date }: P
                     : 'bg-rose/15 text-rose',
               )}
             >
-              {solution.accuracy}% de ajuste
+              {t('nut.fitPctLong', { pct: solution.accuracy })}
             </span>
           </div>
 
@@ -292,14 +300,14 @@ export function SmartMealSheet({ open, onClose, mode, remaining, slot, date }: P
                       'pressable flex size-8 items-center justify-center rounded-lg',
                       p.fixed ? 'bg-brand/15 text-brand' : 'bg-surface text-faint',
                     )}
-                    aria-label={p.fixed ? 'Liberar cantidad' : 'Fijar cantidad'}
+                    aria-label={p.fixed ? t('nut.unlockAmount') : t('nut.lockAmount')}
                   >
                     {p.fixed ? <Lock size={13} /> : <Unlock size={13} />}
                   </button>
                   <button
                     onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== i))}
                     className="pressable flex size-8 items-center justify-center rounded-lg bg-surface text-faint"
-                    aria-label="Quitar"
+                    aria-label={t('nut.removeFood')}
                   >
                     <X size={14} />
                   </button>
@@ -315,9 +323,18 @@ export function SmartMealSheet({ open, onClose, mode, remaining, slot, date }: P
             >
               <Plus size={17} className="shrink-0 text-amber" />
               <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-semibold text-amber">{complement.reason}</p>
+                <p className="text-[14px] font-semibold text-amber">
+                  {t('nut.missingMacro', {
+                    n: Math.round(complement.gap),
+                    macro: t(MACRO_KEY[complement.macro]).toLowerCase(),
+                  })}
+                </p>
                 <p className="text-[12px] text-muted">
-                  Anade {complement.food.name} · unos {complement.grams} {complement.food.unit}
+                  {t('nut.addComplement', {
+                    food: complement.food.name,
+                    grams: complement.grams,
+                    unit: complement.food.unit,
+                  })}
                 </p>
               </div>
             </button>
@@ -338,13 +355,13 @@ function RemainingBanner({ remaining }: { remaining: Macros }) {
     <div className="rounded-2xl border border-line bg-surface2 p-3">
       <p className="mb-2 flex items-center gap-1.5 text-[11px] tracking-wider text-faint uppercase">
         <Zap size={12} className="text-brand" />
-        Te falta hoy
+        {t('nut.missingToday')}
       </p>
       <div className="grid grid-cols-4 gap-2 text-center">
         <Cell label="kcal" value={Math.round(remaining.kcal)} tone="text-brand" />
-        <Cell label="Prot" value={fmtNum(remaining.protein)} tone="text-protein" />
-        <Cell label="Carb" value={fmtNum(remaining.carbs)} tone="text-carbs" />
-        <Cell label="Gras" value={fmtNum(remaining.fat)} tone="text-fat" />
+        <Cell label={t('field.protein')} value={fmtNum(remaining.protein)} tone="text-protein" />
+        <Cell label={t('field.carbs')} value={fmtNum(remaining.carbs)} tone="text-carbs" />
+        <Cell label={t('field.fat')} value={fmtNum(remaining.fat)} tone="text-fat" />
       </div>
     </div>
   );
@@ -362,13 +379,13 @@ function Cell({ label, value, tone }: { label: string; value: string | number; t
 function TotalsRow({ total, remaining }: { total: Macros; remaining: Macros }) {
   const rows: [string, number, number][] = [
     ['kcal', total.kcal, remaining.kcal],
-    ['Proteina', total.protein, remaining.protein],
-    ['Carbos', total.carbs, remaining.carbs],
-    ['Grasas', total.fat, remaining.fat],
+    [t('field.protein'), total.protein, remaining.protein],
+    [t('field.carbs'), total.carbs, remaining.carbs],
+    [t('field.fat'), total.fat, remaining.fat],
   ];
   return (
     <div className="mt-3 rounded-2xl border border-line bg-surface2 p-3">
-      <p className="mb-2 text-[11px] tracking-wider text-faint uppercase">Con esta comida cierras</p>
+      <p className="mb-2 text-[11px] tracking-wider text-faint uppercase">{t('nut.closesDay')}</p>
       <div className="space-y-1">
         {rows.map(([label, value, target]) => {
           const diff = value - target;
@@ -402,7 +419,7 @@ function AddMoreFood({ onAdd }: { onAdd: (food: Food) => void }) {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Anadir otro alimento al plato"
+          placeholder={t('nut.addAnotherFood')}
           className="h-11 w-full rounded-2xl border border-line bg-surface2 pr-3 pl-9 text-[14px] outline-none placeholder:text-faint focus:border-brand/60"
         />
       </div>

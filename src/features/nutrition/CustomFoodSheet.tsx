@@ -3,18 +3,21 @@ import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { Input, Label, Segmented, Select } from '@/components/ui/Field';
 import { CATEGORY_LABEL } from '@/data/foods';
+import { foodCategoryLabel } from '@/i18n/catalogLabels';
 import { kcalFromMacros } from '@/domain/macros';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { toast } from '@/store/uiStore';
+import { t } from '@/i18n';
 import type { FoodCategory, FoodRole } from '@/domain/types';
 
-const ROLE_OPTIONS: { value: FoodRole; label: string }[] = [
-  { value: 'protein', label: 'Proteina' },
-  { value: 'carb', label: 'Carbo' },
-  { value: 'fat', label: 'Grasa' },
-  { value: 'veg', label: 'Verdura' },
-  { value: 'free', label: 'Libre' },
-];
+const ROLE_VALUES: FoodRole[] = ['protein', 'carb', 'fat', 'veg', 'free'];
+const ROLE_KEY = {
+  protein: 'nut.roleProtein',
+  carb: 'nut.roleCarb',
+  fat: 'nut.roleFat',
+  veg: 'nut.roleVeg',
+  free: 'nut.roleFree',
+} as const;
 
 /**
  * Alta de alimentos propios. Solo se piden los macros por 100 g: las calorias
@@ -49,7 +52,7 @@ export function CustomFoodSheet({ open, onClose }: { open: boolean; onClose: () 
       unit,
       per100: { kcal, protein: p, carbs: c, fat: f, fiber: Number(fiber) || 0 },
     });
-    toast(`${name.trim()} guardado`);
+    toast(t('nut.foodSaved', { name: name.trim() }));
     setName('');
     setBrand('');
     setProtein('');
@@ -63,43 +66,43 @@ export function CustomFoodSheet({ open, onClose }: { open: boolean; onClose: () 
     <Sheet
       open={open}
       onClose={onClose}
-      title="Nuevo alimento"
+      title={t('nut.newFood')}
       height="full"
       footer={
         <Button variant="primary" size="lg" block disabled={!valid} onClick={save}>
-          Guardar alimento
+          {t('nut.saveFood')}
         </Button>
       }
     >
       <div className="space-y-4">
         <div>
-          <Label>Nombre</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Pechuga de pavo" />
+          <Label>{t('field.name')}</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('nut.foodNamePlaceholder')} />
         </div>
 
         <div>
-          <Label hint="opcional">Marca</Label>
+          <Label hint={t('common.optional')}>{t('nut.brand')}</Label>
           <Input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Fairlife" />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label>Categoria</Label>
-            <Select aria-label="Categoria del alimento" value={category} onChange={(e) => setCategory(e.target.value as FoodCategory)}>
-              {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
+            <Label>{t('nut.foodCategoryLabel')}</Label>
+            <Select aria-label={t('nut.foodCategory')} value={category} onChange={(e) => setCategory(e.target.value as FoodCategory)}>
+              {(Object.keys(CATEGORY_LABEL) as FoodCategory[]).map((k) => (
                 <option key={k} value={k}>
-                  {v}
+                  {foodCategoryLabel(k)}
                 </option>
               ))}
             </Select>
           </div>
           <div>
-            <Label>Medida</Label>
+            <Label>{t('nut.measure')}</Label>
             <Segmented
               value={unit}
               onChange={setUnit}
               options={[
-                { value: 'g', label: 'Gramos' },
+                { value: 'g', label: t('nut.grams') },
                 { value: 'ml', label: 'ml' },
               ]}
             />
@@ -107,48 +110,52 @@ export function CustomFoodSheet({ open, onClose }: { open: boolean; onClose: () 
         </div>
 
         <div>
-          <Label hint="define como lo usa el generador automatico">Rol en el plato</Label>
-          <Segmented value={role} onChange={setRole} options={ROLE_OPTIONS} />
+          <Label hint={t('nut.plateRoleHint')}>{t('nut.plateRole')}</Label>
+          <Segmented
+            value={role}
+            onChange={setRole}
+            options={ROLE_VALUES.map((v) => ({ value: v, label: t(ROLE_KEY[v]) }))}
+          />
         </div>
 
         <div>
-          <Label hint={`por 100 ${unit}`}>Macros</Label>
+          <Label hint={t('nut.per100', { unit })}>{t('nut.macros')}</Label>
           <div className="grid grid-cols-2 gap-3">
             <Input
               inputMode="decimal"
               value={protein}
               onChange={(e) => setProtein(e.target.value)}
-              placeholder="Proteina"
+              placeholder={t('field.protein')}
               suffix="g"
             />
             <Input
               inputMode="decimal"
               value={carbs}
               onChange={(e) => setCarbs(e.target.value)}
-              placeholder="Carbos"
+              placeholder={t('field.carbs')}
               suffix="g"
             />
             <Input
               inputMode="decimal"
               value={fat}
               onChange={(e) => setFat(e.target.value)}
-              placeholder="Grasas"
+              placeholder={t('field.fat')}
               suffix="g"
             />
             <Input
               inputMode="decimal"
               value={fiber}
               onChange={(e) => setFiber(e.target.value)}
-              placeholder="Fibra"
+              placeholder={t('nut.fiber')}
               suffix="g"
             />
           </div>
         </div>
 
         <div className="rounded-2xl border border-line bg-surface2 p-4 text-center">
-          <p className="text-[11px] tracking-wider text-faint uppercase">Calorias calculadas</p>
+          <p className="text-[11px] tracking-wider text-faint uppercase">{t('nut.computedCalories')}</p>
           <p className="mt-1 text-[28px] font-bold tabular text-brand">{kcal}</p>
-          <p className="text-[11px] text-faint">kcal por 100 {unit} · 4/4/9</p>
+          <p className="text-[11px] text-faint">{t('nut.kcalPer100', { unit })}</p>
         </div>
       </div>
     </Sheet>

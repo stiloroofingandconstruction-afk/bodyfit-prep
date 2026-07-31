@@ -2,7 +2,9 @@ import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Sheet } from '@/components/ui/Sheet';
 import { Chip } from '@/components/ui/Misc';
-import { MUSCLE_LABEL, MUSCLE_ORDER, searchExercises } from '@/data/exercises';
+import { MUSCLE_ORDER, searchExercises } from '@/data/exercises';
+import { muscleLabel } from '@/i18n/catalogLabels';
+import { t } from '@/i18n';
 import type { MuscleGroup } from '@/domain/types';
 
 interface Props {
@@ -21,25 +23,25 @@ export function ExercisePickerSheet({ open, onClose, onPick }: Props) {
   }, [query, muscle]);
 
   return (
-    <Sheet open={open} onClose={onClose} title="Anadir ejercicio" height="full">
+    <Sheet open={open} onClose={onClose} title={t('tr.addExercise')} height="full">
       <div className="sticky -top-4 z-10 -mx-4 -mt-4 mb-3 bg-surface px-4 pt-4 pb-3">
         <div className="relative">
           <Search size={17} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-faint" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Press de banca, sentadilla..."
+            placeholder={t('tr.searchPlaceholder')}
             autoComplete="off"
             className="h-12 w-full rounded-2xl border border-line bg-surface2 pr-3 pl-10 text-[15px] outline-none placeholder:text-faint focus:border-brand/60"
           />
         </div>
         <div className="scroll-momentum -mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1">
           <Chip active={muscle === null} onClick={() => setMuscle(null)}>
-            Todos
+            {t('ex.all')}
           </Chip>
           {MUSCLE_ORDER.map((m) => (
             <Chip key={m} active={muscle === m} onClick={() => setMuscle(m)}>
-              {MUSCLE_LABEL[m]}
+              {muscleLabel(m)}
             </Chip>
           ))}
         </div>
@@ -58,12 +60,12 @@ export function ExercisePickerSheet({ open, onClose, onPick }: Props) {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-medium">{ex.name}</p>
                 <p className="text-[12px] text-faint">
-                  {MUSCLE_LABEL[ex.primary]} · {ex.equipment}
+                  {muscleLabel(ex.primary)} · {ex.equipment}
                 </p>
               </div>
               {ex.compound && (
                 <span className="shrink-0 rounded-full bg-brand/15 px-2 py-0.5 text-[10px] text-brand">
-                  Compuesto
+                  {t('ex.compound')}
                 </span>
               )}
             </button>

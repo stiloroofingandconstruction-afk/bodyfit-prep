@@ -33,6 +33,7 @@ import {
   useWorkouts,
 } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
+import { t } from '@/i18n';
 
 export default function ReportsPage() {
   const profile = useProfile();
@@ -143,11 +144,11 @@ export default function ReportsPage() {
 
   return (
     <>
-      <PageHeader title="Informes y exportacion" subtitle="Tus datos, en tus manos" back />
+      <PageHeader title={t('screen.reports')} subtitle={t('rep.subtitle')} back />
 
       <Page>
         {/* ─────────────────────────── informe para coach */}
-        <SectionTitle>Resumen para tu coach</SectionTitle>
+        <SectionTitle>{t('rep.coachSummary')}</SectionTitle>
         <Card>
           <p className="text-[13px] text-muted">
             Genera el resumen de la semana en curso con peso medio, ritmo, macros, adherencia,
@@ -171,8 +172,7 @@ export default function ReportsPage() {
             </Button>
           </div>
           <p className="mt-2 text-[11px] text-faint">
-            Las fotos no se incluyen en el archivo: se quedan en el dispositivo y las envias tu
-            aparte si quieres.
+            {t('rep.photosNote')}
           </p>
         </Card>
 
@@ -206,8 +206,7 @@ export default function ReportsPage() {
           <SectionTitle>Respaldo completo</SectionTitle>
           <Card>
             <p className="text-[13px] text-muted">
-              El JSON incluye absolutamente todo el estado de la app y sirve para restaurarlo desde
-              Ajustes. Es tu copia de seguridad mientras los datos vivan solo en el dispositivo.
+              {t('rep.jsonNote')}
             </p>
             <Button
               variant="secondary"

@@ -1,9 +1,13 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './Layout';
+import { ErrorBoundary } from './ErrorBoundary';
+import { BackupReminder } from './BackupReminder';
 import { Toaster } from '@/components/ui/Misc';
 import { useHydrated } from '@/store/selectors';
 import { useProfileStore } from '@/store/profileStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { logError } from '@/services/errorLog';
 
 // Cada pantalla es su propio chunk: el arranque solo carga el Dashboard.
 const Dashboard = lazy(() => import('@/features/dashboard/DashboardPage'));
@@ -30,16 +34,27 @@ const ExerciseDetail = lazy(() => import('@/features/exercises/ExerciseDetailPag
 const Reports = lazy(() => import('@/features/reports/ReportsPage'));
 const VideoSettings = lazy(() => import('@/features/settings/VideoSettingsPage'));
 const RemindersPage = lazy(() => import('@/features/reminders/RemindersPage'));
+const DataBackup = lazy(() => import('@/features/settings/DataBackupPage'));
+const Diagnostics = lazy(() => import('@/features/settings/DiagnosticsPage'));
+const DeviceTest = lazy(() => import('@/features/settings/DeviceTestPage'));
 
 export function App() {
   const hydrated = useHydrated();
   const onboarded = useProfileStore((s) => s.profile.onboarded);
+  const locale = useSettingsStore((s) => s.locale);
+
+  useGlobalErrorLogging();
 
   if (!hydrated) return <Splash />;
 
   return (
-    <>
-      <Suspense fallback={<Splash />}>
+    <ErrorBoundary label="raiz">
+      {/*
+        `key={locale}` remonta el arbol al cambiar de idioma. `t()` lee un modulo,
+        no un contexto, asi que sin esto las pantallas ya dibujadas conservarian
+        el idioma anterior hasta que algo las volviera a renderizar.
+      */}
+      <Suspense key={locale} fallback={<Splash />}>
         {!onboarded ? (
           <Onboarding />
         ) : (
@@ -71,6 +86,9 @@ export function App() {
               <Route path="/informes" element={<Reports />} />
               <Route path="/ajustes/videos" element={<VideoSettings />} />
               <Route path="/ajustes/recordatorios" element={<RemindersPage />} />
+              <Route path="/ajustes/datos" element={<DataBackup />} />
+              <Route path="/ajustes/diagnostico" element={<Diagnostics />} />
+              <Route path="/ajustes/diagnostico/iphone" element={<DeviceTest />} />
             </Route>
 
             {/* La sesion en curso ocupa toda la pantalla: sin barra de pestanas */}
@@ -79,9 +97,28 @@ export function App() {
           </Routes>
         )}
       </Suspense>
+      <BackupReminder />
       <Toaster />
-    </>
+    </ErrorBoundary>
   );
+}
+
+/**
+ * Anota los fallos que no pasan por React: promesas rechazadas sin capturar y
+ * errores sueltos. Sin esto, un fallo dentro de una operacion asincrona
+ * desaparece de la consola y el usuario se queda sin nada que ensenar.
+ */
+function useGlobalErrorLogging(): void {
+  useEffect(() => {
+    const onRejection = (e: PromiseRejectionEvent) => logError('promesa', e.reason);
+    const onError = (e: ErrorEvent) => logError('ventana', e.error ?? e.message);
+    window.addEventListener('unhandledrejection', onRejection);
+    window.addEventListener('error', onError);
+    return () => {
+      window.removeEventListener('unhandledrejection', onRejection);
+      window.removeEventListener('error', onError);
+    };
+  }, []);
 }
 
 function Splash() {

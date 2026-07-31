@@ -6,7 +6,9 @@ import { Card } from '@/components/ui/Card';
 import { Label, Slider, Stepper } from '@/components/ui/Field';
 import { Chip } from '@/components/ui/Misc';
 import { planDay } from '@/domain/autoMeal';
-import { DAY_TYPE_LABEL, type NutritionDayType } from '@/domain/prepTypes';
+import { type NutritionDayType } from '@/domain/prepTypes';
+import { dayTypeLabel } from '@/i18n/labels';
+import { t, type Dict } from '@/i18n';
 import { cx, fmtNum } from '@/lib/utils';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { useCatalog } from '@/store/selectors';
@@ -15,6 +17,14 @@ import { toast } from '@/store/uiStore';
 import type { Macros, MealSlot } from '@/domain/types';
 
 const SLOT_BY_INDEX: MealSlot[] = ['desayuno', 'almuerzo', 'pre', 'post', 'cena', 'snack', 'snack', 'snack'];
+
+/** Cada papel de comida tiene su propia frase traducida. */
+const MEAL_KIND_KEY: Record<'training' | 'first' | 'last' | 'plain', keyof Dict> = {
+  training: 'nut.mealTraining',
+  first: 'nut.mealFirst',
+  last: 'nut.mealLast',
+  plain: 'nut.mealPlain',
+};
 
 const DAY_TYPES: NutritionDayType[] = [
   'entrenamiento', 'descanso', 'refeed', 'diet-break', 'alto', 'bajo', 'mantenimiento',
@@ -88,7 +98,7 @@ export function DayPlanSheet({ open, onClose, remaining, date }: Props) {
     );
     if (!payload.length) return;
     addEntries(payload);
-    toast(`${plan.length} comidas registradas`);
+    toast(t('nut.mealsLogged', { n: plan.length }));
     onClose();
   };
 
@@ -98,31 +108,30 @@ export function DayPlanSheet({ open, onClose, remaining, date }: Props) {
     <Sheet
       open={open}
       onClose={onClose}
-      title="Planear mi dia"
+      title={t('nut.planDay')}
       height="full"
       footer={
         plan.length > 0 && (
           <Button variant="primary" size="lg" block onClick={registerAll}>
             <Check size={18} />
-            Registrar el dia completo
+            {t('nut.logFullDay')}
           </Button>
         )
       }
     >
       {/* ─────────────────────────── tipo de dia */}
       <div>
-        <Label hint="ajusta el objetivo solo para hoy">Tipo de dia</Label>
+        <Label hint={t('nut.adjustForToday')}>{t('nut.dayType')}</Label>
         <div className="flex flex-wrap gap-1.5">
-          {DAY_TYPES.map((t) => (
-            <Chip key={t} active={currentType === t} onClick={() => setDayType(date, t)}>
-              {DAY_TYPE_LABEL[t]}
+          {DAY_TYPES.map((kind) => (
+            <Chip key={kind} active={currentType === kind} onClick={() => setDayType(date, kind)}>
+              {dayTypeLabel(kind)}
             </Chip>
           ))}
         </div>
         <p className="mt-2 flex gap-2 text-[11px] text-faint">
           <Info size={12} className="mt-0.5 shrink-0" />
-          Un refeed o un diet break suben los carbohidratos manteniendo la proteina. Son herramientas
-          de planificacion: el criterio de cuando usarlos es tuyo y de tu entrenador.
+          {t('nut.dayTypeNote')}
         </p>
       </div>
 
@@ -130,12 +139,12 @@ export function DayPlanSheet({ open, onClose, remaining, date }: Props) {
       <Card className="mt-4">
         <div className="space-y-4">
           <div>
-            <Label hint={`${meals} comidas`}>Numero de comidas</Label>
+            <Label hint={t('nut.mealsCount', { n: meals })}>{t('nut.mealCount')}</Label>
             <Stepper value={meals} onChange={setMeals} step={1} min={1} max={8} />
           </div>
           <div>
-            <Label hint={`comida ${Math.min(trainingMeal, meals - 1) + 1}`}>
-              Comida alrededor del entreno
+            <Label hint={t('nut.mealNumber', { n: Math.min(trainingMeal, meals - 1) + 1 })}>
+              {t('nut.trainingMeal')}
             </Label>
             <Stepper
               value={Math.min(trainingMeal, meals - 1)}
@@ -146,17 +155,17 @@ export function DayPlanSheet({ open, onClose, remaining, date }: Props) {
             />
           </div>
           <div>
-            <Label hint={`${Math.round(carbShift * 100)}% mas de carbos`}>
-              Carbohidratos alrededor del entreno
+            <Label hint={t('nut.moreCarbs', { pct: Math.round(carbShift * 100) })}>
+              {t('nut.carbsAroundTraining')}
             </Label>
             <Slider
-              aria-label="Carbohidratos alrededor del entreno"
+              aria-label={t('nut.carbsAroundTraining')}
               value={carbShift}
               onChange={setCarbShift}
               min={0}
               max={0.4}
               step={0.05}
-              labels={['uniforme', 'moderado', 'concentrado']}
+              labels={[t('nut.carbUniform'), t('nut.carbModerate'), t('nut.carbConcentrated')]}
             />
           </div>
         </div>
@@ -164,12 +173,12 @@ export function DayPlanSheet({ open, onClose, remaining, date }: Props) {
 
       {/* ─────────────────────────── resultado */}
       <div className="mt-4 flex items-center justify-between px-1">
-        <p className="text-xs font-semibold tracking-wider text-faint uppercase">Tu dia</p>
+        <p className="text-xs font-semibold tracking-wider text-faint uppercase">{t('nut.yourDay')}</p>
         <button
           onClick={() => setVariant((v) => v + 1)}
           className="pressable flex items-center gap-1 text-[13px] text-brand"
         >
-          <RefreshCw size={13} /> Otras opciones
+          <RefreshCw size={13} /> {t('nut.otherOptionsLong')}
         </button>
       </div>
 
@@ -177,7 +186,9 @@ export function DayPlanSheet({ open, onClose, remaining, date }: Props) {
         {plan.map((m) => (
           <div key={m.index} className="rounded-2xl border border-line bg-surface2 p-3.5">
             <div className="flex items-center justify-between gap-2">
-              <p className="truncate text-[14px] font-semibold">{m.label}</p>
+              <p className="truncate text-[14px] font-semibold">
+                {t(MEAL_KIND_KEY[m.kind], { n: m.index + 1 })}
+              </p>
               <span
                 className={cx(
                   'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold',
@@ -208,13 +219,13 @@ export function DayPlanSheet({ open, onClose, remaining, date }: Props) {
 
       {plan.length > 0 && (
         <Card className="mt-3">
-          <p className="mb-2 text-[11px] tracking-wider text-faint uppercase">Total del plan</p>
+          <p className="mb-2 text-[11px] tracking-wider text-faint uppercase">{t('nut.planTotal')}</p>
           {(
             [
               ['kcal', totals.kcal, remaining.kcal],
-              ['Proteina', totals.protein, remaining.protein],
-              ['Carbos', totals.carbs, remaining.carbs],
-              ['Grasas', totals.fat, remaining.fat],
+              [t('field.protein'), totals.protein, remaining.protein],
+              [t('field.carbs'), totals.carbs, remaining.carbs],
+              [t('field.fat'), totals.fat, remaining.fat],
             ] as const
           ).map(([label, value, target]) => (
             <div key={label} className="flex justify-between text-[13px]">

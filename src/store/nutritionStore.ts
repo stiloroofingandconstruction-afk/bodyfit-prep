@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { alive, newEntity, persisted, softDelete, touch } from './persist';
+import { nutritionMigrations } from './migrations';
 import { macrosFor } from '@/domain/macros';
 import { today } from '@/lib/date';
 import type { CustomFood, Entity, Food, FoodEntry, MealSlot, Recipe } from '@/domain/types';
@@ -125,7 +126,7 @@ export const useNutritionStore = create<NutritionState>()(
 
     removeRecipe: (id) =>
       set((s) => ({ recipes: s.recipes.map((r) => (r.id === id ? softDelete(r) : r)) })),
-  })),
+  }), { migrations: nutritionMigrations }),
 );
 
 /** Reconstruye la tabla por 100 g de una entrada ya registrada. */

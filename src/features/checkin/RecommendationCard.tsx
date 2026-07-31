@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Label, Stepper } from '@/components/ui/Field';
 import { ACTION_LABEL, ACTION_TONE, type RecommendationResult } from '@/domain/recommendations';
 import { cx, fmtSigned } from '@/lib/utils';
+import { t } from '@/i18n';
 
 interface Props {
   result: RecommendationResult;
@@ -80,7 +81,7 @@ export function RecommendationCard({
         onClick={() => setShowData((v) => !v)}
         className="mt-3 flex w-full items-center justify-between rounded-xl bg-surface2 px-3 py-2 text-[12px] text-muted"
       >
-        <span>Datos utilizados</span>
+        <span>{t('chk.dataUsed')}</span>
         <ChevronDown size={14} className={cx('transition-transform', showData && 'rotate-180')} />
       </button>
       {showData && (

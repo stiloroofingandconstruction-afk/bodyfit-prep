@@ -18,6 +18,7 @@ import { useProfile } from '@/store/profileStore';
 import { useBodyStore } from '@/store/bodyStore';
 import { useCurrentWeight, useMeasurements } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
+import { t, type Dict } from '@/i18n';
 import type { BodyMeasurement } from '@/domain/types';
 
 type Range = '30' | '90' | 'all';
@@ -59,7 +60,7 @@ export default function BodyPage() {
 
   return (
     <>
-      <PageHeader title="Progreso" subtitle="Peso, medidas y fotos" />
+      <PageHeader title={t('screen.body')} subtitle={t('body.subtitle')} />
 
       <Page>
         <ProgressTabs />
@@ -67,22 +68,22 @@ export default function BodyPage() {
         <div className="grid grid-cols-2 gap-2">
           <Button variant="primary" size="lg" onClick={() => setWeighing(true)}>
             <Scale size={17} />
-            Registrar peso
+            {t('body.logWeight')}
           </Button>
           <Button variant="secondary" size="lg" onClick={() => setMeasuring(true)}>
             <Ruler size={17} />
-            Medidas
+            {t('body.measurements')}
           </Button>
         </div>
 
         {/* -------------------------------------------------------- peso */}
         <Card className="mt-3">
           <div className="mb-3 flex items-center justify-between">
-            <Stat label="Peso actual" value={u.numWeight(weight)} unit={u.w} />
+            <Stat label={t('field.currentWeight')} value={u.numWeight(weight)} unit={u.w} />
             <Stat
-              label="Tendencia"
+              label={t('body.trend')}
               value={u.fmtWeightDelta(trend).replace(` ${u.w}`, '')}
-              unit={`${u.w}/sem`}
+              unit={t('body.perWeek', { unit: u.w })}
               tone={
                 trend === 0
                   ? 'text-muted'
@@ -91,7 +92,11 @@ export default function BodyPage() {
                     : 'text-amber'
               }
             />
-            <Stat label="Cambio total" value={u.fmtWeightDelta(totalChange).replace(` ${u.w}`, '')} unit={u.w} />
+            <Stat
+              label={t('body.totalChange')}
+              value={u.fmtWeightDelta(totalChange).replace(` ${u.w}`, '')}
+              unit={u.w}
+            />
           </div>
 
           <Segmented
@@ -99,9 +104,9 @@ export default function BodyPage() {
             value={range}
             onChange={setRange}
             options={[
-              { value: '30', label: '30 dias' },
-              { value: '90', label: '90 dias' },
-              { value: 'all', label: 'Todo' },
+              { value: '30', label: t('body.range30') },
+              { value: '90', label: t('body.range90') },
+              { value: 'all', label: t('body.rangeAll') },
             ]}
           />
 
@@ -115,26 +120,26 @@ export default function BodyPage() {
 
         {/* ---------------------------------------------- composicion */}
         <div className="mt-5">
-          <SectionTitle>Composicion corporal</SectionTitle>
+          <SectionTitle>{t('body.composition')}</SectionTitle>
           <Card>
             <div className="grid grid-cols-3 gap-3">
               <Stat
-                label="Grasa corporal"
+                label={t('body.bodyFat')}
                 value={bodyFat != null ? `${bodyFat}` : '—'}
                 unit={bodyFat != null ? '%' : ''}
                 tone={category?.tone ?? 'text-ink'}
-                sub={category?.label}
+                sub={category ? t(`bf.${category.key}` as keyof Dict) : undefined}
               />
               <Stat
-                label="Masa magra"
+                label={t('body.leanMass')}
                 value={bodyFat != null ? u.numWeight(leanMass(weight, bodyFat)) : '—'}
                 unit={u.w}
               />
-              <Stat label="IMC" value={bmi(weight, profile.heightCm).toFixed(1)} />
+              <Stat label={t('body.bmi')} value={bmi(weight, profile.heightCm).toFixed(1)} />
             </div>
             {bodyFat == null && (
               <p className="mt-3 text-[12px] text-faint">
-                Registra cuello y cintura en Medidas para calcular el % de grasa con el metodo Navy.
+                {t('body.navyNote')}
               </p>
             )}
           </Card>
@@ -144,12 +149,12 @@ export default function BodyPage() {
 
         {/* --------------------------------------------------- historial */}
         <div className="mt-5">
-          <SectionTitle>Registros</SectionTitle>
+          <SectionTitle>{t('body.records')}</SectionTitle>
           {measurements.length === 0 ? (
             <EmptyState
               icon={<Scale size={22} />}
-              title="Sin registros"
-              description="Empieza pesandote hoy. Con dos semanas de datos la tendencia ya te dice la verdad."
+              title={t('body.empty')}
+              description={t('body.emptyDesc')}
             />
           ) : (
             <div className="space-y-1.5">
@@ -160,17 +165,17 @@ export default function BodyPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-[15px] font-medium tabular">
-                      {m.weight != null ? u.fmtWeight(m.weight) : 'Medidas'}
+                      {m.weight != null ? u.fmtWeight(m.weight) : t('body.measurements')}
                     </p>
                     <p className="text-[12px] text-faint">
                       {friendlyDate(m.date)}
-                      {m.waist ? ` · cintura ${u.fmtLength(m.waist)}` : ''}
+                      {m.waist ? ` · ${t('body.waistShort')} ${u.fmtLength(m.waist)}` : ''}
                     </p>
                   </div>
                   <button
                     onClick={() => remove(m.id)}
                     className="pressable flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface2 text-faint"
-                    aria-label="Eliminar"
+                    aria-label={t('common.delete')}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -189,15 +194,15 @@ export default function BodyPage() {
 
 /* ------------------------------------------------------------- medidas -- */
 
-const FIELDS: { key: keyof BodyMeasurement; label: string }[] = [
-  { key: 'neck', label: 'Cuello' },
-  { key: 'shoulder', label: 'Hombros' },
-  { key: 'chest', label: 'Pecho' },
-  { key: 'waist', label: 'Cintura' },
-  { key: 'hip', label: 'Cadera' },
-  { key: 'arm', label: 'Brazo' },
-  { key: 'thigh', label: 'Muslo' },
-  { key: 'calf', label: 'Gemelo' },
+const FIELDS: { key: keyof BodyMeasurement; label: keyof Dict }[] = [
+  { key: 'neck', label: 'meas.neck' },
+  { key: 'shoulder', label: 'meas.shoulder' },
+  { key: 'chest', label: 'meas.chest' },
+  { key: 'waist', label: 'meas.waist' },
+  { key: 'hip', label: 'meas.hip' },
+  { key: 'arm', label: 'meas.arm' },
+  { key: 'thigh', label: 'meas.thigh' },
+  { key: 'calf', label: 'meas.calf' },
 ];
 
 function MeasurementSheet({
@@ -231,7 +236,7 @@ function MeasurementSheet({
       if (n > 0) patch[f.key] = u.toCanonicalLength(n);
     }
     upsert({ date: today(), ...patch });
-    toast('Medidas guardadas');
+    toast(t('body.measurementsSaved'));
     onClose();
   };
 
@@ -239,22 +244,23 @@ function MeasurementSheet({
     <Sheet
       open={open}
       onClose={onClose}
-      title="Medidas corporales"
+      title={t('body.measurementsTitle')}
       height="full"
       footer={
         <Button variant="primary" size="lg" block onClick={save}>
-          Guardar medidas
+          {t('body.saveMeasurements')}
         </Button>
       }
     >
       <p className="mb-4 text-[13px] text-muted">
-        En {u.lengthUnit === 'cm' ? 'centimetros' : 'pulgadas'}. Mide siempre a la misma hora y
-        sin tensar el musculo.
+        {t('body.measurementsIntro', {
+          unit: u.lengthUnit === 'cm' ? t('units.cm') : t('units.in'),
+        })}
       </p>
       <div className="grid grid-cols-2 gap-3">
         {FIELDS.map((f) => (
           <div key={f.key}>
-            <Label>{f.label}</Label>
+            <Label>{t(f.label)}</Label>
             <Input
               inputMode="decimal"
               value={values[f.key] ?? ''}
@@ -266,7 +272,7 @@ function MeasurementSheet({
         ))}
       </div>
       <p className="mt-4 text-[12px] text-faint">
-        Cuello y cintura (y cadera en mujeres) alimentan el calculo de % de grasa.
+        {t('body.measurementsNote')}
       </p>
     </Sheet>
   );
@@ -315,7 +321,7 @@ function PhotoSection() {
     const id = uid('photo');
     await putPhoto(id, blob);
     attachPhoto(today(), id);
-    toast('Foto guardada');
+    toast(t('body.photoSaved'));
   };
 
   return (
@@ -330,11 +336,11 @@ function PhotoSection() {
               onChange={(e) => onPick(e.target.files?.[0])}
             />
             <Plus size={12} className="mr-0.5 inline" />
-            Anadir
+            {t('common.add')}
           </label>
         }
       >
-        Fotos de progreso
+        {t('photos.title')}
       </SectionTitle>
 
       {urls.length === 0 ? (
@@ -344,7 +350,7 @@ function PhotoSection() {
               <Camera size={19} />
             </div>
             <p className="text-[13px] text-muted">
-              Misma luz, misma pose, mismo momento del dia. Las fotos ven lo que la bascula no.
+              {t('body.photosNote')}
             </p>
           </div>
         </Card>
@@ -354,7 +360,7 @@ function PhotoSection() {
             <div key={p.id} className="relative shrink-0">
               <img
                 src={p.url}
-                alt={`Progreso ${p.date}`}
+                alt={t('body.progressAlt', { date: p.date })}
                 className="h-40 w-28 rounded-2xl border border-line object-cover"
               />
               <span className="absolute inset-x-1 bottom-1 rounded-lg bg-black/60 py-0.5 text-center text-[10px] backdrop-blur">
@@ -366,7 +372,7 @@ function PhotoSection() {
                   detachPhoto(p.date, p.id);
                 }}
                 className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur"
-                aria-label="Eliminar foto"
+                aria-label={t('body.deletePhoto')}
               >
                 <Trash2 size={11} />
               </button>

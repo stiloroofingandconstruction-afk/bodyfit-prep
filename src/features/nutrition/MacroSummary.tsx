@@ -1,6 +1,7 @@
 import { Ring } from '@/components/ui/Ring';
 import { MacroBar } from '@/components/ui/MacroBar';
 import { fmtNum } from '@/lib/utils';
+import { t } from '@/i18n';
 import type { MacroTarget, Macros } from '@/domain/types';
 
 interface Props {
@@ -20,34 +21,40 @@ export function MacroSummary({ consumed, target, compact }: Props) {
         <Ring value={consumed.kcal} max={target.kcal} size={compact ? 104 : 124} stroke={compact ? 9 : 11}>
           <span className="text-[26px] leading-[1.1] font-bold tabular">{Math.abs(left)}</span>
           <span className="mt-0.5 text-[10px] tracking-wider text-faint uppercase">
-            {over ? 'kcal de mas' : 'kcal libres'}
+            {over ? t('nut.kcalOver') : t('nut.kcalLeft')}
           </span>
         </Ring>
 
         <div className="min-w-0 flex-1 space-y-3">
           <MacroBar
-            label="Proteina"
+            label={t('field.protein')}
             value={consumed.protein}
             target={target.protein}
             color="var(--color-protein)"
             compact
           />
           <MacroBar
-            label="Carbohidratos"
+            label={t('field.carbs')}
             value={consumed.carbs}
             target={target.carbs}
             color="var(--color-carbs)"
             compact
           />
-          <MacroBar label="Grasas" value={consumed.fat} target={target.fat} color="var(--color-fat)" compact />
+          <MacroBar
+            label={t('field.fat')}
+            value={consumed.fat}
+            target={target.fat}
+            color="var(--color-fat)"
+            compact
+          />
         </div>
       </div>
 
       {!compact && (
         <div className="mt-4 grid grid-cols-3 gap-2 border-t border-line pt-3 text-center">
-          <MiniStat label="Consumidas" value={`${Math.round(consumed.kcal)}`} />
-          <MiniStat label="Objetivo" value={`${target.kcal}`} />
-          <MiniStat label="Fibra" value={`${fmtNum(consumed.fiber)} / ${target.fiber}g`} />
+          <MiniStat label={t('nut.consumed')} value={`${Math.round(consumed.kcal)}`} />
+          <MiniStat label={t('nut.target')} value={`${target.kcal}`} />
+          <MiniStat label={t('nut.fiber')} value={`${fmtNum(consumed.fiber)} / ${target.fiber} g`} />
         </div>
       )}
     </div>

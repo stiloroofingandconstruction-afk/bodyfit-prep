@@ -92,26 +92,41 @@ export function weightSeries(measurements: BodyMeasurement[]): TrendPoint[] {
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export const BODYFAT_RANGES: Record<Sex, { label: string; max: number; tone: string }[]> = {
+/**
+ * Rangos orientativos de porcentaje graso.
+ *
+ * `key` es lo que traduce la interfaz; `label` se conserva en espanol porque
+ * lo usan las exportaciones CSV y el informe para el coach, que no siguen el
+ * idioma de la pantalla.
+ */
+export type BodyFatKey = 'competition' | 'lean' | 'athletic' | 'fitness' | 'average' | 'high';
+
+export const BODYFAT_RANGES: Record<
+  Sex,
+  { key: BodyFatKey; label: string; max: number; tone: string }[]
+> = {
   hombre: [
-    { label: 'Competicion', max: 6, tone: 'text-brand' },
-    { label: 'Definido', max: 10, tone: 'text-brand' },
-    { label: 'Atletico', max: 14, tone: 'text-sky' },
-    { label: 'Fitness', max: 18, tone: 'text-sky' },
-    { label: 'Promedio', max: 25, tone: 'text-amber' },
-    { label: 'Alto', max: 100, tone: 'text-rose' },
+    { key: 'competition', label: 'Competicion', max: 6, tone: 'text-brand' },
+    { key: 'lean', label: 'Definido', max: 10, tone: 'text-brand' },
+    { key: 'athletic', label: 'Atletico', max: 14, tone: 'text-sky' },
+    { key: 'fitness', label: 'Fitness', max: 18, tone: 'text-sky' },
+    { key: 'average', label: 'Promedio', max: 25, tone: 'text-amber' },
+    { key: 'high', label: 'Alto', max: 100, tone: 'text-rose' },
   ],
   mujer: [
-    { label: 'Competicion', max: 14, tone: 'text-brand' },
-    { label: 'Definida', max: 18, tone: 'text-brand' },
-    { label: 'Atletica', max: 22, tone: 'text-sky' },
-    { label: 'Fitness', max: 26, tone: 'text-sky' },
-    { label: 'Promedio', max: 32, tone: 'text-amber' },
-    { label: 'Alto', max: 100, tone: 'text-rose' },
+    { key: 'competition', label: 'Competicion', max: 14, tone: 'text-brand' },
+    { key: 'lean', label: 'Definida', max: 18, tone: 'text-brand' },
+    { key: 'athletic', label: 'Atletica', max: 22, tone: 'text-sky' },
+    { key: 'fitness', label: 'Fitness', max: 26, tone: 'text-sky' },
+    { key: 'average', label: 'Promedio', max: 32, tone: 'text-amber' },
+    { key: 'high', label: 'Alto', max: 100, tone: 'text-rose' },
   ],
 };
 
-export function bodyFatCategory(sex: Sex, pct: number): { label: string; tone: string } {
+export function bodyFatCategory(
+  sex: Sex,
+  pct: number,
+): { key: BodyFatKey; label: string; tone: string } {
   const ranges = BODYFAT_RANGES[sex];
   return ranges.find((r) => pct <= r.max) ?? ranges[ranges.length - 1];
 }

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persisted } from './persist';
+import { profileMigrations } from './migrations';
 import type { Profile } from '@/domain/types';
 
 export const DEFAULT_PROFILE: Profile = {
@@ -33,7 +34,7 @@ export const useProfileStore = create<ProfileState>()(
     completeOnboarding: (patch) =>
       set((s) => ({ profile: { ...s.profile, ...patch, onboarded: true } })),
     reset: () => set({ profile: DEFAULT_PROFILE }),
-  })),
+  }), { migrations: profileMigrations }),
 );
 
 export const useProfile = () => useProfileStore((s) => s.profile);

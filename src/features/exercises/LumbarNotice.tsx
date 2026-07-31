@@ -1,7 +1,8 @@
 import { AlertTriangle, ShieldCheck, XCircle } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Misc';
-import { LUMBAR_LABEL, LUMBAR_TONE, lumbarAlternativesFor } from '@/data/exercises';
+import { LUMBAR_TONE, lumbarAlternativesFor } from '@/data/exercises';
+import { lumbarLabel } from '@/i18n/catalogLabels';
 import { cx } from '@/lib/utils';
 import { t } from '@/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -45,8 +46,8 @@ export function LumbarNotice({ exercise, onSelect, compact }: Props) {
     return (
       <p className={cx('flex items-center gap-1.5 text-[12px]', LUMBAR_TONE[exercise.lumbarLoad])}>
         <AlertTriangle size={12} className="shrink-0" />
-        {LUMBAR_LABEL[exercise.lumbarLoad]}
-        {sensitive && high && ' · marcaste sensibilidad lumbar'}
+        {lumbarLabel(exercise.lumbarLoad)}
+        {sensitive && high && ` · ${t('ex.lumbarSensitiveShort')}`}
       </p>
     );
   }
@@ -62,14 +63,12 @@ export function LumbarNotice({ exercise, onSelect, compact }: Props) {
         <AlertTriangle size={18} className={cx('mt-0.5 shrink-0', LUMBAR_TONE[exercise.lumbarLoad])} />
         <div className="min-w-0 flex-1">
           <p className={cx('text-[14px] font-semibold', LUMBAR_TONE[exercise.lumbarLoad])}>
-            {LUMBAR_LABEL[exercise.lumbarLoad]}
-            {sensitive && ' · tienes sensibilidad lumbar activada'}
+            {lumbarLabel(exercise.lumbarLoad)}
+            {sensitive && ` · ${t('ex.lumbarSensitiveOn')}`}
           </p>
 
           <p className="mt-1.5 text-[13px] text-muted">
-            {high
-              ? 'Este ejercicio impone una carga alta sobre la zona lumbar por su posicion o por el peso que soporta la columna.'
-              : 'Este ejercicio impone una carga moderada sobre la zona lumbar.'}
+            {high ? t('ex.lumbarHighBody') : t('ex.lumbarModerateBody')}
           </p>
 
           {exercise.technique.lumbarAdaptation && (
@@ -88,10 +87,10 @@ export function LumbarNotice({ exercise, onSelect, compact }: Props) {
             </p>
             <ul className="space-y-1">
               {[
-                'Si notas la zona lumbar antes que el musculo objetivo.',
-                'Si la espalda cambia de forma durante la serie.',
-                'Si vienes de una molestia reciente, aunque hoy no duela.',
-                'Si has dormido mal o vienes con mucha fatiga acumulada.',
+                t('ex.reduce1'),
+                t('ex.reduce2'),
+                t('ex.reduce3'),
+                t('ex.reduce4'),
               ].map((line) => (
                 <li key={line} className="flex gap-2 text-[13px] text-muted">
                   <span className="mt-1.5 block size-1 shrink-0 rounded-full bg-current opacity-50" />
@@ -130,8 +129,7 @@ export function LumbarNotice({ exercise, onSelect, compact }: Props) {
           </button>
 
           <p className="mt-2 text-[11px] text-faint">
-            Informacion general de entrenamiento, no consejo medico. Ante dolor persistente o
-            sintomas que bajen por la pierna, consulta con un profesional sanitario.
+            {t('ex.lumbarDisclaimer')}
           </p>
         </div>
       </div>

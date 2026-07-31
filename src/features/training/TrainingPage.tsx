@@ -19,6 +19,8 @@ import { addDays, dayInitial, friendlyDate, startOfWeek, today, weekRange } from
 import { useRoutines, useWorkouts } from '@/store/selectors';
 import { useUnits } from '@/lib/useUnits';
 import { useTrainingStore } from '@/store/trainingStore';
+import { muscleLabel } from '@/i18n/catalogLabels';
+import { t } from '@/i18n';
 import type { Routine } from '@/domain/types';
 
 export default function TrainingPage() {
@@ -73,15 +75,15 @@ export default function TrainingPage() {
   return (
     <>
       <PageHeader
-        title="Entrenamiento"
-        subtitle={`${last30.length} sesiones en los ultimos 30 dias`}
+        title={t('screen.training')}
+        subtitle={t('tr.subtitle', { n: last30.length })}
       />
 
       <Page>
         {active ? (
           <Button variant="primary" size="lg" block onClick={() => navigate('/entrenamiento/activo')}>
             <Play size={18} />
-            Continuar entreno
+            {t('home.continueWorkout')}
           </Button>
         ) : (
           <Button
@@ -89,17 +91,17 @@ export default function TrainingPage() {
             size="lg"
             block
             onClick={() => {
-              startWorkout('Entreno libre');
+              startWorkout(t('home.freeWorkout'));
               navigate('/entrenamiento/activo');
             }}
           >
             <Zap size={18} />
-            Entreno libre
+            {t('home.freeWorkout')}
           </Button>
         )}
 
         <div className="mt-5">
-          <SectionTitle>Rutinas</SectionTitle>
+          <SectionTitle>{t('tr.routines')}</SectionTitle>
           <div className="space-y-1.5">
             {routines.map((r) => (
               <button
@@ -113,7 +115,7 @@ export default function TrainingPage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px] font-medium">{r.name}</p>
                   <p className="truncate text-[12px] text-faint">
-                    {r.days.length} dias · {r.description}
+                    {t('tr.routineDays', { n: r.days.length })} · {r.description}
                   </p>
                 </div>
                 <ChevronRight size={17} className="shrink-0 text-faint" />
@@ -123,7 +125,7 @@ export default function TrainingPage() {
         </div>
 
         <div className="mt-5">
-          <SectionTitle>Volumen de la semana</SectionTitle>
+          <SectionTitle>{t('tr.weekVolume')}</SectionTitle>
           <Card>
             <BarChart
               data={weekVolume.map((d) => ({ ...d, value: u.toDisplayWeight(d.value) }))}
@@ -134,8 +136,8 @@ export default function TrainingPage() {
 
         {muscleVolume.length > 0 && (
           <div className="mt-5">
-            <SectionTitle action={<span className="text-[11px] text-faint">series / 30 dias</span>}>
-              Reparto por musculo
+            <SectionTitle action={<span className="text-[11px] text-faint">{t('tr.setsPer30')}</span>}>
+              {t('tr.byMuscle')}
             </SectionTitle>
             <Card>
               <div className="space-y-2.5">
@@ -144,7 +146,7 @@ export default function TrainingPage() {
                   return (
                     <div key={muscle}>
                       <div className="mb-1 flex justify-between text-[13px]">
-                        <span className="text-muted capitalize">{muscle}</span>
+                        <span className="text-muted">{muscleLabel(muscle as never)}</span>
                         <span className="tabular">{sets}</span>
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-line">
@@ -163,7 +165,7 @@ export default function TrainingPage() {
 
         {prs.length > 0 && (
           <div className="mt-5">
-            <SectionTitle>Records recientes</SectionTitle>
+            <SectionTitle>{t('tr.recentPRs')}</SectionTitle>
             <Card>
               <div className="grid grid-cols-2 gap-4">
                 {prs.map((pr) => (
@@ -171,7 +173,7 @@ export default function TrainingPage() {
                     key={pr.exerciseId}
                     label={pr.exerciseName}
                     value={`${pr.weight}×${pr.reps}`}
-                    sub={`${u.fmtWeight(pr.e1rm)} de 1RM`}
+                    sub={t('tr.of1RM', { weight: u.fmtWeight(pr.e1rm) })}
                   />
                 ))}
               </div>
@@ -180,12 +182,12 @@ export default function TrainingPage() {
         )}
 
         <div className="mt-5">
-          <SectionTitle>Historial</SectionTitle>
+          <SectionTitle>{t('tr.history')}</SectionTitle>
           {workouts.length === 0 ? (
             <EmptyState
               icon={<Trophy size={22} />}
-              title="Aun no hay entrenos"
-              description="Elige una rutina o empieza un entreno libre. Todo queda registrado con volumen y records."
+              title={t('tr.empty')}
+              description={t('tr.emptyDesc')}
             />
           ) : (
             <div className="space-y-1.5">
@@ -196,8 +198,9 @@ export default function TrainingPage() {
                     <span className="shrink-0 text-[12px] text-faint">{friendlyDate(w.date)}</span>
                   </div>
                   <p className="mt-0.5 text-[12px] tabular text-faint">
-                    {workoutSetCount(w)} series · {u.numWeight(workoutVolume(w), 0)} {u.w}
-                    {workoutDurationMin(w) != null && ` · ${workoutDurationMin(w)} min`}
+                    {workoutSetCount(w)} {t('home.sets')} · {u.numWeight(workoutVolume(w), 0)} {u.w}
+                    {workoutDurationMin(w) != null &&
+                      ` · ${workoutDurationMin(w)} ${t('tr.minutes')}`}
                   </p>
                 </div>
               ))}

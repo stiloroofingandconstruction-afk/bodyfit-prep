@@ -9,6 +9,7 @@ import { usePrepStore } from '@/store/prepStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { toast } from '@/store/uiStore';
 import type { CompetitionPrep, Division, Federation, PrepStatus } from '@/domain/competition';
+import { t } from '@/i18n';
 
 const FEDERATIONS: Federation[] = [
   'IFBB Pro', 'IFBB', 'NPC', 'OCB', 'WNBF', 'INBA/PNBA', 'NANBF', 'Musclemania', 'Otra',
@@ -104,17 +105,17 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
     <Sheet
       open={open}
       onClose={onClose}
-      title={existing ? 'Editar competencia' : 'Nueva competencia'}
+      title={existing ? t('prep.editTitle') : t('prep.newTitle')}
       height="full"
       footer={
         <Button variant="primary" size="lg" block disabled={!valid} onClick={save}>
-          {existing ? 'Guardar cambios' : 'Activar modo competencia'}
+          {existing ? t('prep.saveChanges') : t('prep.activate')}
         </Button>
       }
     >
       <div className="space-y-4">
         <div>
-          <Label>Nombre del show</Label>
+          <Label>{t('prep.showName')}</Label>
           <Input
             value={showName}
             onChange={(e) => setShowName(e.target.value)}
@@ -124,16 +125,16 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label>Federacion</Label>
-            <Select aria-label="Federacion" value={federation} onChange={(e) => setFederation(e.target.value as Federation)}>
+            <Label>{t('prep.federation')}</Label>
+            <Select aria-label={t('prep.federation')} value={federation} onChange={(e) => setFederation(e.target.value as Federation)}>
               {FEDERATIONS.map((f) => (
                 <option key={f} value={f}>{f}</option>
               ))}
             </Select>
           </div>
           <div>
-            <Label>Division</Label>
-            <Select aria-label="Division" value={division} onChange={(e) => setDivision(e.target.value as Division)}>
+            <Label>{t('prep.division')}</Label>
+            <Select aria-label={t('prep.division')} value={division} onChange={(e) => setDivision(e.target.value as Division)}>
               {DIVISIONS.map((d) => (
                 <option key={d} value={d}>{d}</option>
               ))}
@@ -142,28 +143,28 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
         </div>
 
         <div>
-          <Label hint="altura, edad, peso...">Categoria</Label>
+          <Label hint={t('comp.physicalHint')}>{t('prep.category')}</Label>
           <Input
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            placeholder="Open hasta 176 cm"
+            placeholder={t('prep.categoryPlaceholder')}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label>Inicio del prep</Label>
+            <Label>{t('prep.startDate')}</Label>
             <Input type="date" value={prepStartDate} onChange={(e) => setPrepStartDate(e.target.value)} />
           </div>
           <div>
-            <Label>Fecha del show</Label>
+            <Label>{t('prep.showDate')}</Label>
             <Input type="date" value={showDate} onChange={(e) => setShowDate(e.target.value)} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label>Peso inicial</Label>
+            <Label>{t('prep.startWeight')}</Label>
             <Input
               inputMode="decimal"
               value={startWeight}
@@ -172,7 +173,7 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
             />
           </div>
           <div>
-            <Label hint="estimado">Peso objetivo</Label>
+            <Label hint={t('prep.estimated')}>{t('field.goalWeight')}</Label>
             <Input
               inputMode="decimal"
               value={targetWeight}
@@ -185,7 +186,7 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label hint="opcional">Grasa inicial</Label>
+            <Label hint={t('common.optional')}>{t('prep.startBf')}</Label>
             <Input
               inputMode="decimal"
               value={startBf}
@@ -195,7 +196,7 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
             />
           </div>
           <div>
-            <Label hint="estimada">Grasa objetivo</Label>
+            <Label hint={t('prep.estimatedF')}>{t('prep.targetBf')}</Label>
             <Input
               inputMode="decimal"
               value={targetBf}
@@ -207,13 +208,13 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
         </div>
 
         <div>
-          <Label hint="opcional">Entrenador</Label>
-          <Input value={coach} onChange={(e) => setCoach(e.target.value)} placeholder="Nombre del coach" />
+          <Label hint={t('common.optional')}>{t('prep.coach')}</Label>
+          <Input value={coach} onChange={(e) => setCoach(e.target.value)} placeholder={t('prep.coachPlaceholder')} />
         </div>
 
         <div>
-          <Label>Estado del prep</Label>
-          <Select aria-label="Estado del prep" value={status} onChange={(e) => setStatus(e.target.value as PrepStatus)}>
+          <Label>{t('prep.status')}</Label>
+          <Select aria-label={t('prep.status')} value={status} onChange={(e) => setStatus(e.target.value as PrepStatus)}>
             {STATUSES.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
@@ -221,18 +222,18 @@ export function PrepSetupSheet({ open, onClose, existing }: Props) {
         </div>
 
         <div>
-          <Label hint="opcional">Notas</Label>
+          <Label hint={t('common.optional')}>{t('common.notes')}</Label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            placeholder="Objetivos, referencias, recordatorios..."
+            placeholder={t('prep.notesPlaceholder')}
             className="w-full resize-none rounded-2xl border border-line bg-surface2 px-3.5 py-3 text-[15px] outline-none placeholder:text-faint focus:border-brand/60"
           />
         </div>
 
         <p className="rounded-2xl border border-line bg-surface2 p-3 text-[12px] text-faint">
-          Los pesos y porcentajes objetivo son estimaciones para orientar el ritmo. La app no
+          {t('comp.setupNote')}
           diagnostica ni prescribe: usalos junto al criterio de tu entrenador.
         </p>
       </div>

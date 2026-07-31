@@ -16,6 +16,8 @@ import { navyBodyFat } from '../src/domain/body';
 import { estimate1RM } from '../src/domain/training';
 import { runCompetitionTests } from './smoke-competition.mts';
 import { runUnitsTests } from './smoke-units.mts';
+import { runContentTests } from './smoke-content.mts';
+import { runBackupTests } from './smoke-backup.mts';
 import type { Profile } from '../src/domain/types';
 
 setCatalog(FOODS);
@@ -233,6 +235,12 @@ runCompetitionTests(check, line);
 
 /* ======================= UNIDADES, TECNICA, VIDEO, I18N ============== */
 runUnitsTests(check, line);
+
+/* ================== AUDITORIA DE CONTENIDO DE EJERCICIOS ============= */
+runContentTests(check, line);
+
+/* ================== COPIAS DE SEGURIDAD Y RESTAURACION =============== */
+runBackupTests(check, line);
 
 /* ---------------------------------------------------------------------- */
 console.log(`\n${failures === 0 ? 'TODO CORRECTO' : `${failures} COMPROBACIONES FALLIDAS`}\n`);

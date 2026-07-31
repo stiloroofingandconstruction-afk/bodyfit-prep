@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persisted, newEntity, softDelete, touch } from './persist';
 import { setLocale, type Locale } from '@/i18n';
+import { resetDateFormatters } from '@/lib/date';
 import type { WeightUnit, LengthUnit } from '@/domain/units';
 import type { Division } from '@/domain/competition';
 import type { ExerciseMedia } from '@/domain/types';
@@ -74,6 +75,8 @@ export const useSettingsStore = create<SettingsState>()(
 
       setLocaleSetting: (locale) => {
         setLocale(locale);
+        // Los formateadores de fecha y numero cachean el idioma: hay que tirarlos
+        resetDateFormatters();
         set({ locale });
       },
 
@@ -118,7 +121,10 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       onRehydrateStorage: () => (state) => {
-        if (state?.locale) setLocale(state.locale);
+        if (state?.locale) {
+          setLocale(state.locale);
+          resetDateFormatters();
+        }
       },
     },
   ),

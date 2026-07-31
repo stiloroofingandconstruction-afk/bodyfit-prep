@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from 'react-router-dom';
+import { RouteGuard } from './RouteGuard';
 import { TabBar } from './TabBar';
 import { RestTimerBar } from '@/features/training/RestTimerBar';
 import { ActiveWorkoutBanner } from '@/features/training/ActiveWorkoutBanner';
@@ -16,7 +17,9 @@ export function Layout() {
         key={pathname}
         className="fade-enter scroll-momentum flex-1 overflow-y-auto pb-[calc(4.5rem+env(safe-area-inset-bottom))]"
       >
-        <Outlet />
+        <RouteGuard>
+          <Outlet />
+        </RouteGuard>
       </main>
 
       <ActiveWorkoutBanner />

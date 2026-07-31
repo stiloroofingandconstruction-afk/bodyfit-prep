@@ -96,6 +96,15 @@ export const checkinMigrations: Record<number, Migration> = {
       ensureField(c, 'steps', 0);
       ensureField(c, 'cardioMinutes', 0);
       ensureField(c, 'measurements', {});
+      /*
+       * Campos numericos que la pantalla formatea sin comprobar: si faltan, la
+       * vista revienta al abrirse. Un check-in incompleto debe verse a medias,
+       * no tumbar la pantalla entera.
+       */
+      ensureField(c, 'avgWeight', typeof c.weight === 'number' ? c.weight : 0);
+      ensureField(c, 'weightChange', 0);
+      ensureField(c, 'adherence', 0);
+      ensureField(c, 'workoutsCompleted', 0);
     }
     s.checkins = list;
     return s;

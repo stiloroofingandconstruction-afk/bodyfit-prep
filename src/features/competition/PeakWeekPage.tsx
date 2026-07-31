@@ -9,6 +9,7 @@ import { cx, uid } from '@/lib/utils';
 import { alive } from '@/store/persist';
 import { usePrepStore } from '@/store/prepStore';
 import { useActivePrep, useCountdown } from '@/store/selectors';
+import { t } from '@/i18n';
 import type { ChecklistItem } from '@/domain/prepTypes';
 
 /**
@@ -19,34 +20,21 @@ import type { ChecklistItem } from '@/domain/prepTypes';
  * caso, supervision medica. Lo que si hace es asegurar que no se te olvide nada
  * de la logistica, que es donde de verdad se pierden shows.
  */
-const DEFAULT_CHECKLIST: string[] = [
-  'Mantener la rutina de comidas que ya conoces',
-  'Mantener la ingesta habitual de agua',
-  'Mantener el sodio habitual de tu dieta',
-  'Practicar posing a diario, con la musica del show',
-  'Reducir el volumen de entrenamiento, mantener la intensidad tecnica',
-  'Priorizar el sueno: 7–9 horas',
-  'Nada de alimentos nuevos esta semana',
-  'Nada de suplementos nuevos esta semana',
-  'Revisar que la ropa de competicion esta lista y probada',
-  'Confirmar la hora y el lugar del registro',
-];
+/* Se siembran una sola vez, en el idioma activo; despues son datos editables. */
+function defaultChecklist(): string[] {
+  return [
+    t('peak.r1'), t('peak.r2'), t('peak.r3'), t('peak.r4'), t('peak.r5'),
+    t('peak.r6'), t('peak.r7'), t('peak.r8'), t('peak.r9'), t('peak.r10'),
+  ];
+}
 
-const DEFAULT_LOGISTICS: string[] = [
-  'Inscripcion confirmada y pagada',
-  'Carnet de federacion en regla',
-  'Tan reservado o material comprado',
-  'Ropa de competicion (traje, trunks, bikini)',
-  'Calzado para el escenario',
-  'Musica entregada en el formato pedido',
-  'Documento de identidad',
-  'Transporte al recinto',
-  'Alojamiento confirmado',
-  'Comida conocida preparada para el dia',
-  'Toallas viejas y sabanas oscuras para el tan',
-  'Bandas elasticas para el pump-up',
-  'Cargador y bateria externa',
-];
+function defaultLogistics(): string[] {
+  return [
+    t('peak.l1'), t('peak.l2'), t('peak.l3'), t('peak.l4'), t('peak.l5'),
+    t('peak.l6'), t('peak.l7'), t('peak.l8'), t('peak.l9'), t('peak.l10'),
+    t('peak.l11'), t('peak.l12'), t('peak.l13'),
+  ];
+}
 
 function toItems(labels: string[]): ChecklistItem[] {
   return labels.map((label) => ({ id: uid(), label, done: false }));
@@ -76,8 +64,8 @@ export default function PeakWeekPage() {
       savePeakWeek({
         prepId: prep.id,
         weekStart,
-        checklist: toItems(DEFAULT_CHECKLIST),
-        logistics: toItems(DEFAULT_LOGISTICS),
+        checklist: toItems(defaultChecklist()),
+        logistics: toItems(defaultLogistics()),
         dailyNotes: {},
         acknowledgedDisclaimer: false,
       });
@@ -88,11 +76,11 @@ export default function PeakWeekPage() {
   if (!prep) {
     return (
       <>
-        <PageHeader title="Peak week" back />
+        <PageHeader title={t('screen.peakWeek')} back />
         <Page>
           <EmptyState
-            title="Sin competencia activa"
-            description="Activa el modo competencia para planificar tu peak week."
+            title={t('prep.noPrep')}
+            description={t('peak.noPrepDesc')}
           />
         </Page>
       </>
@@ -114,8 +102,12 @@ export default function PeakWeekPage() {
   return (
     <>
       <PageHeader
-        title="Peak week"
-        subtitle={`Semana del ${friendlyDate(weekStart)} · ${doneCount}/${totalCount} completado`}
+        title={t('screen.peakWeek')}
+        subtitle={t('peak.weekOf', {
+          date: friendlyDate(weekStart),
+          done: doneCount,
+          total: totalCount,
+        })}
         back
       />
 
@@ -125,15 +117,12 @@ export default function PeakWeekPage() {
           <div className="flex gap-3">
             <AlertTriangle size={18} className="mt-0.5 shrink-0 text-carbs" />
             <div>
-              <p className="text-[14px] font-semibold text-carbs">Lee esto antes de empezar</p>
+              <p className="text-[14px] font-semibold text-carbs">{t('peak.readFirst')}</p>
               <p className="mt-1.5 text-[13px] text-muted">
-                Cualquier manipulacion avanzada de agua, sodio, carbohidratos o suplementacion debe
-                hacerse con un coach cualificado y, cuando corresponda, supervision medica. Esta app
-                no automatiza, no calcula y no recomienda ese tipo de protocolos.
+                {t('peak.warning')}
               </p>
               <p className="mt-2 text-[13px] text-muted">
-                La peak week no arregla un prep: lo revela. Lo que mas suma a estas alturas es no
-                cambiar nada de lo que ya funciona y tener la logistica resuelta.
+                {t('peak.philosophy')}
               </p>
               {!ack && (
                 <Button
@@ -144,7 +133,7 @@ export default function PeakWeekPage() {
                     updatePeakWeek(plan.id, { acknowledgedDisclaimer: true });
                   }}
                 >
-                  Entendido
+                  {t('peak.understood')}
                 </Button>
               )}
             </div>
@@ -156,8 +145,7 @@ export default function PeakWeekPage() {
             <div className="flex gap-2.5">
               <Info size={15} className="mt-0.5 shrink-0 text-sky" />
               <p className="text-[13px] text-muted">
-                Aun faltan {cd.weeksOut} semanas. Puedes ir preparando la logistica: es lo que menos
-                cuesta adelantar y lo que mas tranquilidad da al llegar.
+                {t('peak.stillWeeks', { n: cd.weeksOut })}
               </p>
             </div>
           </Card>
@@ -172,7 +160,7 @@ export default function PeakWeekPage() {
               </span>
             }
           >
-            Rutina de la semana
+            {t('peak.weekRoutine')}
           </SectionTitle>
           <CheckList items={plan.checklist} onToggle={(id) => toggle('checklist', id)} />
         </div>
@@ -186,20 +174,20 @@ export default function PeakWeekPage() {
               </span>
             }
           >
-            Logistica
+            {t('peak.logistics')}
           </SectionTitle>
           <CheckList items={plan.logistics} onToggle={(id) => toggle('logistics', id)} />
         </div>
 
         {/* ─────────────────────────────────── notas por dia */}
         <div className="mt-5">
-          <SectionTitle>Notas por dia</SectionTitle>
+          <SectionTitle>{t('peak.dayNotes')}</SectionTitle>
           <div className="space-y-2">
             {days.map((d) => (
               <div key={d} className="rounded-2xl border border-line bg-surface p-3">
                 <p className="mb-1.5 text-[13px] font-medium">
                   {dayName(d)}
-                  {d === prep.showDate && <span className="ml-2 text-brand">· dia del show</span>}
+                  {d === prep.showDate && <span className="ml-2 text-brand">· {t('peak.showDay')}</span>}
                 </p>
                 <textarea
                   value={plan.dailyNotes[d] ?? ''}
@@ -209,7 +197,7 @@ export default function PeakWeekPage() {
                     })
                   }
                   rows={2}
-                  placeholder="Comidas, entrenamiento, posing, descanso..."
+                  placeholder={t('peak.notesPlaceholder')}
                   className="w-full resize-none rounded-xl border border-line bg-surface2 px-3 py-2 text-[14px] outline-none placeholder:text-faint focus:border-brand/60"
                 />
               </div>

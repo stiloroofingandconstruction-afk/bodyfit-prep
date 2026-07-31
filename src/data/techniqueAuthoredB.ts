@@ -97,7 +97,8 @@ export const AUTHORED_LOWER: Record<string, T> = {
       'Empuja con todo el pie, sobre todo con el talon.',
       'Termina sin bloquear las rodillas de golpe.',
     ],
-    breathing: 'Inspira al bajar, expulsa el aire durante el empuje.',
+    breathing:
+      'Inspira al bajar y expulsa durante el empuje. Con carga alta y las piernas por encima del corazon, evita apneas largas.',
     rangeOfMotion:
       'Hasta unos 90 grados de rodilla o algo mas, siempre que la pelvis siga apoyada. Ese es el limite real, no la profundidad.',
     tempo: '3-0-1-0',
@@ -147,7 +148,8 @@ export const AUTHORED_LOWER: Record<string, T> = {
       'Manten toda la espalda pegada al respaldo.',
       'Empuja con el pie completo hasta casi extender.',
     ],
-    breathing: 'Inspira al bajar, expulsa el aire al subir.',
+    breathing:
+      'Inspira arriba, manten el torso firme al bajar y expulsa pasado el punto mas dificil de la subida.',
     rangeOfMotion:
       'Hasta el paralelo o algo mas, mientras la pelvis siga apoyada.',
     tempo: '3-1-1-0',
@@ -162,7 +164,7 @@ export const AUTHORED_LOWER: Record<string, T> = {
       '8–15 repeticiones. Excelente para llevar el cuadriceps cerca del fallo con seguridad.',
     ],
     strength: ['Buena para acumular carga sin el coste tecnico de la sentadilla libre.'],
-    warnings: ['Ninguna especifica manteniendo la espalda apoyada.'],
+    warnings: ['Sin riesgos destacables mientras mantengas toda la espalda apoyada en el respaldo.'],
     contraindications: ['Molestia de rodilla en flexion profunda.'],
     lumbarAdaptation:
       'Con la espalda apoyada la carga lumbar baja mucho respecto a la sentadilla. Limita el rango al punto donde la pelvis empiece a rodar.',
@@ -207,7 +209,7 @@ export const AUTHORED_LOWER: Record<string, T> = {
       'Muy util como preactivacion antes de sentadilla o prensa.',
     ],
     strength: ['No aplica.'],
-    warnings: ['Ninguna con carga moderada y buena alineacion.'],
+    warnings: ['Sin riesgos destacables con carga moderada y el eje de la maquina alineado con la rodilla.'],
     contraindications: ['Dolor femoropatelar que empeora con el ejercicio.'],
     lumbarAdaptation:
       'Carga lumbar nula con la espalda apoyada. Es de los pocos ejercicios de pierna que puedes hacer con la espalda muy sensible.',
@@ -262,7 +264,7 @@ export const AUTHORED_LOWER: Record<string, T> = {
       'CARGA LUMBAR ALTA. Es una bisagra de cadera cargada: exige mucho a los erectores.',
     ],
     contraindications: [
-      'Dolor lumbar activo, hernia sintomatica o cualquier molestia que aparezca al inclinarse.',
+      'Dolor lumbar activo, hernia sintomatica o cualquier molestia que aparezca al inclinarse. Consulta con un profesional sanitario antes de retomar este patron.',
     ],
     lumbarAdaptation:
       'Con lumbar sensible, sustituye por curl femoral sentado o tumbado: trabajan el isquiotibial sin ninguna carga sobre la columna. Si quieres mantener el patron de cadera, el hip thrust da trabajo de gluteo con la espalda apoyada.',
@@ -286,7 +288,8 @@ export const AUTHORED_LOWER: Record<string, T> = {
       'Manten un instante en la contraccion maxima.',
       'Vuelve en 3 segundos resistiendo hasta la extension completa.',
     ],
-    breathing: 'Expulsa el aire al flexionar, inspira al extender.',
+    breathing:
+      'Expulsa al llevar el talon bajo el asiento, inspira mientras la pierna se extiende.',
     rangeOfMotion:
       'Desde extension completa hasta la maxima flexion de rodilla que permita la maquina.',
     tempo: '3-1-1-0',
@@ -305,7 +308,7 @@ export const AUTHORED_LOWER: Record<string, T> = {
       'La version sentada da mas estiramiento que la tumbada: si eliges una sola, elige esta.',
     ],
     strength: ['No aplica.'],
-    warnings: ['Ninguna relevante.'],
+    warnings: ['Sin riesgos destacables: la maquina fija la cadera y la espalda queda apoyada.'],
     contraindications: ['Molestia en la parte posterior de la rodilla.'],
     lumbarAdaptation:
       'Carga lumbar nula. Es la mejor alternativa al peso muerto rumano cuando la espalda esta sensible.',
@@ -329,7 +332,8 @@ export const AUTHORED_LOWER: Record<string, T> = {
       'Manten las caderas pegadas al banco durante todo el recorrido.',
       'Aprieta arriba y vuelve controlado hasta la extension completa.',
     ],
-    breathing: 'Expulsa el aire al flexionar, inspira al extender.',
+    breathing:
+      'Expulsa al acercar el talon al gluteo, inspira mientras la pierna vuelve a extenderse.',
     rangeOfMotion: 'Extension completa abajo, maxima flexion arriba sin levantar la cadera.',
     tempo: '3-1-1-0',
     commonMistakes: [
@@ -373,7 +377,8 @@ export const AUTHORED_LOWER: Record<string, T> = {
       'Manten la pelvis en retroversion: no busques altura arqueando la espalda.',
       'Baja controlado sin llegar a apoyar del todo entre repeticiones.',
     ],
-    breathing: 'Expulsa el aire al subir, inspira al bajar.',
+    breathing:
+      'Expulsa al empujar la cadera arriba, inspira mientras desciende. Manten el abdomen firme sin bloquear el aire.',
     rangeOfMotion:
       'Hasta que el torso quede paralelo al suelo. Ni un grado mas: la altura extra sale de la lumbar, no del gluteo.',
     tempo: '2-1-1-1',
@@ -422,7 +427,8 @@ export const AUTHORED_LOWER: Record<string, T> = {
       'Empuja con el talon delantero para volver.',
       'Manten la cadera cuadrada durante todo el recorrido.',
     ],
-    breathing: 'Inspira al bajar, expulsa el aire al subir.',
+    breathing:
+      'Inspira antes de bajar sobre la pierna de apoyo, expulsa al subir desde el punto mas bajo.',
     rangeOfMotion: 'Hasta el paralelo del muslo delantero, o hasta donde controles el equilibrio.',
     tempo: '3-1-1-0',
     commonMistakes: [
@@ -469,7 +475,8 @@ export const AUTHORED_LOWER: Record<string, T> = {
       'Empuja con el talon delantero para volver o para dar el siguiente paso.',
       'Manten la cadera cuadrada en todo momento.',
     ],
-    breathing: 'Inspira al bajar, expulsa el aire al subir.',
+    breathing:
+      'Inspira al dar el paso y bajar, expulsa al empujar con la pierna de delante para volver.',
     rangeOfMotion: 'Hasta que la rodilla trasera quede a un par de centimetros del suelo.',
     tempo: '2-1-1-0',
     commonMistakes: [
@@ -509,7 +516,8 @@ export const AUTHORED_LOWER: Record<string, T> = {
       'Baja despacio hasta el estiramiento maximo.',
       'Manten 2 segundos abajo antes de la siguiente repeticion.',
     ],
-    breathing: 'Expulsa el aire al subir, inspira al bajar.',
+    breathing:
+      'Expulsa al elevarte sobre las puntas, inspira mientras los talones descienden.',
     rangeOfMotion:
       'Estiramiento maximo abajo y elevacion completa arriba. El recorrido parcial es la razon principal por la que los gemelos no crecen.',
     tempo: '3-2-1-1 · 2 s de estiramiento abajo',
@@ -576,8 +584,10 @@ export const AUTHORED_LOWER: Record<string, T> = {
     strength: [
       'Progresa alargando la palanca o el tiempo bajo control, nunca anadiendo velocidad.',
     ],
-    warnings: ['Ninguna. Es un ejercicio de control, no de carga.'],
-    contraindications: ['Ninguna relevante en su version basica.'],
+    warnings: ['Sin riesgos destacables: es un ejercicio de control motor, no de carga.'],
+    contraindications: [
+      'En su version basica no hay contraindicaciones destacables. Si notas la zona lumbar, acorta el recorrido.',
+    ],
     lumbarAdaptation:
       'Este ejercicio ES la adaptacion lumbar. Ensena justo el control que falta cuando la espalda baja se sobrecarga en sentadillas y peso muerto. Si tienes molestias recurrentes, incluyelo dos o tres veces por semana.',
   },
@@ -619,7 +629,7 @@ export const AUTHORED_LOWER: Record<string, T> = {
     ],
     hypertrophy: ['3 series de 8–10 repeticiones por lado con mantenimiento.'],
     strength: ['Progresa alargando el mantenimiento, no anadiendo velocidad.'],
-    warnings: ['Ninguna.'],
+    warnings: ['Sin riesgos especificos mas alla de respetar la tecnica descrita.'],
     contraindications: ['Molestia de muneca: usa punos cerrados o paralelas.'],
     lumbarAdaptation:
       'Es uno de los ejercicios de referencia para reeducar el control lumbopelvico. Seguro incluso en fases muy sensibles, siempre que la pelvis no se mueva.',
@@ -659,7 +669,7 @@ export const AUTHORED_LOWER: Record<string, T> = {
     safety: ['Carga ligera siempre. Aqui el peso alto elimina el objetivo del ejercicio.'],
     hypertrophy: ['3 series de 8–12 repeticiones por lado con mantenimiento.'],
     strength: ['Progresa alejandote de la polea antes que anadiendo peso.'],
-    warnings: ['Ninguna.'],
+    warnings: ['Sin riesgos especificos mas alla de respetar la tecnica descrita.'],
     contraindications: ['Dolor al resistir la rotacion del tronco.'],
     lumbarAdaptation:
       'Excelente con lumbar sensible: entrena la estabilidad del tronco sin flexion, extension ni carga axial. Es el complemento natural del dead bug y el bird dog.',
@@ -726,7 +736,8 @@ export const AUTHORED_LOWER: Record<string, T> = {
       'Manten la posicion sin dejar que la cadera caiga ni rote.',
       'Baja controlado y cambia de lado.',
     ],
-    breathing: 'Respiracion continua y tranquila.',
+    breathing:
+      'Respiracion continua por la nariz. Si tienes que retener el aire, la serie ya es demasiado larga.',
     rangeOfMotion: 'Isometrico en alineacion completa.',
     tempo: 'Mantenimientos de 20–40 segundos por lado',
     commonMistakes: [
@@ -742,7 +753,7 @@ export const AUTHORED_LOWER: Record<string, T> = {
     safety: ['Con las rodillas apoyadas la version es mucho mas accesible y sigue siendo util.'],
     hypertrophy: ['3 series de 20–40 segundos por lado.'],
     strength: ['Progresa levantando la pierna superior o anadiendo peso en la cadera.'],
-    warnings: ['Ninguna.'],
+    warnings: ['Sin riesgos especificos mas alla de respetar la tecnica descrita.'],
     contraindications: ['Dolor de hombro en apoyo lateral.'],
     lumbarAdaptation:
       'Muy recomendable con lumbar sensible: fortalece el lateral del tronco sin flexionar ni comprimir la columna. Empieza con las rodillas apoyadas.',
@@ -833,8 +844,10 @@ export const AUTHORED_LOWER: Record<string, T> = {
     strength: [
       'Es el paso previo a cargar cualquier bisagra. Dominarlo mejora directamente el peso muerto rumano.',
     ],
-    warnings: ['Ninguna: se hace sin peso.'],
-    contraindications: ['Ninguna relevante.'],
+    warnings: ['Sin riesgos destacables: se practica sin carga y con recorrido guiado por el baston.'],
+    contraindications: [
+      'Sin contraindicaciones destacables al hacerlo sin carga y dentro de un rango comodo.',
+    ],
     lumbarAdaptation:
       'Es la herramienta principal para reaprender la bisagra despues de una molestia lumbar. Practicalo a diario unos minutos: te ensena donde esta tu limite real antes de que la carga te lo recuerde.',
   },
@@ -856,7 +869,8 @@ export const AUTHORED_LOWER: Record<string, T> = {
       'Manten la pelvis metida: no busques altura arqueando la lumbar.',
       'Baja controlado sin apoyar del todo entre repeticiones.',
     ],
-    breathing: 'Expulsa el aire al subir, inspira al bajar.',
+    breathing:
+      'Expulsa al elevar la cadera, inspira al apoyarla de nuevo. Respiracion tranquila de principio a fin.',
     rangeOfMotion:
       'Hasta la alineacion rodilla-cadera-hombro. Ni un centimetro mas: la altura extra sale de la lumbar.',
     tempo: '2-2-1-0 · 2 s de contraccion arriba',
@@ -872,8 +886,10 @@ export const AUTHORED_LOWER: Record<string, T> = {
     safety: ['Sin carga y con la espalda apoyada, es de los ejercicios mas seguros del catalogo.'],
     hypertrophy: ['3 series de 12–20 repeticiones con pausa arriba.'],
     strength: ['Progresa hacia el hip thrust con barra cuando controles bien la retroversion.'],
-    warnings: ['Ninguna.'],
-    contraindications: ['Ninguna relevante.'],
+    warnings: ['Sin riesgos especificos mas alla de respetar la tecnica descrita.'],
+    contraindications: [
+      'Sin contraindicaciones destacables al hacerlo sin carga y dentro de un rango comodo.',
+    ],
     lumbarAdaptation:
       'Perfecto con lumbar sensible: activa el gluteo, que suele estar poco implicado en quienes sobrecargan la espalda baja. Usalo como calentamiento antes de cualquier sesion de pierna.',
   },

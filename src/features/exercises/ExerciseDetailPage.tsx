@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/ui/Misc';
 import { Button } from '@/components/ui/Button';
 import { ExerciseTechnique } from './ExerciseTechnique';
 import { EXERCISES, EXERCISE_BY_ID } from '@/data/exercises';
+import { t } from '@/i18n';
 
 export default function ExerciseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -22,14 +23,14 @@ export default function ExerciseDetailPage() {
   if (!exercise) {
     return (
       <>
-        <PageHeader title="Ejercicio" back />
+        <PageHeader title={t('ex.exercise')} back />
         <Page>
           <EmptyState
-            title="Ejercicio no encontrado"
-            description="Puede que el enlace sea antiguo."
+            title={t('ex.notFound')}
+            description={t('ex.notFoundDesc')}
             action={
               <Button variant="primary" onClick={() => navigate('/ejercicios')}>
-                Ver biblioteca
+                {t('ex.viewLibrary')}
               </Button>
             }
           />
@@ -40,7 +41,7 @@ export default function ExerciseDetailPage() {
 
   return (
     <>
-      <PageHeader title="Tecnica" subtitle={exercise.name} back />
+      <PageHeader title={t('ex.techniqueTitle')} subtitle={exercise.name} back />
       <Page>
         <ExerciseTechnique
           exercise={exercise}

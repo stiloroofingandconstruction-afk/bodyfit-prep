@@ -10,12 +10,22 @@ import { MacroSummary } from '@/features/nutrition/MacroSummary';
 import { sumMacros } from '@/domain/macros';
 import { weightSeries } from '@/domain/body';
 import { workoutSetCount, workoutVolume } from '@/domain/training';
-import { addDays, dayInitial, friendlyDate, fromISODate, monthName, toISODate, today } from '@/lib/date';
+import {
+  addDays,
+  dayInitial,
+  friendlyDate,
+  fromISODate,
+  monthName,
+  toISODate,
+  today,
+  weekdayInitials,
+} from '@/lib/date';
 import { cx } from '@/lib/utils';
 import { useUnits } from '@/lib/useUnits';
 import { alive } from '@/store/persist';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { useMeasurements, useTargets, useWorkouts } from '@/store/selectors';
+import { t } from '@/i18n';
 
 export default function HistoryPage() {
   const entries = useNutritionStore((s) => s.entries);
@@ -80,7 +90,7 @@ export default function HistoryPage() {
 
   return (
     <>
-      <PageHeader title="Historial" subtitle="Todo lo que has registrado" />
+      <PageHeader title={t('screen.history')} subtitle={t('hist.subtitle')} />
 
       <Page>
         <ProgressTabs />
@@ -91,7 +101,7 @@ export default function HistoryPage() {
             <button
               onClick={() => setCursor(shiftMonth(cursor, -1))}
               className="pressable flex size-8 items-center justify-center rounded-full bg-surface2 text-muted"
-              aria-label="Mes anterior"
+              aria-label={t('hist.prevMonth')}
             >
               <ChevronLeft size={17} />
             </button>
@@ -101,14 +111,14 @@ export default function HistoryPage() {
             <button
               onClick={() => setCursor(shiftMonth(cursor, 1))}
               className="pressable flex size-8 items-center justify-center rounded-full bg-surface2 text-muted"
-              aria-label="Mes siguiente"
+              aria-label={t('hist.nextMonth')}
             >
               <ChevronRight size={17} />
             </button>
           </div>
 
           <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[10px] text-faint">
-            {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((d, i) => (
+            {weekdayInitials().map((d, i) => (
               <span key={i}>{d}</span>
             ))}
           </div>
@@ -150,16 +160,22 @@ export default function HistoryPage() {
           </div>
 
           <div className="mt-3 grid grid-cols-3 gap-3 border-t border-line pt-3">
-            <Stat label="Dias con registro" value={monthStats.logged} />
-            <Stat label="Entrenos" value={monthStats.workouts} />
-            <Stat label="Media kcal" value={monthStats.avgKcal} />
+            <Stat label={t('hist.daysLogged')} value={monthStats.logged} />
+            <Stat label={t('hist.workouts')} value={monthStats.workouts} />
+            <Stat label={t('hist.avgKcal')} value={monthStats.avgKcal} />
           </div>
         </Card>
 
         {/* ------------------------------------------------------------ graficas */}
         <div className="mt-5">
-          <SectionTitle action={<span className="text-[11px] text-faint">objetivo {target.kcal}</span>}>
-            Calorias · ultimos 14 dias
+          <SectionTitle
+            action={
+              <span className="text-[11px] text-faint">
+                {t('hist.targetShort')} {target.kcal}
+              </span>
+            }
+          >
+            {t('hist.calories14')}
           </SectionTitle>
           <Card>
             <BarChart data={last14} unit=" kcal" height={150} />
@@ -167,8 +183,14 @@ export default function HistoryPage() {
         </div>
 
         <div className="mt-5">
-          <SectionTitle action={<span className="text-[11px] text-faint">objetivo {target.protein} g</span>}>
-            Proteina · ultimos 30 dias
+          <SectionTitle
+            action={
+              <span className="text-[11px] text-faint">
+                {t('hist.targetShort')} {target.protein} g
+              </span>
+            }
+          >
+            {t('hist.protein30')}
           </SectionTitle>
           <Card>
             <LineChart data={proteinSeries} color="var(--color-protein)" unit=" g" zeroBased />
@@ -176,7 +198,7 @@ export default function HistoryPage() {
         </div>
 
         <div className="mt-5">
-          <SectionTitle>Peso</SectionTitle>
+          <SectionTitle>{t('field.weight')}</SectionTitle>
           <Card>
             <LineChart
               data={weights.map((p) => ({ ...p, value: u.toDisplayWeight(p.value) }))}
@@ -216,12 +238,12 @@ function DaySheet({ date, onClose }: { date: string | null; onClose: () => void 
 
       {dayWorkouts.length > 0 && (
         <div className="mt-4">
-          <SectionTitle>Entrenamiento</SectionTitle>
+          <SectionTitle>{t('set.training')}</SectionTitle>
           {dayWorkouts.map((w) => (
             <div key={w.id} className="mb-1.5 rounded-2xl border border-line bg-surface2 px-3.5 py-3">
               <p className="text-[15px] font-medium">{w.name}</p>
               <p className="text-[12px] tabular text-faint">
-                {workoutSetCount(w)} series · {u.numWeight(workoutVolume(w), 0)} {u.w}
+                {workoutSetCount(w)} {t('home.sets')} · {u.numWeight(workoutVolume(w), 0)} {u.w}
               </p>
               <div className="mt-2 space-y-0.5">
                 {w.exercises.map((ex) => (
@@ -239,9 +261,9 @@ function DaySheet({ date, onClose }: { date: string | null; onClose: () => void 
       )}
 
       <div className="mt-4">
-        <SectionTitle>Alimentos</SectionTitle>
+        <SectionTitle>{t('hist.foods')}</SectionTitle>
         {dayEntries.length === 0 ? (
-          <p className="py-6 text-center text-[13px] text-faint">Sin registros este dia</p>
+          <p className="py-6 text-center text-[13px] text-faint">{t('hist.noRecords')}</p>
         ) : (
           <div className="space-y-1.5">
             {dayEntries.map((e) => (

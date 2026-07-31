@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { alive, newEntity, persisted, softDelete, touch } from './persist';
+import { checkinMigrations } from './migrations';
 import type { Entity, WeeklyCheckin } from '@/domain/types';
 
 type CheckinInput = Omit<WeeklyCheckin, keyof Entity>;
@@ -29,5 +30,5 @@ export const useCheckinStore = create<CheckinState>()(
 
     remove: (id) =>
       set((s) => ({ checkins: s.checkins.map((c) => (c.id === id ? softDelete(c) : c)) })),
-  })),
+  }), { migrations: checkinMigrations }),
 );

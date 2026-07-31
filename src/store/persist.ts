@@ -1,6 +1,7 @@
 import { createJSONStorage, persist, type PersistOptions } from 'zustand/middleware';
 import type { StateCreator } from 'zustand';
 import { zustandStorage } from '@/services/storage';
+import { runMigrations, type Migration } from './migrations';
 import { nowISO, uid } from '@/lib/utils';
 import type { Entity } from '@/domain/types';
 
@@ -11,15 +12,36 @@ import type { Entity } from '@/domain/types';
 export function persisted<T>(
   name: string,
   initializer: StateCreator<T>,
-  options: Partial<PersistOptions<T, unknown>> = {},
+  options: Partial<PersistOptions<T, unknown>> & { migrations?: Record<number, Migration> } = {},
 ) {
+  const { migrations, ...rest } = options;
+
   return persist(initializer, {
     name,
-    version: 1,
+    version: migrations ? STORE_VERSION : 1,
     storage: createJSONStorage(() => zustandStorage),
-    ...options,
+    /*
+     * Las migraciones se conectan aqui y no en cada store para que ninguna se
+     * quede sin enganchar. Antes existian escritas pero sin llamar: los datos
+     * antiguos llegaban a las pantallas sin los campos nuevos.
+     */
+    ...(migrations
+      ? {
+          migrate: (state: unknown, version: number) =>
+            runMigrations(state, version, migrations),
+        }
+      : {}),
+    ...rest,
   } as PersistOptions<T, unknown>);
 }
+
+/**
+ * Version actual de cualquier coleccion con migraciones.
+ *
+ * Sube de uno en uno y se anade la funcion correspondiente en `migrations.ts`.
+ * Los stores sin migraciones se quedan en 1: no hay nada que transformar.
+ */
+export const STORE_VERSION = 2;
 
 /** Crea una entidad nueva con los campos de sincronizacion ya rellenos. */
 export function newEntity<T extends object>(data: T): T & Entity {

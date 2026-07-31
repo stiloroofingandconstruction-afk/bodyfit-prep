@@ -154,7 +154,10 @@ export interface DayPlanOptions extends SuggestOptions {
 
 export interface PlannedMeal {
   index: number;
+  /** Etiqueta en espanol. La usan las exportaciones; la interfaz traduce `kind`. */
   label: string;
+  /** Que papel juega esta comida en el dia, para poder traducirla. */
+  kind: 'training' | 'first' | 'last' | 'plain';
   target: Macros;
   result: SolveResult;
 }
@@ -218,6 +221,8 @@ export function planDay(remaining: Partial<Macros>, options: DayPlanOptions): Pl
     out.push({
       index: i,
       label: mealLabel(i, meals, i === trainingIndex),
+      kind:
+        i === trainingIndex ? 'training' : i === 0 ? 'first' : i === meals - 1 ? 'last' : 'plain',
       target,
       result: best.result,
     });

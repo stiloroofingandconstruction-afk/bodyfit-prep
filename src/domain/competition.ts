@@ -324,8 +324,25 @@ export interface Projection {
   /** Ritmo actual, kg/semana. */
   currentWeekly: number | null;
   status: 'sin-datos' | 'en-ritmo' | 'ligeramente-fuera' | 'fuera-de-ritmo' | 'sin-objetivo';
-  /** Explicacion en datos, no en alarmas. */
+  /** Explicacion en datos, no en alarmas. Texto en espanol, para exportaciones. */
   explanation: string;
+  /**
+   * Misma explicacion en forma estructurada, para que la interfaz la traduzca y
+   * la muestre en las unidades del usuario. Los pesos van SIEMPRE en kg.
+   */
+  detail:
+    | { kind: 'no-data'; daysLogged: number }
+    | { kind: 'no-target'; weeklyKg: number; projectedKg: number }
+    | {
+        kind: 'full';
+        avgKg: number;
+        weeklyKg: number;
+        requiredWeeklyKg: number;
+        weeksLeft: number;
+        projectedKg: number;
+        gapKg: number;
+        above: boolean;
+      };
 }
 
 export function projectToShow(
@@ -345,6 +362,7 @@ export function projectToShow(
       currentWeekly: null,
       status: 'sin-datos',
       explanation: `Con ${trend.daysLogged14} dias de peso en las ultimas 2 semanas aun no hay base suficiente. Se necesitan al menos 7.`,
+      detail: { kind: 'no-data', daysLogged: trend.daysLogged14 },
     };
   }
 
@@ -359,6 +377,7 @@ export function projectToShow(
       currentWeekly,
       status: 'sin-objetivo',
       explanation: `Al ritmo actual (${fmtKgWeek(currentWeekly)}) llegarias al show sobre ${projectedWeight} kg. Define un peso objetivo para medir el ritmo.`,
+      detail: { kind: 'no-target', weeklyKg: currentWeekly, projectedKg: projectedWeight },
     };
   }
 
@@ -381,7 +400,24 @@ export function projectToShow(
     `ritmo necesario ${fmtKgWeek(requiredWeekly)} durante ${weeksLeft.toFixed(1)} semanas. ` +
     `Proyeccion: ${projectedWeight} kg, ${absGap.toFixed(1)} kg ${dir} del objetivo.`;
 
-  return { projectedWeight, vsTarget, requiredWeekly, currentWeekly, status, explanation };
+  return {
+    projectedWeight,
+    vsTarget,
+    requiredWeekly,
+    currentWeekly,
+    status,
+    explanation,
+    detail: {
+      kind: 'full',
+      avgKg: current,
+      weeklyKg: currentWeekly,
+      requiredWeeklyKg: requiredWeekly,
+      weeksLeft: Math.round(weeksLeft * 10) / 10,
+      projectedKg: projectedWeight,
+      gapKg: Math.round(absGap * 10) / 10,
+      above: vsTarget > 0,
+    },
+  };
 }
 
 function fmtKgWeek(v: number): string {

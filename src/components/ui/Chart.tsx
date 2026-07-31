@@ -1,5 +1,6 @@
 import { useId, useMemo } from 'react';
 import { shortDate } from '@/lib/date';
+import { t } from '@/i18n';
 
 export interface Point {
   date: string;
@@ -73,7 +74,7 @@ export function LineChart({
   if (!geometry) {
     return (
       <div className="flex items-center justify-center py-8 text-[13px] text-faint" style={{ height }}>
-        Necesitas al menos 2 registros para ver la tendencia
+        {t('chart.needTwo')}
       </div>
     );
   }

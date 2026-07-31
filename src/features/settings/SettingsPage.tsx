@@ -1,35 +1,33 @@
-import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Bell,
   ChevronRight,
-  Download,
+  Database,
   FileText,
   Film,
   Info,
   Share,
   ShieldCheck,
   SquarePlus,
+  Stethoscope,
   Trash2,
   Trophy,
-  Upload,
 } from 'lucide-react';
 import { Page, PageHeader } from '@/components/ui/PageHeader';
 import { Card, SectionTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Label, Segmented, Select, Slider } from '@/components/ui/Field';
 import { Stat } from '@/components/ui/Misc';
-import { ACTIVITY_LABEL, ageFrom, bmr, tdee } from '@/domain/energy';
-import { clearAll, exportAll, importAll } from '@/services/storage';
-import { download } from '@/lib/utils';
+import { ACTIVITY_LEVELS, ageFrom, bmr, tdee } from '@/domain/energy';
+import { activityLabel } from '@/i18n/labels';
 import { useUnits } from '@/lib/useUnits';
-import { toISODate } from '@/lib/date';
+import { fmtDateTime, toISODate } from '@/lib/date';
 import { useProfile, useProfileStore } from '@/store/profileStore';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { useSettingsStore, type Experience } from '@/store/settingsStore';
+import { useBackupStore } from '@/store/backupStore';
 import { useActivePrep, useCurrentWeight, useTargets } from '@/store/selectors';
 import { alive } from '@/store/persist';
-import { toast } from '@/store/uiStore';
 import { LOCALE_LABEL, t, type Locale } from '@/i18n';
 import { EXERCISE_BY_ID } from '@/data/exercises';
 import type { ActivityLevel, Goal, Sex } from '@/domain/types';
@@ -44,8 +42,7 @@ export default function SettingsPage() {
   const removeCustomFood = useNutritionStore((s) => s.removeCustomFood);
   const settings = useSettingsStore();
   const prep = useActivePrep();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [confirmReset, setConfirmReset] = useState(false);
+  const lastBackup = useBackupStore((s) => s.lastBackupAt);
   const u = useUnits();
 
   const maintenance = tdee(profile, weight);
@@ -54,28 +51,28 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Ajustes" subtitle="Perfil, objetivos y datos" />
+      <PageHeader title={t('screen.settings')} subtitle={t('set.subtitle')} />
 
       <Page>
         {/* ------------------------------------------------- modo competencia */}
-        <SectionTitle>Competencia</SectionTitle>
+        <SectionTitle>{t('set.competition')}</SectionTitle>
         <Card>
           <div className="flex items-start gap-3">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface2 text-brand">
               <Trophy size={18} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-medium">Modo competencia</p>
+              <p className="text-[15px] font-medium">{t('set.competitionMode')}</p>
               <p className="mt-0.5 text-[12px] text-muted">
                 {prep
                   ? `${prep.showName} · ${prep.division}`
-                  : 'Cuenta atras, fases del prep, cardio, posing, peak week y dia del show'}
+                  : t('set.competitionModeDesc')}
               </p>
             </div>
             <button
               onClick={() => settings.update({ competitionMode: !settings.competitionMode })}
               className={cxToggle(settings.competitionMode)}
-              aria-label="Alternar modo competencia"
+              aria-label={t('set.competitionToggle')}
             >
               <span
                 className={`block size-5 rounded-full bg-white transition-transform ${
@@ -89,41 +86,41 @@ export default function SettingsPage() {
               to="/competencia"
               className="pressable mt-3 flex items-center justify-between rounded-xl bg-surface2 px-3 py-2.5 text-[14px]"
             >
-              <span>{prep ? 'Ver panel de competencia' : 'Configurar competencia'}</span>
+              <span>{prep ? t('set.viewCompetition') : t('set.setupCompetition')}</span>
               <ChevronRight size={16} className="text-faint" />
             </Link>
           )}
         </Card>
 
         {/* ------------------------------------------------------------ perfil */}
-        <SectionTitle>Perfil</SectionTitle>
+        <SectionTitle>{t('set.profile')}</SectionTitle>
         <Card>
           <div className="space-y-4">
             <div>
-              <Label>Nombre</Label>
+              <Label>{t('field.name')}</Label>
               <Input
                 value={profile.name}
                 onChange={(e) => update({ name: e.target.value })}
-                placeholder="Tu nombre"
+                placeholder={t('field.yourName')}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Sexo</Label>
+                <Label>{t('field.sex')}</Label>
                 <Segmented
                   value={profile.sex}
                   onChange={(v: Sex) => update({ sex: v })}
                   options={[
-                    { value: 'hombre', label: 'Hombre' },
-                    { value: 'mujer', label: 'Mujer' },
+                    { value: 'hombre', label: t('field.male') },
+                    { value: 'mujer', label: t('field.female') },
                   ]}
                 />
               </div>
               <div>
-                <Label hint={`${ageFrom(profile.birthDate)} anos`}>Nacimiento</Label>
+                <Label hint={String(ageFrom(profile.birthDate))}>{t('field.birth')}</Label>
                 <Input
-                  aria-label="Fecha de nacimiento"
+                  aria-label={t('field.birthDate')}
                   type="date"
                   value={profile.birthDate}
                   max={toISODate()}
@@ -134,9 +131,9 @@ export default function SettingsPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Altura</Label>
+                <Label>{t('field.height')}</Label>
                 <Input
-                  aria-label="Altura"
+                  aria-label={t('field.height')}
                   inputMode="decimal"
                   value={u.numLength(profile.heightCm, u.lengthUnit === 'cm' ? 0 : 1)}
                   onChange={(e) =>
@@ -146,9 +143,9 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <Label hint="opcional">Peso objetivo</Label>
+                <Label hint={t('common.optional')}>{t('field.goalWeight')}</Label>
                 <Input
-                  aria-label="Peso objetivo"
+                  aria-label={t('field.goalWeight')}
                   inputMode="decimal"
                   value={profile.goalWeight != null ? u.numWeight(profile.goalWeight) : ''}
                   onChange={(e) => {
@@ -162,15 +159,15 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <Label>Nivel de actividad</Label>
+              <Label>{t('field.activity')}</Label>
               <Select
-                aria-label="Nivel de actividad"
+                aria-label={t('field.activity')}
                 value={profile.activity}
                 onChange={(e) => update({ activity: e.target.value as ActivityLevel })}
               >
-                {Object.entries(ACTIVITY_LABEL).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
+                {ACTIVITY_LEVELS.map((level) => (
+                  <option key={level} value={level}>
+                    {activityLabel(level)}
                   </option>
                 ))}
               </Select>
@@ -180,36 +177,39 @@ export default function SettingsPage() {
 
         {/* ---------------------------------------------------------- objetivo */}
         <div className="mt-5">
-          <SectionTitle>Objetivo</SectionTitle>
+          <SectionTitle>{t('field.goal')}</SectionTitle>
           <Card>
             <Segmented
               value={profile.goal}
               onChange={(v: Goal) => update({ goal: v })}
               options={[
-                { value: 'definicion', label: 'Definicion' },
-                { value: 'mantenimiento', label: 'Mantener' },
-                { value: 'volumen', label: 'Volumen' },
+                { value: 'definicion', label: t('goal.cut') },
+                { value: 'mantenimiento', label: t('goal.maintainShort') },
+                { value: 'volumen', label: t('goal.bulk') },
               ]}
             />
 
             {profile.goal !== 'mantenimiento' && (
               <div className="mt-4">
-                <Label hint={`${profile.paceWeekPct}% / semana ≈ ${u.fmtWeight((weight * profile.paceWeekPct) / 100, 2)}`}>
-                  Ritmo
+                <Label
+                  hint={`${profile.paceWeekPct}% / ${t('common.week').toLowerCase()} ≈ ${u.fmtWeight(
+                    (weight * profile.paceWeekPct) / 100,
+                    2,
+                  )}`}
+                >
+                  {t('field.pace')}
                 </Label>
                 <Slider
-                  aria-label="Ritmo de cambio de peso por semana"
+                  aria-label={t('field.pace')}
                   value={profile.paceWeekPct}
                   onChange={(v) => update({ paceWeekPct: v })}
                   min={0.25}
                   max={1}
                   step={0.05}
-                  labels={['Lento', 'Moderado', 'Agresivo']}
+                  labels={[t('field.paceSlow'), t('field.paceModerate'), t('field.paceAggressive')]}
                 />
                 <p className="mt-1.5 text-[12px] text-faint">
-                  {profile.goal === 'definicion'
-                    ? 'Por encima de 1% semanal empiezas a perder musculo con la grasa.'
-                    : 'Ganar mas rapido no es ganar mas musculo, es ganar mas grasa.'}
+                  {profile.goal === 'definicion' ? t('goal.cutNote') : t('goal.bulkNote')}
                 </p>
               </div>
             )}
@@ -218,13 +218,13 @@ export default function SettingsPage() {
 
         {/* ------------------------------------------------------------ macros */}
         <div className="mt-5">
-          <SectionTitle>Macros</SectionTitle>
+          <SectionTitle>{t('set.macros')}</SectionTitle>
           <Card>
             <div className="mb-4 grid grid-cols-4 gap-2 text-center">
-              <Stat label="Kcal" value={targets.kcal} tone="text-brand" />
-              <Stat label="Prot" value={`${targets.protein}g`} tone="text-protein" />
-              <Stat label="Carb" value={`${targets.carbs}g`} tone="text-carbs" />
-              <Stat label="Gras" value={`${targets.fat}g`} tone="text-fat" />
+              <Stat label="kcal" value={targets.kcal} tone="text-brand" />
+              <Stat label={t('field.protein')} value={`${targets.protein} g`} tone="text-protein" />
+              <Stat label={t('field.carbs')} value={`${targets.carbs} g`} tone="text-carbs" />
+              <Stat label={t('field.fat')} value={`${targets.fat} g`} tone="text-fat" />
             </div>
 
             <div className="space-y-5">
@@ -232,10 +232,10 @@ export default function SettingsPage() {
                 <Label
                   hint={`${u.toDisplayPerWeight(profile.proteinPerKg).toFixed(u.weightUnit === 'kg' ? 1 : 2)} ${u.perW} → ${Math.round(weight * profile.proteinPerKg)} g`}
                 >
-                  Proteina
+                  {t('field.protein')}
                 </Label>
                 <Slider
-                  aria-label="Proteina por unidad de peso corporal"
+                  aria-label={t('field.perWeightUnit', { unit: t('field.protein') })}
                   value={u.toDisplayPerWeight(profile.proteinPerKg)}
                   onChange={(v) => update({ proteinPerKg: u.toCanonicalPerWeight(v) })}
                   {...u.perWeightRange(1.2, 3)}
@@ -250,10 +250,10 @@ export default function SettingsPage() {
                 <Label
                   hint={`${u.toDisplayPerWeight(profile.fatPerKg).toFixed(2)} ${u.perW} → ${Math.round(weight * profile.fatPerKg)} g`}
                 >
-                  Grasa
+                  {t('field.fat')}
                 </Label>
                 <Slider
-                  aria-label="Grasa por unidad de peso corporal"
+                  aria-label={t('field.perWeightUnit', { unit: t('field.fat') })}
                   value={u.toDisplayPerWeight(profile.fatPerKg)}
                   onChange={(v) => update({ fatPerKg: u.toCanonicalPerWeight(v) })}
                   {...u.perWeightRange(0.5, 1.5)}
@@ -265,7 +265,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <Label hint={profile.kcalOverride ? 'manual' : 'automatico'}>Calorias</Label>
+                <Label hint={profile.kcalOverride ? t('field.manual') : t('field.auto')}>{t('field.calories')}</Label>
                 <div className="flex gap-2">
                   <Input
                     inputMode="numeric"
@@ -276,7 +276,7 @@ export default function SettingsPage() {
                   />
                   {profile.kcalOverride && (
                     <Button variant="secondary" onClick={() => update({ kcalOverride: null })}>
-                      Auto
+                      {t('field.auto')}
                     </Button>
                   )}
                 </div>
@@ -284,54 +284,53 @@ export default function SettingsPage() {
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-3">
-              <Stat label="Metabolismo basal" value={basal} unit="kcal" />
-              <Stat label="Mantenimiento" value={maintenance} unit="kcal" />
+              <Stat label={t('set.basalMetabolism')} value={basal} unit="kcal" />
+              <Stat label={t('set.maintenance')} value={maintenance} unit="kcal" />
             </div>
             <p className="mt-2 text-[11px] text-faint">
-              Mifflin-St Jeor sobre {u.fmtWeight(weight)}. Los carbohidratos se calculan con lo que
-              sobra tras fijar proteina y grasa.
+              {t('set.macrosNote', { weight: u.fmtWeight(weight) })}
             </p>
           </Card>
         </div>
 
         {/* ------------------------------------------- unidades e idioma */}
         <div className="mt-5">
-          <SectionTitle>Unidades e idioma</SectionTitle>
+          <SectionTitle>{t('units.title')}</SectionTitle>
           <Card>
             <div className="space-y-4">
               <div>
-                <Label>Peso</Label>
+                <Label>{t('units.weight')}</Label>
                 <Segmented
                   value={settings.weightUnit}
                   onChange={(v: WeightUnit) => settings.setUnits({ weightUnit: v })}
                   options={[
-                    { value: 'kg', label: 'Kilogramos' },
-                    { value: 'lb', label: 'Libras' },
+                    { value: 'kg', label: t('units.kg') },
+                    { value: 'lb', label: t('units.lb') },
                   ]}
                 />
               </div>
               <div>
-                <Label>Longitud</Label>
+                <Label>{t('units.length')}</Label>
                 <Segmented
                   value={settings.lengthUnit}
                   onChange={(v: LengthUnit) => settings.setUnits({ lengthUnit: v })}
                   options={[
-                    { value: 'cm', label: 'Centimetros' },
-                    { value: 'in', label: 'Pulgadas' },
+                    { value: 'cm', label: t('units.cm') },
+                    { value: 'in', label: t('units.in') },
                   ]}
                 />
               </div>
               <div>
-                <Label>Idioma</Label>
+                <Label>{t('units.language')}</Label>
                 <Segmented
                   value={settings.locale}
                   onChange={(v: Locale) => settings.setLocaleSetting(v)}
                   options={(Object.keys(LOCALE_LABEL) as Locale[]).map((l) => ({
                     value: l,
-                    label: l === 'en' ? `${LOCALE_LABEL[l]} (parcial)` : LOCALE_LABEL[l],
+                    label: LOCALE_LABEL[l],
                   }))}
                 />
-                <p className="mt-1.5 text-[11px] text-faint">{t('units.englishPartial')}</p>
+                <p className="mt-1.5 text-[11px] text-faint">{t('units.languageNote')}</p>
               </div>
             </div>
           </Card>
@@ -339,26 +338,28 @@ export default function SettingsPage() {
 
         {/* --------------------------------------------- entrenamiento */}
         <div className="mt-5">
-          <SectionTitle>Entrenamiento</SectionTitle>
+          <SectionTitle>{t('set.training')}</SectionTitle>
           <Card>
             <div className="space-y-4">
               <div>
-                <Label>Nivel de experiencia</Label>
+                <Label>{t('field.experience')}</Label>
                 <Select
-                  aria-label="Nivel de experiencia"
+                  aria-label={t('field.experience')}
                   value={settings.experience}
                   onChange={(e) => settings.update({ experience: e.target.value as Experience })}
                 >
-                  <option value="principiante">Principiante</option>
-                  <option value="intermedio">Intermedio</option>
-                  <option value="avanzado">Avanzado</option>
-                  <option value="competidor">Competidor</option>
+                  <option value="principiante">{t('exp.beginner')}</option>
+                  <option value="intermedio">{t('exp.intermediate')}</option>
+                  <option value="avanzado">{t('exp.advanced')}</option>
+                  <option value="competidor">{t('exp.competitor')}</option>
                 </Select>
               </div>
               <div>
-                <Label hint={`${settings.trainingDaysPerWeek} dias`}>Dias de entrenamiento</Label>
+                <Label hint={t('field.days', { n: settings.trainingDaysPerWeek })}>
+                  {t('field.trainingDays')}
+                </Label>
                 <Slider
-                  aria-label="Dias de entrenamiento por semana"
+                  aria-label={t('field.trainingDaysWeek')}
                   value={settings.trainingDaysPerWeek}
                   onChange={(v) => settings.update({ trainingDaysPerWeek: v })}
                   min={1}
@@ -368,25 +369,24 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <Label hint="separadas por comas">Molestias fisicas</Label>
+                <Label hint={t('field.commaSeparated')}>{t('field.discomforts')}</Label>
                 <Input
-                  aria-label="Molestias fisicas"
+                  aria-label={t('field.discomforts')}
                   value={settings.discomforts.join(', ')}
                   onChange={(e) =>
                     settings.update({
                       discomforts: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
                     })
                   }
-                  placeholder="lumbar, hombro derecho"
+                  placeholder={t('field.discomfortsPlaceholder')}
                 />
                 <p className="mt-1.5 text-[11px] text-faint">
-                  La biblioteca de ejercicios marca la carga lumbar y propone alternativas cuando es
-                  alta. No es consejo medico.
+                  {t('set.lumbarNote')}
                 </p>
               </div>
               {settings.avoidedExercises.length > 0 && (
                 <div>
-                  <Label hint={`${settings.avoidedExercises.length}`}>Ejercicios a evitar</Label>
+                  <Label hint={String(settings.avoidedExercises.length)}>{t('set.avoidedExercises')}</Label>
                   <div className="flex flex-wrap gap-1.5">
                     {settings.avoidedExercises.map((id) => (
                       <button
@@ -406,13 +406,15 @@ export default function SettingsPage() {
 
         {/* --------------------------------------------------- herramientas */}
         <div className="mt-5">
-          <SectionTitle>Herramientas</SectionTitle>
+          <SectionTitle>{t('set.tools')}</SectionTitle>
           <div className="space-y-1.5">
             {[
-              { to: '/ejercicios', label: 'Biblioteca de ejercicios', detail: 'Tecnica, variantes y seguridad', Icon: ShieldCheck },
-              { to: '/ajustes/videos', label: 'Videos de ejercicios', detail: 'Asocia tus propios videos', Icon: Film },
-              { to: '/ajustes/recordatorios', label: 'Recordatorios', detail: 'Avisos dentro de la app', Icon: Bell },
-              { to: '/informes', label: 'Informes y exportacion', detail: 'CSV, JSON y resumen para coach', Icon: FileText },
+              { to: '/ejercicios', label: t('set.toolLibrary'), detail: t('set.toolLibraryDesc'), Icon: ShieldCheck },
+              { to: '/ajustes/videos', label: t('set.toolVideos'), detail: t('set.toolVideosDesc'), Icon: Film },
+              { to: '/ajustes/recordatorios', label: t('set.toolReminders'), detail: t('set.toolRemindersDesc'), Icon: Bell },
+              { to: '/informes', label: t('set.toolReports'), detail: t('set.toolReportsDesc'), Icon: FileText },
+              { to: '/ajustes/datos', label: t('data.openLink'), detail: t('data.openHint'), Icon: Database },
+              { to: '/ajustes/diagnostico', label: t('set.toolDiagnostics'), detail: t('set.toolDiagnosticsDesc'), Icon: Stethoscope },
             ].map(({ to, label, detail, Icon }) => (
               <Link
                 key={to}
@@ -435,7 +437,7 @@ export default function SettingsPage() {
         {/* ----------------------------------------------- alimentos propios */}
         {customs.length > 0 && (
           <div className="mt-5">
-            <SectionTitle>Mis alimentos ({customs.length})</SectionTitle>
+            <SectionTitle>{`${t('set.myFoods')} (${customs.length})`}</SectionTitle>
             <div className="space-y-1.5">
               {customs.map((f) => (
                 <div
@@ -452,7 +454,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => removeCustomFood(f.id)}
                     className="pressable flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface2 text-faint"
-                    aria-label="Eliminar"
+                    aria-label={t('common.delete')}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -464,79 +466,44 @@ export default function SettingsPage() {
 
         {/* --------------------------------------------------------- datos */}
         <div className="mt-5">
-          <SectionTitle>Datos</SectionTitle>
+          <SectionTitle>{t('set.data')}</SectionTitle>
           <Card>
-            <p className="mb-3 text-[13px] text-muted">
-              Todo se guarda en este dispositivo. Exporta de vez en cuando: es tu copia de seguridad
-              hasta que activemos la nube.
+            <p className="text-[13px] text-muted">
+              {t('set.dataNote')}
             </p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="secondary"
-                onClick={async () => {
-                  download(`bodyfit-${toISODate()}.json`, await exportAll());
-                  toast('Copia exportada');
-                }}
-              >
-                <Download size={16} />
-                Exportar
-              </Button>
-              <Button variant="secondary" onClick={() => fileRef.current?.click()}>
-                <Upload size={16} />
-                Importar
-              </Button>
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-surface2 px-3 py-2.5 text-[13px]">
+              <span className="text-muted">{t('data.backup.last')}</span>
+              <span className={lastBackup ? 'text-ink' : 'text-amber'}>
+                {lastBackup ? fmtDateTime(lastBackup) : t('data.backup.neverShort')}
+              </span>
             </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="application/json"
-              className="hidden"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                try {
-                  await importAll(await file.text());
-                  toast('Copia importada. Reiniciando...');
-                  setTimeout(() => window.location.reload(), 700);
-                } catch {
-                  toast('El archivo no es una copia valida', 'error');
-                }
-              }}
-            />
-
-            <button
-              onClick={async () => {
-                if (!confirmReset) {
-                  setConfirmReset(true);
-                  return;
-                }
-                await clearAll();
-                window.location.reload();
-              }}
-              className="mt-3 w-full rounded-2xl border border-rose/30 bg-rose/10 py-3 text-[14px] font-medium text-rose"
+            <Link
+              to="/ajustes/datos"
+              className="pressable mt-2 flex items-center justify-between rounded-xl bg-brand px-3 py-2.5 text-[14px] font-medium text-base"
             >
-              {confirmReset ? 'Pulsa otra vez para borrar todo' : 'Borrar todos los datos'}
-            </button>
+              <span>{t('data.openLink')}</span>
+              <ChevronRight size={16} />
+            </Link>
           </Card>
         </div>
 
         {/* ------------------------------------------------------ instalacion */}
         <div className="mt-5">
-          <SectionTitle>Instalar en el iPhone</SectionTitle>
+          <SectionTitle>{t('set.installTitle')}</SectionTitle>
           <Card>
             <ol className="space-y-2.5 text-[13px] text-muted">
               <li className="flex gap-2.5">
                 <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-surface2 text-[11px] text-brand">
                   1
                 </span>
-                Abre esta pagina en Safari
+                {t('set.installStep1')}
               </li>
               <li className="flex gap-2.5">
                 <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-surface2 text-[11px] text-brand">
                   2
                 </span>
                 <span className="flex items-center gap-1.5">
-                  Pulsa Compartir <Share size={14} className="inline text-ink" />
+                  {t('set.installStep2')} <Share size={14} className="inline text-ink" />
                 </span>
               </li>
               <li className="flex gap-2.5">
@@ -544,33 +511,26 @@ export default function SettingsPage() {
                   3
                 </span>
                 <span className="flex items-center gap-1.5">
-                  Elige Anadir a pantalla de inicio <SquarePlus size={14} className="inline text-ink" />
+                  {t('set.installStep3')} <SquarePlus size={14} className="inline text-ink" />
                 </span>
               </li>
             </ol>
             <p className="mt-3 text-[12px] text-faint">
-              Se abrira a pantalla completa, sin barras del navegador y funcionara sin conexion.
+              {t('set.installNote')}
             </p>
           </Card>
         </div>
 
         {/* ------------------------------------------------------- avisos */}
         <div className="mt-5">
-          <SectionTitle>Aviso</SectionTitle>
+          <SectionTitle>{t('set.notice')}</SectionTitle>
           <Card className="border-line/70">
             <div className="flex gap-2.5">
               <Info size={15} className="mt-0.5 shrink-0 text-faint" />
               <div className="space-y-2 text-[12px] text-faint">
-                <p>
-                  BodyFit Prep es una herramienta de planificacion y seguimiento. No sustituye la
-                  atencion medica ni la valoracion de un entrenador cualificado.
-                </p>
-                <p>
-                  La app no recomienda sustancias, diureticos ni protocolos de deshidratacion, y no
-                  automatiza manipulaciones de agua o sodio. Ante cualquier sintoma que te preocupe,
-                  consulta con un profesional sanitario.
-                </p>
-                <p>Tus datos se guardan unicamente en este dispositivo.</p>
+                <p>{t('disclaimer.medical')}</p>
+                <p>{t('disclaimer.peakWeek')}</p>
+                <p>{t('disclaimer.local')}</p>
               </div>
             </div>
           </Card>

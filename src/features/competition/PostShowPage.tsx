@@ -13,13 +13,14 @@ import { alive } from '@/store/persist';
 import { usePrepStore } from '@/store/prepStore';
 import { useActivePrep, useTargets } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
+import { t, type Dict } from '@/i18n';
 
-const SCALES = [
-  { key: 'hunger', label: 'Hambre' },
-  { key: 'sleep', label: 'Sueno' },
-  { key: 'digestion', label: 'Digestion' },
-  { key: 'mood', label: 'Estado de animo' },
-] as const;
+const SCALES: { key: 'hunger' | 'sleep' | 'digestion' | 'mood'; label: keyof Dict }[] = [
+  { key: 'hunger', label: 'post.hunger' },
+  { key: 'sleep', label: 'post.sleep' },
+  { key: 'digestion', label: 'post.digestion' },
+  { key: 'mood', label: 'post.mood' },
+];
 
 export default function PostShowPage() {
   const prep = useActivePrep();
@@ -76,11 +77,11 @@ export default function PostShowPage() {
   if (!prep) {
     return (
       <>
-        <PageHeader title="Post-show" back />
+        <PageHeader title={t('screen.postShow')} back />
         <Page>
           <EmptyState
-            title="Sin competencia activa"
-            description="El modulo post-show se activa junto al modo competencia."
+            title={t('prep.noPrep')}
+            description={t('post.noPrepDesc')}
           />
         </Page>
       </>
@@ -89,30 +90,27 @@ export default function PostShowPage() {
 
   return (
     <>
-      <PageHeader title="Post-show" subtitle="Recuperacion y transicion" back />
+      <PageHeader title={t('screen.postShow')} subtitle={t('post.subtitle')} back />
 
       <Page>
         <Card className="border-line/70">
           <div className="flex gap-2.5">
             <Info size={15} className="mt-0.5 shrink-0 text-sky" />
             <p className="text-[13px] text-muted">
-              Subir calorias de forma gradual y seguir midiendo ayuda a que el retorno sea ordenado.
-              Es normal que el peso suba rapido las primeras semanas por agua y glucogeno: eso no es
-              grasa. Si aparecen sintomas fisicos o emocionales que te preocupen, habla con un
-              profesional.
+              {t('post.intro')}
             </p>
           </div>
         </Card>
 
         {/* ─────────────────────────────────── plan de transicion */}
         <div className="mt-4">
-          <SectionTitle>Plan de transicion</SectionTitle>
+          <SectionTitle>{t('post.transitionPlan')}</SectionTitle>
           <Card>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Calorias de partida</Label>
+                <Label>{t('post.startCalories')}</Label>
                 <Input
-                  aria-label="Calorias de partida"
+                  aria-label={t('post.startCalories')}
                   inputMode="numeric"
                   value={startKcal}
                   onChange={(e) => setStartKcal(Number(e.target.value) || 0)}
@@ -120,9 +118,9 @@ export default function PostShowPage() {
                 />
               </div>
               <div>
-                <Label>Calorias objetivo</Label>
+                <Label>{t('post.targetCalories')}</Label>
                 <Input
-                  aria-label="Calorias objetivo"
+                  aria-label={t('post.targetCalories')}
                   inputMode="numeric"
                   value={targetKcal}
                   onChange={(e) => setTargetKcal(Number(e.target.value) || 0)}
@@ -131,14 +129,14 @@ export default function PostShowPage() {
               </div>
             </div>
             <div className="mt-3">
-              <Label hint={`${weeks} semanas`}>Duracion de la transicion</Label>
-              <Stepper value={weeks} onChange={setWeeks} step={1} min={2} max={20} suffix="sem" />
+              <Label hint={t('post.weeks', { n: weeks })}>{t('post.duration')}</Label>
+              <Stepper value={weeks} onChange={setWeeks} step={1} min={2} max={20} suffix={t('post.weeksSuffix')} />
             </div>
 
             <div className="mt-3 max-h-52 space-y-1 overflow-y-auto rounded-2xl border border-line bg-surface2 p-3">
               {ramp.map((r) => (
                 <div key={r.week} className="flex justify-between text-[13px]">
-                  <span className="text-muted">Semana {r.week}</span>
+                  <span className="text-muted">{t('post.week', { n: r.week })}</span>
                   <span className="tabular font-semibold">{r.kcal} kcal</span>
                 </div>
               ))}
@@ -156,22 +154,22 @@ export default function PostShowPage() {
                   targetKcal,
                   weeks,
                 });
-                toast('Plan post-show guardado');
+                toast(t('post.planSaved'));
               }}
             >
-              Guardar plan
+              {t('post.savePlan')}
             </Button>
           </Card>
         </div>
 
         {/* ─────────────────────────────────── seguimiento */}
         <div className="mt-5">
-          <SectionTitle>Registro de hoy</SectionTitle>
+          <SectionTitle>{t('post.todayLog')}</SectionTitle>
           <Card>
             <div className="mb-3">
-              <Label>Peso</Label>
+              <Label>{t('field.weight')}</Label>
               <Input
-                aria-label="Peso"
+                aria-label={t('field.weight')}
                 inputMode="decimal"
                 value={weight || ''}
                 onChange={(e) => setWeight(Number(e.target.value) || 0)}
@@ -183,7 +181,7 @@ export default function PostShowPage() {
             <div className="space-y-4">
               {SCALES.map((s) => (
                 <div key={s.key}>
-                  <Label hint={`${scales[s.key]} / 5`}>{s.label}</Label>
+                  <Label hint={`${scales[s.key]} / 5`}>{t(s.label)}</Label>
                   <div className="flex gap-1.5">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <button
@@ -203,10 +201,10 @@ export default function PostShowPage() {
                 </div>
               ))}
               <div>
-                <Label hint={`${adherence}%`}>Adherencia</Label>
+                <Label hint={`${adherence}%`}>{t('post.adherence')}</Label>
                 <input
                   type="range"
-                  aria-label="Adherencia"
+                  aria-label={t('post.adherence')}
                   min={0}
                   max={100}
                   step={5}
@@ -224,7 +222,7 @@ export default function PostShowPage() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              placeholder="Como te sientes"
+              placeholder={t('post.howYouFeel')}
               className="mt-3 w-full resize-none rounded-2xl border border-line bg-surface2 px-3.5 py-2.5 text-[14px] outline-none placeholder:text-faint focus:border-brand/60"
             />
 
@@ -243,12 +241,12 @@ export default function PostShowPage() {
                   adherence,
                   ...(notes.trim() ? { notes: notes.trim() } : {}),
                 });
-                toast('Registro guardado');
+                toast(t('post.logSaved'));
                 setNotes('');
               }}
             >
               <Heart size={16} />
-              Guardar registro
+              {t('post.saveLog')}
             </Button>
           </Card>
         </div>
@@ -256,12 +254,12 @@ export default function PostShowPage() {
         {/* ─────────────────────────────────── evolucion */}
         {log.length > 0 && (
           <div className="mt-5">
-            <SectionTitle>Evolucion post-show</SectionTitle>
+            <SectionTitle>{t('post.evolution')}</SectionTitle>
             <Card>
               <div className="mb-3 grid grid-cols-3 gap-3">
-                <Stat label="Registros" value={log.length} />
+                <Stat label={t('post.entries')} value={log.length} />
                 <Stat
-                  label="Cambio de peso"
+                  label={t('post.weightChange')}
                   value={
                     weightSeries.length >= 2
                       ? `${(weightSeries[weightSeries.length - 1].value - weightSeries[0].value > 0 ? '+' : '')}${(
@@ -272,7 +270,7 @@ export default function PostShowPage() {
                   unit={u.w}
                 />
                 <Stat
-                  label="Desde"
+                  label={t('post.from')}
                   value={log[0] ? friendlyDate(log[0].date).slice(0, 10) : '—'}
                 />
               </div>

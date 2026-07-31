@@ -19,6 +19,7 @@ import { today } from '@/lib/date';
 import { cx, download } from '@/lib/utils';
 import { useSettingsStore } from '@/store/settingsStore';
 import { toast } from '@/store/uiStore';
+import { t } from '@/i18n';
 import type { ExerciseMedia } from '@/domain/types';
 
 export { parseYouTubeId };
@@ -46,7 +47,7 @@ export default function VideoSettingsPage() {
 
   return (
     <>
-      <PageHeader title="Videos de ejercicios" subtitle="Configura tus propios videos" back />
+      <PageHeader title={t('screen.videos')} subtitle={t('vid.subtitle')} back />
 
       <Page>
         <Card className="border-line/70">
@@ -54,13 +55,10 @@ export default function VideoSettingsPage() {
             <Film size={15} className="mt-0.5 shrink-0 text-brand" />
             <div>
               <p className="text-[13px] text-muted">
-                La app no incrusta videos de terceros por su cuenta: los enlaces ajenos desaparecen y
-                el contenido puede estar protegido por derechos de autor. Aqui puedes asociar tus
-                propios videos (MP4 o WebM alojados por ti) o un enlace de YouTube que tu elijas.
+                {t('vid.policy')}
               </p>
               <p className="mt-2 text-[12px] text-faint">
-                Anota siempre la fuente y con que permiso lo usas. Los ejercicios sin video muestran
-                la guia escrita completa, que es el contenido principal de la pantalla de tecnica.
+                {t('vid.policy2')}
               </p>
             </div>
           </div>
@@ -70,21 +68,22 @@ export default function VideoSettingsPage() {
           <Card className="mt-3 border-carbs/30 bg-carbs/8">
             <p className="flex gap-2 text-[13px] text-carbs">
               <AlertTriangle size={15} className="mt-0.5 shrink-0" />
-              {unverified} {unverified === 1 ? 'video sin verificar' : 'videos sin verificar'}. Se
-              muestran con aviso hasta que confirmes fuente y permiso.
+              {unverified === 1
+                ? t('vid.unverifiedCountOne')
+                : t('vid.unverifiedCount', { n: unverified })}
             </p>
           </Card>
         )}
 
         {/* ─────────────────────────── buscador */}
         <div className="mt-4">
-          <SectionTitle>Anadir video a un ejercicio</SectionTitle>
+          <SectionTitle>{t('vid.addToExercise')}</SectionTitle>
           <div className="relative">
             <Search size={17} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-faint" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar ejercicio"
+              placeholder={t('vid.searchExercise')}
               className="h-12 w-full rounded-2xl border border-line bg-surface2 pr-3 pl-10 text-[15px] outline-none placeholder:text-faint focus:border-brand/60"
             />
           </div>
@@ -101,7 +100,7 @@ export default function VideoSettingsPage() {
                 >
                   {ex.name}
                   {exerciseMedia[ex.id] && (
-                    <span className="ml-2 text-[11px] text-brand">· ya configurado</span>
+                    <span className="ml-2 text-[11px] text-brand">· {t('vid.alreadySet')}</span>
                   )}
                 </button>
               ))}
@@ -111,12 +110,12 @@ export default function VideoSettingsPage() {
 
         {/* ─────────────────────────── configurados */}
         <div className="mt-5">
-          <SectionTitle>Videos configurados ({configured.length})</SectionTitle>
+          <SectionTitle>{t('vid.configured', { n: configured.length })}</SectionTitle>
           {configured.length === 0 ? (
             <EmptyState
               icon={<Film size={22} />}
-              title="Sin videos propios"
-              description="Busca un ejercicio arriba y asocia tu video. Se guarda solo en este dispositivo."
+              title={t('vid.empty')}
+              description={t('vid.emptyDesc')}
             />
           ) : (
             <div className="space-y-1.5">
@@ -133,25 +132,27 @@ export default function VideoSettingsPage() {
                     <p className="truncate text-[12px] text-faint">
                       {media.youtubeId
                         ? `YouTube · ${media.youtubeId}`
-                        : (media.videoUrl ?? media.videoWebmUrl ?? 'Sin fuente reproducible')}
+                        : (media.videoUrl ?? media.videoWebmUrl ?? t('vid.noPlayableSource'))}
                     </p>
                     {media.source && (
-                      <p className="truncate text-[11px] text-faint">Fuente: {media.source}</p>
+                      <p className="truncate text-[11px] text-faint">
+                        {t('vid.sourcePrefix', { source: media.source })}
+                      </p>
                     )}
                   </div>
                   <button
                     onClick={() => setEditing(id)}
                     className="pressable rounded-lg bg-surface2 px-2.5 py-1.5 text-[12px] text-brand"
                   >
-                    Editar
+                    {t('common.edit')}
                   </button>
                   <button
                     onClick={() => {
                       clearExerciseMedia(id);
-                      toast('Video eliminado', 'info');
+                      toast(t('vid.deleted'), 'info');
                     }}
                     className="pressable flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface2 text-faint"
-                    aria-label="Eliminar"
+                    aria-label={t('common.delete')}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -163,12 +164,10 @@ export default function VideoSettingsPage() {
 
         {/* ─────────────────────────── importar / exportar */}
         <div className="mt-5">
-          <SectionTitle>Copia de la configuracion</SectionTitle>
+          <SectionTitle>{t('vid.configBackup')}</SectionTitle>
           <Card>
             <p className="text-[13px] text-muted">
-              Exporta tu configuracion de videos para pasarla a otro dispositivo o guardarla como
-              respaldo. Al importar, las entradas con URL invalida se descartan en lugar de
-              guardarse rotas.
+              {t('vid.configBackupNote')}
             </p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <Button
@@ -179,15 +178,15 @@ export default function VideoSettingsPage() {
                     `bodyfit-videos-${today()}.json`,
                     exportMedia(exerciseMedia, new Date().toISOString()),
                   );
-                  toast('Configuracion exportada');
+                  toast(t('vid.exported'));
                 }}
               >
                 <Download size={16} />
-                Exportar
+                {t('video.export')}
               </Button>
               <Button variant="secondary" onClick={() => fileRef.current?.click()}>
                 <Upload size={16} />
-                Importar
+                {t('video.import')}
               </Button>
             </div>
             <input
@@ -206,12 +205,15 @@ export default function VideoSettingsPage() {
                   update({ exerciseMedia: { ...exerciseMedia, ...result.media } });
                   toast(
                     result.skipped.length
-                      ? `${result.imported} importados, ${result.skipped.length} descartados`
-                      : `${result.imported} videos importados`,
+                      ? t('vid.importedSome', {
+                          n: result.imported,
+                          skipped: result.skipped.length,
+                        })
+                      : t('vid.imported', { n: result.imported }),
                     result.skipped.length ? 'warn' : 'ok',
                   );
                 } catch {
-                  toast('El archivo no es una configuracion valida', 'error');
+                  toast(t('vid.invalidFile'), 'error');
                 }
                 e.target.value = '';
               }}
@@ -227,7 +229,7 @@ export default function VideoSettingsPage() {
           onClose={() => setEditing(null)}
           onSave={(media) => {
             setExerciseMedia(editing, media);
-            toast('Video guardado');
+            toast(t('vid.saved'));
             setEditing(null);
           }}
         />
@@ -284,7 +286,7 @@ function MediaSheet({
     <Sheet
       open
       onClose={onClose}
-      title={exercise?.name ?? 'Video'}
+      title={exercise?.name ?? t('vid.videoWord')}
       height="full"
       footer={
         <Button
@@ -294,7 +296,7 @@ function MediaSheet({
           disabled={empty || blocked}
           onClick={() => onSave(media)}
         >
-          {blocked ? 'Corrige los errores para guardar' : 'Guardar video'}
+          {blocked ? t('vid.fixErrors') : t('vid.save')}
         </Button>
       }
     >
@@ -321,7 +323,7 @@ function MediaSheet({
         )}
 
         <div>
-          <Label hint={ytId ? `id: ${ytId}` : 'enlace o id'}>YouTube</Label>
+          <Label hint={ytId ? t('vid.idPrefix', { id: ytId }) : t('vid.linkOrId')}>YouTube</Label>
           <Input
             value={youtube}
             onChange={(e) => setYoutube(e.target.value)}
@@ -330,7 +332,7 @@ function MediaSheet({
         </div>
 
         <div>
-          <Label hint="alojado por ti, https">Video MP4</Label>
+          <Label hint={t('vid.mp4Hint')}>{t('vid.mp4')}</Label>
           <Input
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
@@ -339,7 +341,7 @@ function MediaSheet({
         </div>
 
         <div>
-          <Label hint="opcional">Video WebM</Label>
+          <Label hint={t('common.optional')}>{t('vid.webm')}</Label>
           <Input
             value={webmUrl}
             onChange={(e) => setWebmUrl(e.target.value)}
@@ -349,7 +351,7 @@ function MediaSheet({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label hint="imagen de portada">Poster</Label>
+            <Label hint={t('vid.posterHint')}>{t('vid.poster')}</Label>
             <Input
               value={poster}
               onChange={(e) => setPoster(e.target.value)}
@@ -357,7 +359,7 @@ function MediaSheet({
             />
           </div>
           <div>
-            <Label hint="segundos">Duracion</Label>
+            <Label hint={t('vid.seconds')}>{t('vid.duration')}</Label>
             <Input
               inputMode="numeric"
               value={duration}
@@ -369,7 +371,7 @@ function MediaSheet({
         </div>
 
         <div>
-          <Label hint="si no hay video">Imagen ilustrativa</Label>
+          <Label hint={t('vid.imageHint')}>{t('vid.illustrativeImage')}</Label>
           <Input
             value={image}
             onChange={(e) => setImage(e.target.value)}
@@ -379,27 +381,27 @@ function MediaSheet({
 
         <div className="rounded-2xl border border-line bg-surface2 p-3">
           <p className="mb-3 text-[11px] font-semibold tracking-wider text-faint uppercase">
-            Procedencia y permiso
+            {t('vid.provenance')}
           </p>
           <div className="space-y-3">
             <div>
-              <Label hint="autor o canal">Fuente</Label>
+              <Label hint={t('vid.authorOrChannel')}>{t('video.source')}</Label>
               <Input
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
-                placeholder="Grabado por mi / Canal de mi coach"
+                placeholder={t('vid.sourcePlaceholder')}
               />
             </div>
             <div>
-              <Label hint="o permiso concedido">Licencia</Label>
+              <Label hint={t('vid.orPermission')}>{t('video.license')}</Label>
               <Input
                 value={license}
                 onChange={(e) => setLicense(e.target.value)}
-                placeholder="Propio / CC BY / Permiso del autor"
+                placeholder={t('vid.licensePlaceholder')}
               />
             </div>
             <div>
-              <Label>Fecha de revision</Label>
+              <Label>{t('vid.reviewDate')}</Label>
               <Input
                 type="date"
                 value={reviewedAt}
@@ -420,17 +422,15 @@ function MediaSheet({
               />
               <span className={cx('text-[13px]', verified ? 'text-brand' : 'text-muted')}>
                 {verified
-                  ? 'Verificado: has confirmado la fuente y el permiso'
-                  : 'Marcar como verificado: confirmo que reviso la fuente y tengo permiso o licencia para usar este video'}
+                  ? t('vid.verifiedNote')
+                  : t('vid.markVerifiedNote')}
               </span>
             </button>
           </div>
         </div>
 
         <p className="rounded-2xl border border-line bg-surface2 p-3 text-[12px] text-faint">
-          Los videos solo se descargan cuando pulsas reproducir, no se reproducen solos y no se
-          precachean para uso sin conexion: ocuparian demasiado espacio. Sin conexion, la guia
-          escrita sigue disponible completa.
+          {t('vid.noPrecache')}
         </p>
       </div>
     </Sheet>

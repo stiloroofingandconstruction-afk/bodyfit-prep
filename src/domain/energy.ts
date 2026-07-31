@@ -10,6 +10,15 @@ export const ACTIVITY_FACTOR: Record<ActivityLevel, number> = {
   atleta: 1.9,
 };
 
+/** Orden en el que se ofrecen los niveles en los selectores. */
+export const ACTIVITY_LEVELS: ActivityLevel[] = [
+  'sedentario',
+  'ligero',
+  'moderado',
+  'alto',
+  'atleta',
+];
+
 export const ACTIVITY_LABEL: Record<ActivityLevel, string> = {
   sedentario: 'Sedentario — trabajo de oficina, sin ejercicio',
   ligero: 'Ligero — 1-3 entrenos por semana',

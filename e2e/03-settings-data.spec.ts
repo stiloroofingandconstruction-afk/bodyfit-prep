@@ -40,8 +40,8 @@ test.describe('Ajustes, unidades, idioma y datos', () => {
     await page.getByRole('button', { name: 'Pulgadas' }).click();
 
     await page.goto('/cuerpo');
-    await page.getByRole('button', { name: 'Medidas' }).click();
-    await expect(page.getByText(/En pulgadas/)).toBeVisible();
+    await page.getByRole('button', { name: 'Medidas', exact: true }).click();
+    await expect(page.getByText(/En Pulgadas/i)).toBeVisible();
   });
 
   test('cambiar el idioma traduce la navegacion sin recargar', async ({ page }, info) => {
@@ -87,23 +87,26 @@ test.describe('Ajustes, unidades, idioma y datos', () => {
     assertClean(problems, 'activar competencia');
   });
 
-  test('exporta el respaldo completo en JSON', async ({ page }) => {
+  test('crea la copia completa desde Datos y respaldo', async ({ page }) => {
     const problems = collectProblems(page);
     await seedApp(page);
-    await page.goto('/ajustes');
+    // La exportacion vive ahora en su propia pantalla, con verificacion y todo
+    await page.goto('/ajustes/datos');
 
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'Exportar' }).click(),
+      page.getByRole('button', { name: /Crear copia/ }).click(),
     ]);
-    expect(download.suggestedFilename()).toMatch(/^bodyfit-\d{4}-\d{2}-\d{2}\.json$/);
+    expect(download.suggestedFilename()).toMatch(/^bodyfit-copia-\d{4}-\d{2}-\d{2}\.json$/);
 
     const path = await download.path();
     const parsed = JSON.parse(readFileSync(path!, 'utf8'));
     expect(parsed.app).toBe('BodyFit Prep');
-    expect(parsed.data).toBeTruthy();
+    expect(parsed.format, 'la copia debe declarar su formato').toBe(2);
+    expect(parsed.checksum, 'la copia debe llevar suma de verificacion').toBeTruthy();
+    expect(Array.isArray(parsed.photos), 'la copia debe traer seccion de fotos').toBe(true);
     expect(Object.keys(parsed.data).length).toBeGreaterThan(1);
-    assertClean(problems, 'exportacion JSON');
+    assertClean(problems, 'copia completa');
   });
 
   test('exporta los CSV con la unidad en la cabecera', async ({ page }) => {
@@ -137,33 +140,31 @@ test.describe('Ajustes, unidades, idioma y datos', () => {
     assertClean(problems, 'informe para coach');
   });
 
-  test('importa un respaldo y restaura los datos', async ({ page }) => {
+  test('verifica una copia antes de restaurarla y detecta las corruptas', async ({ page }) => {
     await seedApp(page);
+    await page.goto('/ajustes/datos');
 
-    // Se exporta, se borra y se reimporta
-    await page.goto('/ajustes');
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'Exportar' }).click(),
+      page.getByRole('button', { name: /Crear copia/ }).click(),
     ]);
     const backupPath = (await download.path())!;
+    const good = readFileSync(backupPath, 'utf8');
 
-    await page.evaluate(() => localStorage.clear());
-    await page.goto('/ajustes');
-
-    // Tras borrar, la app vuelve al onboarding
-    await expect(page.getByRole('heading', { name: 'BodyFit Prep' })).toBeVisible();
-
-    // Se importa desde el onboarding no es posible: se rehace y se importa
-    await page.evaluate(() => {
-      localStorage.setItem(
-        'bodyfit:v1:profile',
-        JSON.stringify({ state: { profile: { onboarded: true, name: 'tmp', sex: 'hombre', birthDate: '1995-01-01', heightCm: 178, startWeight: 80, activity: 'moderado', goal: 'definicion', paceWeekPct: 0.6, proteinPerKg: 2, fatPerKg: 0.8, kcalOverride: null, units: 'metric' } }, version: 1 }),
-      );
+    // Un archivo truncado se rechaza con explicacion, no se restaura a medias
+    await page.setInputFiles('input[type="file"]', {
+      name: 'rota.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(good.slice(0, 200), 'utf8'),
     });
-    await page.goto('/ajustes');
-    await page.setInputFiles('input[type="file"][accept="application/json"]', backupPath);
-    await expect(page.getByText(/Copia importada/)).toBeVisible();
+    await expect(page.getByText(/Copia no valida/)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Restaurar esta copia/ })).toHaveCount(0);
+
+    // La buena se acepta, muestra que trae dentro y solo entonces deja restaurar
+    await page.setInputFiles('input[type="file"]', backupPath);
+    await expect(page.getByText(/Copia valida/)).toBeVisible();
+    await expect(page.getByText(/Integridad verificada/)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Restaurar esta copia/ })).toBeVisible();
   });
 
   test('crea y elimina un recordatorio', async ({ page }, info) => {

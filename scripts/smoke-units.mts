@@ -251,15 +251,19 @@ export function runUnitsTests(
     'todas las guias individuales estan marcadas como authored',
     authored.every((e) => e.technique.authored === true),
   );
-  check(
-    'todas tienen resumen, posicion inicial, senales y advertencias',
-    authored.every(
-      (e) =>
+  const incomplete = authored.filter(
+    (e) =>
+      !(
         e.technique.summary.length > 20 &&
         e.technique.startPosition.length >= 2 &&
         e.technique.warningSigns.length >= 2 &&
-        e.technique.warnings.length >= 1,
-    ),
+        e.technique.warnings.length >= 1
+      ),
+  );
+  check(
+    'todas tienen resumen, posicion inicial, senales y advertencias',
+    incomplete.length === 0,
+    incomplete.map((e) => e.id).join(', '),
   );
   check(
     'todas tienen ejecucion detallada (3+ pasos)',
@@ -378,12 +382,20 @@ export function runUnitsTests(
   const emptyEn = enKeys.filter((k) => !String((en as Record<string, string>)[k] ?? '').trim());
   check('ninguna clave inglesa esta vacia', emptyEn.length === 0, emptyEn.join(', '));
 
-  const untranslated = esKeys.filter(
-    (k) =>
-      (es as Record<string, string>)[k] === (en as Record<string, string>)[k] &&
-      (es as Record<string, string>)[k].length > 12 &&
-      !/^(Peak week|Post-show|Prep|Posing|LISS)/.test((es as Record<string, string>)[k]),
-  );
+  /*
+   * Una cadena identica en ambos idiomas no siempre es un olvido: hay plantillas
+   * que solo colocan valores ("{n} min · {division}") y terminos tecnicos que no
+   * se traducen ("Service worker", "Peak week"). Se ignoran quitando primero los
+   * marcadores y quedandose con las letras que de verdad habria que traducir.
+   */
+  const TECHNICAL = /^(peak week|post\-show|prep|posing|liss|service worker|bodyfit prep|youtube|indexeddb)$/i;
+  const untranslated = esKeys.filter((k) => {
+    const value = (es as Record<string, string>)[k];
+    if (value !== (en as Record<string, string>)[k]) return false;
+    const words = value.replace(/\{[^}]*\}/g, ' ').replace(/[^\p{L} ]+/gu, ' ').trim();
+    if (words.length <= 12) return false;
+    return !TECHNICAL.test(words);
+  });
   check(
     'los textos largos estan realmente traducidos',
     untranslated.length === 0,

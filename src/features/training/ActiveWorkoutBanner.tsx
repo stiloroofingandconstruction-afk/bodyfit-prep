@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Dumbbell } from 'lucide-react';
 import { useTrainingStore } from '@/store/trainingStore';
 import { useUIStore } from '@/store/uiStore';
+import { t } from '@/i18n';
 
 /** Aviso persistente de que hay un entreno abierto. */
 export function ActiveWorkoutBanner() {
@@ -27,7 +28,7 @@ export function ActiveWorkoutBanner() {
         <div className="min-w-0 flex-1">
           <p className="truncate text-[14px] font-semibold text-brand">{active.name}</p>
           <p className="text-[11px] text-muted">
-            {done} de {total} series completadas
+            {t('ex.setsCompleted', { done, total })}
           </p>
         </div>
         <ChevronRight size={17} className="shrink-0 text-brand" />

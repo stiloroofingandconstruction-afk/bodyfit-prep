@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cx } from '@/lib/utils';
+import { t } from '@/i18n';
 
 interface Props {
   open: boolean;
@@ -35,7 +36,7 @@ export function Sheet({ open, onClose, title, children, height = 'auto', footer 
   return createPortal(
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <button
-        aria-label="Cerrar"
+        aria-label={t('common.close')}
         className="fade-enter absolute inset-0 bg-black/60 backdrop-blur-[2px]"
         onClick={onClose}
       />
@@ -53,7 +54,7 @@ export function Sheet({ open, onClose, title, children, height = 'auto', footer 
           <button
             onClick={onClose}
             className="pressable -mr-1 flex size-8 items-center justify-center rounded-full bg-surface2 text-muted"
-            aria-label="Cerrar"
+            aria-label={t('common.close')}
           >
             <X size={16} />
           </button>

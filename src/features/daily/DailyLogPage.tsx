@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/Button';
 import { Input, Label, Stepper } from '@/components/ui/Field';
 import { Stat } from '@/components/ui/Misc';
 import { LineChart } from '@/components/ui/Chart';
-import { PROJECTION_LABEL, PROJECTION_TONE } from '@/domain/competition';
+import { PROJECTION_TONE } from '@/domain/competition';
+import { projectionLabel } from '@/i18n/labels';
 import { addDays, friendlyDate, today } from '@/lib/date';
 import { cx } from '@/lib/utils';
 import { useUnits } from '@/lib/useUnits';
@@ -16,14 +17,16 @@ import { useCurrentWeight, useProjection, useReadiness, useWeightTrend } from '@
 import { useSettingsStore } from '@/store/settingsStore';
 import { alive } from '@/store/persist';
 import { toast } from '@/store/uiStore';
+import { localeTag } from '@/lib/date';
+import { t, type Dict } from '@/i18n';
 
-const SCALES = [
-  { key: 'sleepQuality', label: 'Calidad del sueno', lo: 'Fatal', hi: 'Perfecto' },
-  { key: 'energy', label: 'Energia', lo: 'Agotado', hi: 'Excelente' },
-  { key: 'hunger', label: 'Hambre', lo: 'Saciado', hi: 'Voraz' },
-  { key: 'stress', label: 'Estres', lo: 'Tranquilo', hi: 'Al limite' },
-  { key: 'digestion', label: 'Digestion', lo: 'Mala', hi: 'Perfecta' },
-] as const;
+const SCALES: { key: string; label: keyof Dict; lo: keyof Dict; hi: keyof Dict }[] = [
+  { key: 'sleepQuality', label: 'daily.sleep', lo: 'daily.sleepLo', hi: 'daily.sleepHi' },
+  { key: 'energy', label: 'daily.energy', lo: 'daily.energyLo', hi: 'daily.energyHi' },
+  { key: 'hunger', label: 'daily.hunger', lo: 'daily.hungerLo', hi: 'daily.hungerHi' },
+  { key: 'stress', label: 'daily.stress', lo: 'daily.stressLo', hi: 'daily.stressHi' },
+  { key: 'digestion', label: 'daily.digestion', lo: 'daily.digestionLo', hi: 'daily.digestionHi' },
+];
 
 export default function DailyLogPage() {
   const [date, setDate] = useState(today());
@@ -79,7 +82,7 @@ export default function DailyLogPage() {
       ...(notes.trim() ? { notes: notes.trim() } : {}),
     });
     if (steps > 0) setSteps(date, steps);
-    toast('Registro guardado');
+    toast(t('daily.saved'));
   };
 
   const chartData = useMemo(
@@ -90,7 +93,7 @@ export default function DailyLogPage() {
   return (
     <>
       <PageHeader
-        title="Registro diario"
+        title={t('daily.title')}
         subtitle={friendlyDate(date)}
         back
         action={
@@ -98,7 +101,7 @@ export default function DailyLogPage() {
             <button
               onClick={() => setDate((d) => addDays(d, -1))}
               className="pressable flex size-9 items-center justify-center rounded-full bg-surface2 text-muted"
-              aria-label="Dia anterior"
+              aria-label={t('nut.prevDay')}
             >
               <ChevronLeft size={18} />
             </button>
@@ -106,7 +109,7 @@ export default function DailyLogPage() {
               onClick={() => setDate((d) => addDays(d, 1))}
               disabled={date >= today()}
               className="pressable flex size-9 items-center justify-center rounded-full bg-surface2 text-muted disabled:opacity-30"
-              aria-label="Dia siguiente"
+              aria-label={t('nut.nextDay')}
             >
               <ChevronRight size={18} />
             </button>
@@ -118,16 +121,20 @@ export default function DailyLogPage() {
         {/* ───────────────────────────────────── tendencia */}
         <Card>
           <div className="mb-3 grid grid-cols-3 gap-3">
-            <Stat label="Media 7 dias" value={trend.avg7 != null ? u.numWeight(trend.avg7) : '—'} unit={u.w} />
             <Stat
-              label="Cambio semanal"
+              label={t('daily.avg7')}
+              value={trend.avg7 != null ? u.numWeight(trend.avg7) : '—'}
+              unit={u.w}
+            />
+            <Stat
+              label={t('daily.weekChange')}
               value={trend.weekChange != null ? u.fmtWeightDelta(trend.weekChange).replace(` ${u.w}`, '') : '—'}
               unit={u.w}
             />
             <Stat
-              label="Ritmo"
+              label={t('daily.pace')}
               value={trend.weekPct != null ? `${trend.weekPct > 0 ? '+' : ''}${trend.weekPct.toFixed(1)}` : '—'}
-              unit="%/sem"
+              unit={t('daily.pacePerWeek')}
             />
           </div>
 
@@ -139,14 +146,13 @@ export default function DailyLogPage() {
 
           <p className="mt-2 flex gap-2 text-[11px] text-faint">
             <Info size={12} className="mt-0.5 shrink-0" />
-            Las decisiones se toman sobre la media de 7 dias, nunca sobre el peso de un dia suelto:
-            el agua y el glucogeno mueven la bascula mas que la grasa en una semana.
+            {t('daily.avgNote')}
           </p>
 
           {projection && projection.status !== 'sin-datos' && (
             <div className="mt-3 rounded-2xl border border-line bg-surface2 p-3">
               <p className={cx('text-[13px] font-semibold', PROJECTION_TONE[projection.status])}>
-                {PROJECTION_LABEL[projection.status]}
+                {projectionLabel(projection.status)}
               </p>
               <p className="mt-1 text-[12px] text-muted">{projection.explanation}</p>
             </div>
@@ -155,7 +161,7 @@ export default function DailyLogPage() {
 
         {/* ───────────────────────────────────── peso */}
         <div className="mt-5">
-          <SectionTitle>Peso en ayunas</SectionTitle>
+          <SectionTitle>{t('daily.weight')}</SectionTitle>
           <Card>
             <div className="mb-3 text-center">
               <span className="text-[44px] leading-[1.1] font-bold tabular">
@@ -173,9 +179,9 @@ export default function DailyLogPage() {
               suffix={u.w}
             />
             <div className="mt-3">
-              <Label hint="misma hora cada dia">Hora de la medicion</Label>
+              <Label hint={t('daily.timeHint')}>{t('daily.timeLabel')}</Label>
               <Input
-                aria-label="Hora de la medicion"
+                aria-label={t('daily.timeLabel')}
                 type="time"
                 value={weighTime}
                 onChange={(e) => setWeighTime(e.target.value)}
@@ -186,12 +192,12 @@ export default function DailyLogPage() {
 
         {/* ───────────────────────────────────── sensaciones */}
         <div className="mt-5">
-          <SectionTitle>Como te sientes</SectionTitle>
+          <SectionTitle>{t('daily.feelings')}</SectionTitle>
           <Card>
             <div className="space-y-5">
               {SCALES.map((s) => (
                 <div key={s.key}>
-                  <Label hint={`${scales[s.key] ?? 3} / 5`}>{s.label}</Label>
+                  <Label hint={`${scales[s.key] ?? 3} / 5`}>{t(s.label)}</Label>
                   <div className="flex gap-1.5">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <button
@@ -209,8 +215,8 @@ export default function DailyLogPage() {
                     ))}
                   </div>
                   <div className="mt-1 flex justify-between text-[11px] text-faint">
-                    <span>{s.lo}</span>
-                    <span>{s.hi}</span>
+                    <span>{t(s.lo)}</span>
+                    <span>{t(s.hi)}</span>
                   </div>
                 </div>
               ))}
@@ -220,11 +226,13 @@ export default function DailyLogPage() {
 
         {/* ───────────────────────────────────── actividad */}
         <div className="mt-5">
-          <SectionTitle>Actividad</SectionTitle>
+          <SectionTitle>{t('daily.activity')}</SectionTitle>
           <Card>
             <div className="space-y-4">
               <div>
-                <Label hint={`objetivo ${stepGoal.toLocaleString('es')}`}>Pasos</Label>
+                <Label hint={t('daily.stepsGoal', { n: stepGoal.toLocaleString(localeTag()) })}>
+                  {t('daily.steps')}
+                </Label>
                 <Input
                   inputMode="numeric"
                   value={steps || ''}
@@ -241,12 +249,12 @@ export default function DailyLogPage() {
                 )}
               </div>
               <div>
-                <Label>Cardio de hoy</Label>
+                <Label>{t('daily.todayCardio')}</Label>
                 <Input
                   inputMode="numeric"
                   value={cardioMinutes || ''}
                   onChange={(e) => setCardioMinutes(Number(e.target.value) || 0)}
-                  suffix="min"
+                  suffix={t('cardio.min')}
                   placeholder="0"
                 />
               </div>
@@ -255,18 +263,18 @@ export default function DailyLogPage() {
         </div>
 
         <div className="mt-5">
-          <SectionTitle>Notas</SectionTitle>
+          <SectionTitle>{t('common.notes')}</SectionTitle>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            placeholder="Como fue el dia, molestias, contexto..."
+            placeholder={t('daily.notesPlaceholder')}
             className="w-full resize-none rounded-2xl border border-line bg-surface2 px-3.5 py-3 text-[15px] outline-none placeholder:text-faint focus:border-brand/60"
           />
         </div>
 
         <Button variant="primary" size="lg" block className="mt-4" onClick={save}>
-          Guardar registro
+          {t('daily.saveLog')}
         </Button>
       </Page>
     </>

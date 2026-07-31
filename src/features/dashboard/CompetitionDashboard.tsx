@@ -4,7 +4,8 @@ import { AlertCircle, Footprints, PersonStanding, Timer, Trophy } from 'lucide-r
 import { ActionLink, Card, SectionTitle } from '@/components/ui/Card';
 import { Stat } from '@/components/ui/Misc';
 import { Ring } from '@/components/ui/Ring';
-import { PROJECTION_LABEL, PROJECTION_TONE } from '@/domain/competition';
+import { ProjectionText } from '@/features/competition/ProjectionText';
+import { phaseFocus, phaseLabel } from '@/i18n/labels';
 import { startOfWeek, today, weekRange } from '@/lib/date';
 import { cx } from '@/lib/utils';
 import { useUnits } from '@/lib/useUnits';
@@ -22,6 +23,7 @@ import {
   useWeightTrend,
   useWorkouts,
 } from '@/store/selectors';
+import { t } from '@/i18n';
 
 /**
  * Panel de competencia.
@@ -70,22 +72,22 @@ export function CompetitionDashboard() {
     if (!trend.reliable) {
       out.push({
         tone: 'text-carbs',
-        text: `Solo ${trend.daysLogged14} pesos en 14 dias. Con menos de 7 no se puede leer la tendencia.`,
+        text: t('comp.alertTrend', { n: trend.daysLogged14 }),
       });
     }
     if (weekStats.adherence < 80 && weekStats.adherence > 0) {
       out.push({
         tone: 'text-carbs',
-        text: `Adherencia del ${weekStats.adherence}% esta semana. Los ajustes solo valen sobre un plan cumplido.`,
+        text: t('comp.alertAdherence', { pct: weekStats.adherence }),
       });
     }
     if (weekStats.sleep != null && weekStats.sleep <= 2.5) {
-      out.push({ tone: 'text-rose', text: `Sueno medio de ${weekStats.sleep}/5. Afecta al peso y al rendimiento.` });
+      out.push({ tone: 'text-rose', text: t('comp.alertSleep', { n: weekStats.sleep }) });
     }
     if (cd && cd.daysOut <= 14 && cd.daysOut >= 0) {
       out.push({
         tone: 'text-violet',
-        text: `Quedan ${cd.daysOut} dias. Revisa la logistica del show si aun no lo has hecho.`,
+        text: t('comp.alertShowSoon', { n: cd.daysOut }),
       });
     }
     return out;
@@ -108,7 +110,7 @@ export function CompetitionDashboard() {
                 {Math.max(0, cd.daysOut)}
               </span>
               <span className="mt-0.5 text-[10px] tracking-wider text-faint uppercase">
-                {cd.daysOut < 0 ? 'dias despues' : 'dias'}
+                {cd.daysOut < 0 ? t('comp.daysAfter') : t('comp.days')}
               </span>
             </Ring>
             <div className="min-w-0 flex-1">
@@ -117,9 +119,9 @@ export function CompetitionDashboard() {
                 <span className="truncate">{prep.showName}</span>
               </p>
               <p className={cx('mt-1 text-[17px] leading-tight font-bold', cd.phase.tone)}>
-                {cd.phase.label}
+                {phaseLabel(cd.phase)}
               </p>
-              <p className="mt-1 text-[12px] text-muted">{cd.phase.focus}</p>
+              <p className="mt-1 text-[12px] text-muted">{phaseFocus(cd.phase)}</p>
             </div>
           </div>
         </Card>
@@ -129,26 +131,30 @@ export function CompetitionDashboard() {
       <div className="mt-3">
         <SectionTitle
           action={
-            <ActionLink to="/diario">Registrar</ActionLink>
+            <ActionLink to="/diario">{t('comp.log')}</ActionLink>
           }
         >
-          Peso y ritmo
+          {t('home.weightAndPace')}
         </SectionTitle>
         <Card>
           <div className="grid grid-cols-4 gap-2">
-            <Stat label="Media 7d" value={trend.avg7 != null ? u.numWeight(trend.avg7) : '—'} unit={u.w} />
             <Stat
-              label="Semanal"
+              label={t('comp.avg7d')}
+              value={trend.avg7 != null ? u.numWeight(trend.avg7) : '—'}
+              unit={u.w}
+            />
+            <Stat
+              label={t('comp.weekly')}
               value={trend.weekChange != null ? u.fmtWeightDelta(trend.weekChange).replace(` ${u.w}`, '') : '—'}
               unit={u.w}
             />
             <Stat
-              label="Ritmo"
+              label={t('daily.pace')}
               value={trend.weekPct != null ? `${trend.weekPct > 0 ? '+' : ''}${trend.weekPct.toFixed(1)}` : '—'}
               unit="%"
             />
             <Stat
-              label="Total"
+              label={t('comp.total')}
               value={trend.avg7 != null ? u.fmtWeightDelta(trend.avg7 - prep.startWeight).replace(` ${u.w}`, '') : '—'}
               unit={u.w}
             />
@@ -156,10 +162,7 @@ export function CompetitionDashboard() {
 
           {projection && (
             <div className="mt-3 border-t border-line pt-3">
-              <p className={cx('text-[13px] font-semibold', PROJECTION_TONE[projection.status])}>
-                {PROJECTION_LABEL[projection.status]}
-              </p>
-              <p className="mt-1 text-[12px] text-muted">{projection.explanation}</p>
+              <ProjectionText projection={projection} />
             </div>
           )}
         </Card>
@@ -169,56 +172,67 @@ export function CompetitionDashboard() {
       <div className="mt-3">
         <SectionTitle
           action={
-            <ActionLink to="/nutricion">Ver</ActionLink>
+            <ActionLink to="/nutricion">{t('comp.view')}</ActionLink>
           }
         >
-          Objetivo de hoy
+          {t('home.todayTarget')}
         </SectionTitle>
         <Card>
           <div className="grid grid-cols-4 gap-2">
-            <Stat label="Kcal" value={targets.kcal} tone="text-brand" sub={`${Math.round(consumed.kcal)} hoy`} />
-            <Stat label="Prot" value={`${targets.protein}g`} tone="text-protein" />
-            <Stat label="Carb" value={`${targets.carbs}g`} tone="text-carbs" />
-            <Stat label="Gras" value={`${targets.fat}g`} tone="text-fat" />
+            <Stat
+              label="kcal"
+              value={targets.kcal}
+              tone="text-brand"
+              sub={t('comp.todayShort', { n: Math.round(consumed.kcal) })}
+            />
+            <Stat label={t('field.protein')} value={`${targets.protein} g`} tone="text-protein" />
+            <Stat label={t('field.carbs')} value={`${targets.carbs} g`} tone="text-carbs" />
+            <Stat label={t('field.fat')} value={`${targets.fat} g`} tone="text-fat" />
           </div>
         </Card>
       </div>
 
       {/* ─────────────────────────────────── semana */}
       <div className="mt-3">
-        <SectionTitle>Esta semana</SectionTitle>
+        <SectionTitle>{t('comp.thisWeek')}</SectionTitle>
         <Card>
           <div className="grid grid-cols-3 gap-3">
             <Link to="/cardio" className="pressable">
               <Stat
-                label="Cardio"
+                label={t('daily.cardio')}
                 value={week.cardioMinutes}
-                unit="min"
-                sub={week.cardioPlanned ? `de ${week.cardioPlanned} plan.` : undefined}
+                unit={t('cardio.min')}
+                sub={
+                  week.cardioPlanned ? t('comp.ofPlanned', { n: week.cardioPlanned }) : undefined
+                }
               />
             </Link>
             <Link to="/cardio" className="pressable">
               <Stat
-                label="Pasos / dia"
+                label={t('comp.stepsPerDay')}
                 value={week.avgSteps || '—'}
-                sub={week.avgSteps ? `${Math.round((week.avgSteps / stepGoal) * 100)}% objetivo` : undefined}
+                sub={
+                  week.avgSteps
+                    ? t('comp.pctOfGoal', { pct: Math.round((week.avgSteps / stepGoal) * 100) })
+                    : undefined
+                }
               />
             </Link>
             <Link to="/posing" className="pressable">
-              <Stat label="Posing" value={week.posingMinutes} unit="min" />
+              <Stat label={t('posing.title')} value={week.posingMinutes} unit={t('cardio.min')} />
             </Link>
           </div>
 
           <div className="mt-3 grid grid-cols-3 gap-3 border-t border-line pt-3">
-            <Stat label="Adherencia" value={`${weekStats.adherence}%`} />
-            <Stat label="Entrenos" value={weekStats.workouts} />
-            <Stat label="Sueno" value={weekStats.sleep != null ? `${weekStats.sleep}/5` : '—'} />
+            <Stat label={t('comp.adherence')} value={`${weekStats.adherence}%`} />
+            <Stat label={t('comp.workouts')} value={weekStats.workouts} />
+            <Stat label={t('comp.sleep')} value={weekStats.sleep != null ? `${weekStats.sleep}/5` : '—'} />
           </div>
 
           <div className="mt-3 grid grid-cols-3 gap-3 border-t border-line pt-3">
-            <Stat label="Energia" value={weekStats.energy != null ? `${weekStats.energy}/5` : '—'} />
-            <Stat label="Hambre" value={weekStats.hunger != null ? `${weekStats.hunger}/5` : '—'} />
-            <Stat label="Estres" value={weekStats.stress != null ? `${weekStats.stress}/5` : '—'} />
+            <Stat label={t('comp.energy')} value={weekStats.energy != null ? `${weekStats.energy}/5` : '—'} />
+            <Stat label={t('comp.hunger')} value={weekStats.hunger != null ? `${weekStats.hunger}/5` : '—'} />
+            <Stat label={t('comp.stress')} value={weekStats.stress != null ? `${weekStats.stress}/5` : '—'} />
           </div>
         </Card>
       </div>
@@ -226,7 +240,7 @@ export function CompetitionDashboard() {
       {/* ─────────────────────────────────── alertas */}
       {alerts.length > 0 && (
         <div className="mt-3">
-          <SectionTitle>A tener en cuenta</SectionTitle>
+          <SectionTitle>{t('comp.watchOut')}</SectionTitle>
           <Card>
             <ul className="space-y-2">
               {alerts.map((a, i) => (
@@ -242,9 +256,9 @@ export function CompetitionDashboard() {
 
       {/* ─────────────────────────────────── accesos */}
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <Quick to="/diario" label="Diario" Icon={Timer} />
-        <Quick to="/cardio" label="Cardio" Icon={Footprints} />
-        <Quick to="/posing" label="Posing" Icon={PersonStanding} />
+        <Quick to="/diario" label={t('comp.quickDaily')} Icon={Timer} />
+        <Quick to="/cardio" label={t('daily.cardio')} Icon={Footprints} />
+        <Quick to="/posing" label={t('posing.title')} Icon={PersonStanding} />
       </div>
     </>
   );

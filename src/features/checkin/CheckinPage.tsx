@@ -31,6 +31,7 @@ import {
   useWorkouts,
 } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
+import { t } from '@/i18n';
 
 const MEASURE_FIELDS = [
   { key: 'waist', label: 'Cintura' },
@@ -215,6 +216,7 @@ export default function CheckinPage() {
           currentWeekly: trend.weekChange,
           status: 'sin-objetivo',
           explanation: '',
+          detail: { kind: 'no-target', weeklyKg: trend.weekChange ?? 0, projectedKg: 0 },
         },
         adherence,
         energy: scales.energy,
@@ -292,7 +294,10 @@ export default function CheckinPage() {
 
   return (
     <>
-      <PageHeader title="Check-in semanal" subtitle={`Semana del ${shortDate(weekStart)}`} />
+      <PageHeader
+        title={t('screen.checkin')}
+        subtitle={t('chk.weekOfShort', { date: shortDate(weekStart) })}
+      />
 
       <Page>
         <ProgressTabs />
@@ -300,7 +305,11 @@ export default function CheckinPage() {
         {/* ─────────────────────────── datos de la semana */}
         <Card>
           <div className="grid grid-cols-3 gap-3">
-            <Stat label="Media 7 dias" value={trend.avg7 != null ? u.numWeight(trend.avg7) : '—'} unit={u.w} />
+            <Stat
+              label={t('daily.avg7')}
+              value={trend.avg7 != null ? u.numWeight(trend.avg7) : '—'}
+              unit={u.w}
+            />
             <Stat
               label="Cambio"
               value={trend.weekChange != null ? u.fmtWeightDelta(trend.weekChange).replace(` ${u.w}`, '') : '—'}
@@ -320,13 +329,13 @@ export default function CheckinPage() {
 
         {/* ─────────────────────────── resumen automatico */}
         <div className="mt-5">
-          <SectionTitle>Resumen de la semana</SectionTitle>
+          <SectionTitle>{t('chk.weekSummary')}</SectionTitle>
           <Card>
             <p className="mb-3 text-[14px] font-medium">{summary.headline}</p>
             <div className="space-y-2.5">
               <Group title="Mejoro" items={summary.improved} icon={<TrendingUp size={13} />} />
               <Group title="Empeoro" items={summary.worsened} icon={<TrendingDown size={13} />} />
-              <Group title="Se mantuvo" items={summary.stable} icon={<Minus size={13} />} />
+              <Group title={t('chk.stable')} items={summary.stable} icon={<Minus size={13} />} />
             </div>
             {summary.missing.length > 0 && (
               <p className="mt-3 border-t border-line pt-2 text-[11px] text-faint">
@@ -341,11 +350,13 @@ export default function CheckinPage() {
           <SectionTitle
             action={
               latestMeasurement ? (
-                <span className="text-[11px] text-faint">ultima {shortDate(latestMeasurement.date)}</span>
+                <span className="text-[11px] text-faint">
+                  {t('chk.lastMeasure', { date: shortDate(latestMeasurement.date) })}
+                </span>
               ) : undefined
             }
           >
-            Medidas de esta semana
+            {t('chk.weekMeasurements')}
           </SectionTitle>
           <Card>
             <div className="grid grid-cols-2 gap-3">
@@ -354,7 +365,7 @@ export default function CheckinPage() {
                   <Label
                     hint={
                       latestMeasurement?.[f.key] != null
-                        ? `antes ${u.numLength(latestMeasurement[f.key] as number)}`
+                        ? t('chk.before', { value: u.numLength(latestMeasurement[f.key] as number) })
                         : undefined
                     }
                   >
@@ -377,8 +388,8 @@ export default function CheckinPage() {
         <div className="mt-5">
           {/* ActionLink usa Link, no <a href>: un ancla recargaria toda la app
               y se perderia el formulario del check-in a medio rellenar. */}
-          <SectionTitle action={<ActionLink to="/fotos">Anadir</ActionLink>}>
-            Fotos de la semana
+          <SectionTitle action={<ActionLink to="/fotos">{t('common.add')}</ActionLink>}>
+            {t('chk.weekPhotos')}
           </SectionTitle>
           <Card>
             <div className="flex items-center gap-3">
@@ -387,8 +398,8 @@ export default function CheckinPage() {
               </div>
               <p className="text-[13px] text-muted">
                 {weekPhotos.length > 0
-                  ? `${weekPhotos.length} fotos registradas esta semana.`
-                  : 'Sin fotos esta semana. Mismo encuadre y misma luz que la semana anterior.'}
+                  ? t('chk.photosThisWeek', { n: weekPhotos.length })
+                  : t('chk.noPhotosThisWeek')}
               </p>
             </div>
           </Card>
@@ -396,7 +407,7 @@ export default function CheckinPage() {
 
         {/* ─────────────────────────── sensaciones */}
         <div className="mt-5">
-          <SectionTitle>Como fue la semana</SectionTitle>
+          <SectionTitle>{t('chk.howWasWeek')}</SectionTitle>
           <Card>
             <div className="space-y-5">
               <div>
@@ -443,12 +454,12 @@ export default function CheckinPage() {
             </div>
 
             <div className="mt-4">
-              <Label hint="opcional">Comentarios</Label>
+              <Label hint={t('common.optional')}>{t('chk.comments')}</Label>
               <textarea
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
                 rows={3}
-                placeholder="Contexto de la semana, viajes, eventos, molestias..."
+                placeholder={t('chk.notesPlaceholder')}
                 className="w-full resize-none rounded-2xl border border-line bg-surface2 px-3.5 py-3 text-[15px] outline-none placeholder:text-faint focus:border-brand/60"
               />
             </div>
@@ -457,7 +468,7 @@ export default function CheckinPage() {
 
         {/* ─────────────────────────── recomendacion */}
         <div className="mt-5">
-          <SectionTitle>Recomendacion</SectionTitle>
+          <SectionTitle>{t('chk.recommendation')}</SectionTitle>
           <RecommendationCard
             result={recommendation}
             currentKcal={targets.kcal}
@@ -478,30 +489,32 @@ export default function CheckinPage() {
                 outcome: 'rechazada',
               });
               saveCheckin();
-              toast('Recomendacion rechazada. El check-in se guardo igual.', 'info');
+              toast(t('chk.rejected'), 'info');
             }}
           />
         </div>
 
         <Button variant="secondary" size="lg" block className="mt-3" onClick={saveCheckin}>
-          Guardar check-in sin aplicar cambios
+          {t('chk.saveWithout')}
         </Button>
 
         {/* ─────────────────────────── historial */}
         <div className="mt-6">
-          <SectionTitle>Check-ins anteriores</SectionTitle>
+          <SectionTitle>{t('chk.previous')}</SectionTitle>
           {checkins.length === 0 ? (
             <EmptyState
               icon={<CalendarCheck size={22} />}
-              title="Sin check-ins"
-              description="Haz uno cada semana. Es lo que convierte datos sueltos en decisiones."
+              title={t('chk.empty')}
+              description={t('chk.emptyDesc')}
             />
           ) : (
             <div className="space-y-1.5">
               {checkins.map((c) => (
                 <div key={c.id} className="rounded-2xl border border-line bg-surface px-3.5 py-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-[14px] font-medium">Semana del {shortDate(c.weekStart)}</p>
+                    <p className="text-[14px] font-medium">
+                      {t('chk.weekOfShort', { date: shortDate(c.weekStart) })}
+                    </p>
                     <span className="text-[13px] tabular text-muted">{u.fmtWeight(c.avgWeight)}</span>
                   </div>
                   <p className="mt-0.5 text-[12px] tabular text-faint">

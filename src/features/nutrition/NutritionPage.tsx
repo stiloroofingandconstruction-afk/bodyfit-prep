@@ -13,6 +13,8 @@ import { CustomFoodSheet } from './CustomFoodSheet';
 import { DayPlanSheet } from './DayPlanSheet';
 import { Chip } from '@/components/ui/Misc';
 import { DAY_TYPE_LABEL, type NutritionDayType } from '@/domain/prepTypes';
+import { dayTypeLabel } from '@/i18n/labels';
+import { t, type Dict } from '@/i18n';
 import { addDays, friendlyDate, today } from '@/lib/date';
 import { fmtNum } from '@/lib/utils';
 import { sumMacros } from '@/domain/macros';
@@ -21,13 +23,13 @@ import { useDayNutrition } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
 import type { FoodEntry, MealSlot } from '@/domain/types';
 
-const SLOTS: { key: MealSlot; label: string }[] = [
-  { key: 'desayuno', label: 'Desayuno' },
-  { key: 'almuerzo', label: 'Almuerzo' },
-  { key: 'cena', label: 'Cena' },
-  { key: 'snack', label: 'Snacks' },
-  { key: 'pre', label: 'Pre-entreno' },
-  { key: 'post', label: 'Post-entreno' },
+const SLOTS: { key: MealSlot; label: keyof Dict }[] = [
+  { key: 'desayuno', label: 'slot.breakfast' },
+  { key: 'almuerzo', label: 'slot.lunch' },
+  { key: 'cena', label: 'slot.dinner' },
+  { key: 'snack', label: 'slot.snack' },
+  { key: 'pre', label: 'slot.pre' },
+  { key: 'post', label: 'slot.post' },
 ];
 
 /** Franja sugerida segun la hora: evita elegir "Desayuno" a las 9 de la noche. */
@@ -68,14 +70,14 @@ export default function NutritionPage() {
   return (
     <>
       <PageHeader
-        title="Nutricion"
+        title={t('screen.nutrition')}
         subtitle={friendlyDate(date)}
         action={
           <div className="flex items-center gap-1">
             <button
               onClick={() => setDate((d) => addDays(d, -1))}
               className="pressable flex size-9 items-center justify-center rounded-full bg-surface2 text-muted"
-              aria-label="Dia anterior"
+              aria-label={t('nut.prevDay')}
             >
               <ChevronLeft size={18} />
             </button>
@@ -83,7 +85,7 @@ export default function NutritionPage() {
               onClick={() => setDate((d) => addDays(d, 1))}
               disabled={date >= today()}
               className="pressable flex size-9 items-center justify-center rounded-full bg-surface2 text-muted disabled:opacity-30"
-              aria-label="Dia siguiente"
+              aria-label={t('nut.nextDay')}
             >
               <ChevronRight size={18} />
             </button>
@@ -98,9 +100,13 @@ export default function NutritionPage() {
 
         {/* Tipo de dia: refeed, diet break, descanso... escala el objetivo */}
         <div className="scroll-momentum -mx-4 mt-3 flex gap-2 overflow-x-auto px-4">
-          {(Object.keys(DAY_TYPE_LABEL) as NutritionDayType[]).map((t) => (
-            <Chip key={t} active={currentDayType === t} onClick={() => setDayType(date, t)}>
-              {DAY_TYPE_LABEL[t]}
+          {(Object.keys(DAY_TYPE_LABEL) as NutritionDayType[]).map((kind) => (
+            <Chip
+              key={kind}
+              active={currentDayType === kind}
+              onClick={() => setDayType(date, kind)}
+            >
+              {dayTypeLabel(kind)}
             </Chip>
           ))}
         </div>
@@ -108,17 +114,17 @@ export default function NutritionPage() {
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Button variant="primary" size="lg" onClick={() => setSmart('plan')}>
             <Sparkles size={17} />
-            Quiero comer...
+            {t('nut.iWantToEat')}
           </Button>
           <Button variant="secondary" size="lg" onClick={() => setSmart('auto')}>
             <Wand2 size={17} />
-            Completar macros
+            {t('home.completeMacros')}
           </Button>
         </div>
 
         <Button variant="secondary" size="lg" block className="mt-2" onClick={() => setPlanning(true)}>
           <CalendarRange size={17} />
-          Planear mi dia completo
+          {t('nut.planFullDay')}
         </Button>
 
         <div className="mt-5 space-y-4">
@@ -134,7 +140,7 @@ export default function NutritionPage() {
                     </span>
                   }
                 >
-                  {slot.label}
+                  {t(slot.label)}
                 </SectionTitle>
 
                 <div className="space-y-1.5">
@@ -162,7 +168,7 @@ export default function NutritionPage() {
                     className="pressable flex w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-line py-3 text-[14px] text-muted"
                   >
                     <Plus size={16} />
-                    Anadir a {slot.label.toLowerCase()}
+                    {t('nut.addTo', { slot: t(slot.label).toLowerCase() })}
                   </button>
                 </div>
               </div>
@@ -179,15 +185,15 @@ export default function NutritionPage() {
               className="pressable rounded-full border border-line bg-surface2 px-3 py-1.5 text-[13px] text-muted"
             >
               <Plus size={12} className="mr-1 inline" />
-              {s.label}
+              {t(s.label)}
             </button>
           ))}
         </div>
 
         {entries.length === 0 && (
           <EmptyState
-            title="Dia sin registros"
-            description="Escribe un alimento y la app te pregunta los gramos. Nada de calcular calorias a mano."
+            title={t('nut.emptyDay')}
+            description={t('nut.emptyDayDesc')}
           />
         )}
 
@@ -195,12 +201,12 @@ export default function NutritionPage() {
           <button
             onClick={() => {
               duplicateDay(date, today());
-              toast('Dia copiado a hoy');
+              toast(t('nut.dayCopied'));
             }}
             className="mt-6 flex w-full items-center justify-center gap-2 py-3 text-[13px] text-muted"
           >
             <Copy size={14} />
-            Copiar este dia a hoy
+            {t('nut.copyDay')}
           </button>
         )}
       </Page>
@@ -272,7 +278,7 @@ function EditEntrySheet({ entry, onClose }: { entry: FoodEntry | null; onClose: 
             size="lg"
             onClick={() => {
               removeEntry(entry.id);
-              toast('Eliminado', 'info');
+              toast(t('nut.deleted'), 'info');
               onClose();
             }}
           >
@@ -287,21 +293,21 @@ function EditEntrySheet({ entry, onClose }: { entry: FoodEntry | null; onClose: 
               onClose();
             }}
           >
-            Guardar
+            {t('common.save')}
           </Button>
         </div>
       }
     >
-      <p className="mb-3 text-center text-[13px] text-muted">Ajusta la cantidad</p>
+      <p className="mb-3 text-center text-[13px] text-muted">{t('nut.adjustAmount')}</p>
       <Stepper value={grams} onChange={setGrams} step={5} min={0} max={3000} suffix="g" />
 
       <div className="mt-4 grid grid-cols-4 gap-2 rounded-2xl border border-line bg-surface2 p-3 text-center">
         {(
           [
             ['kcal', (entry.macros.kcal / entry.grams) * grams, 'text-brand'],
-            ['Prot', (entry.macros.protein / entry.grams) * grams, 'text-protein'],
-            ['Carb', (entry.macros.carbs / entry.grams) * grams, 'text-carbs'],
-            ['Gras', (entry.macros.fat / entry.grams) * grams, 'text-fat'],
+            [t('field.protein'), (entry.macros.protein / entry.grams) * grams, 'text-protein'],
+            [t('field.carbs'), (entry.macros.carbs / entry.grams) * grams, 'text-carbs'],
+            [t('field.fat'), (entry.macros.fat / entry.grams) * grams, 'text-fat'],
           ] as const
         ).map(([label, value, tone]) => (
           <div key={label}>

@@ -4,13 +4,14 @@ import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { NumberPad } from '@/components/ui/NumberPad';
 import { Chip, EmptyState } from '@/components/ui/Misc';
-import { CATEGORY_LABEL } from '@/data/foods';
+import { foodCategoryLabel } from '@/i18n/catalogLabels';
 import { searchFoods } from '@/data/foodSearch';
 import { macrosFor } from '@/domain/macros';
 import { cx, fmtNum } from '@/lib/utils';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { useCatalog, useFoodLookup } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
+import { t } from '@/i18n';
 import type { Food, MealSlot } from '@/domain/types';
 
 interface Props {
@@ -80,7 +81,7 @@ export function FoodSearchSheet({ open, onClose, slot, date, onCreateCustom }: P
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title="Anadir alimento" height="full">
+    <Sheet open={open} onClose={onClose} title={t('nut.addFood')} height="full">
       <div className="sticky -top-4 z-10 -mx-4 -mt-4 mb-3 bg-surface px-4 pt-4 pb-3">
         <div className="relative">
           <Search size={17} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-faint" />
@@ -88,7 +89,7 @@ export function FoodSearchSheet({ open, onClose, slot, date, onCreateCustom }: P
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Pollo, arroz, avena, Fairlife..."
+            placeholder={t('nut.searchPlaceholder')}
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
@@ -97,19 +98,19 @@ export function FoodSearchSheet({ open, onClose, slot, date, onCreateCustom }: P
         </div>
         {!query && (favorites.length > 0 || recent.length > 0) && (
           <p className="mt-2 px-1 text-[11px] tracking-wider text-faint uppercase">
-            {favorites.length ? 'Favoritos y recientes' : 'Recientes'}
+            {favorites.length ? t('nut.favAndRecent') : t('nut.recent')}
           </p>
         )}
       </div>
 
       {results.length === 0 ? (
         <EmptyState
-          title="Sin resultados"
-          description={`No encontramos "${query}". Puedes crearlo con sus macros y quedara guardado.`}
+          title={t('nut.noResults')}
+          description={t('nut.notFoundDesc', { query })}
           action={
             onCreateCustom && (
               <Button variant="primary" onClick={onCreateCustom}>
-                Crear alimento
+                {t('nut.createFoodShort')}
               </Button>
             )
           }
@@ -135,13 +136,13 @@ export function FoodSearchSheet({ open, onClose, slot, date, onCreateCustom }: P
                     </p>
                   </div>
                   <span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-[10px] text-faint">
-                    {CATEGORY_LABEL[food.category]}
+                    {foodCategoryLabel(food.category)}
                   </span>
                 </button>
                 <button
                   onClick={() => toggleFavorite(food.id)}
                   className="pressable flex size-10 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface2"
-                  aria-label="Favorito"
+                  aria-label={t('nut.favorite')}
                 >
                   <Star
                     size={16}
@@ -159,7 +160,7 @@ export function FoodSearchSheet({ open, onClose, slot, date, onCreateCustom }: P
           onClick={onCreateCustom}
           className="mt-4 w-full py-3 text-center text-[13px] text-muted underline underline-offset-4"
         >
-          No esta en la lista — crear alimento
+          {t('nut.createFood')}
         </button>
       )}
     </Sheet>
@@ -210,11 +211,13 @@ function GramsStep({
       footer={
         <Button variant="primary" size="lg" block disabled={grams <= 0} onClick={() => onConfirm(grams)}>
           <Check size={18} />
-          Anadir {grams > 0 ? `${grams} ${food.unit}` : ''}
+          {t('nut.addAmount', { amount: grams > 0 ? `${grams} ${food.unit}` : '' }).trim()}
         </Button>
       }
     >
-      <p className="text-center text-[13px] text-muted">¿Cuantos {food.unit === 'ml' ? 'mililitros' : 'gramos'}?</p>
+      <p className="text-center text-[13px] text-muted">
+        {food.unit === 'ml' ? t('nut.howManyMl') : t('nut.howManyGrams')}
+      </p>
 
       <div className="mt-2 mb-4 text-center">
         <span className="text-[52px] leading-[1.1] font-bold tabular">{raw || '0'}</span>
@@ -223,9 +226,9 @@ function GramsStep({
 
       <div className="mb-4 grid grid-cols-4 gap-2 rounded-2xl border border-line bg-surface2 p-3 text-center">
         <Macro label="kcal" value={Math.round(macros.kcal)} tone="text-brand" />
-        <Macro label="Prot" value={fmtNum(macros.protein)} tone="text-protein" />
-        <Macro label="Carb" value={fmtNum(macros.carbs)} tone="text-carbs" />
-        <Macro label="Gras" value={fmtNum(macros.fat)} tone="text-fat" />
+        <Macro label={t('field.protein')} value={fmtNum(macros.protein)} tone="text-protein" />
+        <Macro label={t('field.carbs')} value={fmtNum(macros.carbs)} tone="text-carbs" />
+        <Macro label={t('field.fat')} value={fmtNum(macros.fat)} tone="text-fat" />
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">

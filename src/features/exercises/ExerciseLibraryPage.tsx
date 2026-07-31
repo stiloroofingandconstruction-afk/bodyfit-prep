@@ -3,17 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Search, ShieldCheck } from 'lucide-react';
 import { Page, PageHeader } from '@/components/ui/PageHeader';
 import { Chip, EmptyState } from '@/components/ui/Misc';
-import {
-  DIFFICULTY_LABEL,
-  EXERCISES,
-  LUMBAR_TONE,
-  MUSCLE_LABEL,
-  MUSCLE_ORDER,
-  searchExercises,
-} from '@/data/exercises';
+import { EXERCISES, LUMBAR_TONE, MUSCLE_ORDER, searchExercises } from '@/data/exercises';
+import { difficultyLabel, muscleLabel } from '@/i18n/catalogLabels';
+import { t, type Dict } from '@/i18n';
 import { cx } from '@/lib/utils';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { Difficulty, MuscleGroup } from '@/domain/types';
+
+/** Nivel de carga lumbar en minuscula, para incrustarlo en una frase. */
+const LUMBAR_WORD: Record<'bajo' | 'moderado' | 'alto', keyof Dict> = {
+  bajo: 'ex.lumbarLow',
+  moderado: 'ex.lumbarModerate',
+  alto: 'ex.lumbarHigh',
+};
 
 export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
@@ -43,7 +45,11 @@ export default function ExerciseLibraryPage() {
 
   return (
     <>
-      <PageHeader title="Ejercicios" subtitle={`${EXERCISES.length} ejercicios con guia de tecnica`} back />
+      <PageHeader
+        title={t('screen.exercises')}
+        subtitle={t('ex.subtitle', { n: EXERCISES.length })}
+        back
+      />
 
       <Page>
         <div className="relative">
@@ -51,7 +57,7 @@ export default function ExerciseLibraryPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar ejercicio, musculo o etiqueta"
+            placeholder={t('ex.searchPlaceholder')}
             autoComplete="off"
             className="h-12 w-full rounded-2xl border border-line bg-surface2 pr-3 pl-10 text-[15px] outline-none placeholder:text-faint focus:border-brand/60"
           />
@@ -59,11 +65,11 @@ export default function ExerciseLibraryPage() {
 
         <div className="scroll-momentum -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
           <Chip active={muscle === null} onClick={() => setMuscle(null)}>
-            Todos
+            {t('ex.all')}
           </Chip>
           {MUSCLE_ORDER.map((m) => (
             <Chip key={m} active={muscle === m} onClick={() => setMuscle(muscle === m ? null : m)}>
-              {MUSCLE_LABEL[m]}
+              {muscleLabel(m)}
             </Chip>
           ))}
         </div>
@@ -75,23 +81,23 @@ export default function ExerciseLibraryPage() {
               active={difficulty === d}
               onClick={() => setDifficulty(difficulty === d ? null : d)}
             >
-              {DIFFICULTY_LABEL[d]}
+              {difficultyLabel(d)}
             </Chip>
           ))}
           <Chip active={lumbarOnly} onClick={() => setLumbarOnly(!lumbarOnly)}>
             <ShieldCheck size={12} className="mr-1 inline" />
-            Lumbar segura
+            {t('ex.lumbarSafeFilter')}
           </Chip>
         </div>
 
         {results.length === 0 ? (
-          <EmptyState title="Sin resultados" description="Prueba con otro termino o quita algun filtro." />
+          <EmptyState title={t('ex.noResults')} description={t('ex.noResultsDesc')} />
         ) : (
           <div className="mt-5 space-y-5">
             {grouped.map(({ muscle: m, list }) => (
               <div key={m}>
                 <h2 className="mb-2 px-1 text-xs font-semibold tracking-wider text-faint uppercase">
-                  {MUSCLE_LABEL[m]} · {list.length}
+                  {muscleLabel(m)} · {list.length}
                 </h2>
                 <div className="space-y-1.5">
                   {list.map((ex) => (
@@ -103,14 +109,17 @@ export default function ExerciseLibraryPage() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[15px] font-medium">{ex.name}</p>
                         <p className="truncate text-[12px] text-faint">
-                          {DIFFICULTY_LABEL[ex.difficulty]} · {ex.equipment}
+                          {difficultyLabel(ex.difficulty)} · {ex.equipment}
                           {ex.lumbarLoad !== 'bajo' && (
                             <span className={cx('ml-1.5', LUMBAR_TONE[ex.lumbarLoad])}>
-                              · lumbar {ex.lumbarLoad}
+                              ·{' '}
+                              {t('ex.lumbarInline', {
+                                level: t(LUMBAR_WORD[ex.lumbarLoad]),
+                              })}
                             </span>
                           )}
                           {avoided.includes(ex.id) && (
-                            <span className="ml-1.5 text-rose">· evitando</span>
+                            <span className="ml-1.5 text-rose">· {t('ex.avoidingInline')}</span>
                           )}
                         </p>
                       </div>

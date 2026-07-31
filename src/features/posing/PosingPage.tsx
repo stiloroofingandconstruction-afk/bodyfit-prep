@@ -14,6 +14,7 @@ import { alive } from '@/store/persist';
 import { useActivityStore } from '@/store/activityStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { toast } from '@/store/uiStore';
+import { t } from '@/i18n';
 import type { Division } from '@/domain/competition';
 
 const DIVISIONS: Division[] = [
@@ -46,21 +47,21 @@ export default function PosingPage() {
 
   return (
     <>
-      <PageHeader title="Posing" subtitle={division} back />
+      <PageHeader title={t('posing.title')} subtitle={division} back />
 
       <Page>
         <Card>
           <div className="grid grid-cols-3 gap-3">
-            <Stat label="Esta semana" value={weekMinutes} unit="min" tone="text-brand" />
-            <Stat label="Sesiones" value={alive(sessions).length} />
-            <Stat label="Total" value={totalMinutes} unit="min" />
+            <Stat label={t('posing.thisWeek')} value={weekMinutes} unit={t('cardio.min')} tone="text-brand" />
+            <Stat label={t('posing.sessions')} value={alive(sessions).length} />
+            <Stat label={t('posing.total')} value={totalMinutes} unit={t('cardio.min')} />
           </div>
         </Card>
 
         <div className="mt-3">
-          <Label>Division</Label>
+          <Label>{t('prep.division')}</Label>
           <Select
-            aria-label="Division de competencia"
+            aria-label={t('posing.divisionSelect')}
             value={division}
             onChange={(e) => updateSettings({ division: e.target.value as Division })}
           >
@@ -72,13 +73,19 @@ export default function PosingPage() {
 
         <Button variant="primary" size="lg" block className="mt-3" onClick={() => setRunning(true)}>
           <Play size={17} />
-          Empezar sesion
+          {t('posing.start')}
         </Button>
 
         {/* ─────────────────────────────────────── poses */}
         <div className="mt-5">
-          <SectionTitle action={<span className="text-[11px] text-faint">{poses.length} poses</span>}>
-            Poses de tu division
+          <SectionTitle
+            action={
+              <span className="text-[11px] text-faint">
+                {t('posing.posesCount', { n: poses.length })}
+              </span>
+            }
+          >
+            {t('posing.divisionPoses')}
           </SectionTitle>
           <div className="space-y-1.5">
             {poses.map((p) => (
@@ -99,18 +106,17 @@ export default function PosingPage() {
             ))}
           </div>
           <p className="mt-2 px-1 text-[11px] text-faint">
-            Las poses obligatorias varian entre federaciones y temporadas. Confirma siempre la
-            normativa oficial de la tuya.
+            {t('posing.rulesNote')}
           </p>
         </div>
 
         {/* ─────────────────────────────────────── historial */}
         <div className="mt-5">
-          <SectionTitle>Historial</SectionTitle>
+          <SectionTitle>{t('posing.history')}</SectionTitle>
           {history.length === 0 ? (
             <EmptyState
-              title="Sin sesiones registradas"
-              description="El posing se entrena como cualquier otra habilidad: poco tiempo, muchos dias."
+              title={t('posing.empty')}
+              description={t('posing.emptyDesc')}
             />
           ) : (
             <div className="space-y-1.5">
@@ -120,15 +126,18 @@ export default function PosingPage() {
                   className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-3.5 py-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-medium">{s.minutes} min · {s.division}</p>
+                    <p className="text-[15px] font-medium">
+                      {t('posing.sessionMinutes', { n: s.minutes, division: s.division })}
+                    </p>
                     <p className="truncate text-[12px] text-faint">
-                      {friendlyDate(s.date)} · {s.posesPracticed.length} poses
+                      {friendlyDate(s.date)} ·{' '}
+                      {t('posing.sessionPoses', { n: s.posesPracticed.length })}
                     </p>
                   </div>
                   <button
                     onClick={() => removePosing(s.id)}
                     className="pressable flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface2 text-faint"
-                    aria-label="Eliminar"
+                    aria-label={t('common.delete')}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -192,7 +201,7 @@ function PosingTimer({ division, onClose }: { division: Division; onClose: () =>
       posesPracticed: poses.slice(0, index + 1).map((p) => p.id),
       checklist: done,
     });
-    toast(`Sesion de ${minutes} min guardada`);
+    toast(t('posing.sessionSaved', { n: minutes }));
     onClose();
   };
 
@@ -204,15 +213,15 @@ function PosingTimer({ division, onClose }: { division: Division; onClose: () =>
     <Sheet
       open
       onClose={onClose}
-      title="Sesion de posing"
+      title={t('posing.session')}
       height="full"
       footer={
         <div className="flex gap-2">
           <Button variant="secondary" size="lg" onClick={onClose}>
-            Cancelar
+            {t('common.cancel')}
           </Button>
           <Button variant="primary" size="lg" block onClick={finish}>
-            Terminar y guardar
+            {t('posing.finish')}
           </Button>
         </div>
       }
@@ -228,19 +237,23 @@ function PosingTimer({ division, onClose }: { division: Division; onClose: () =>
         >
           <span className="text-[44px] leading-[1.1] font-bold tabular">{remaining}</span>
           <span className="mt-1 text-[11px] tracking-wider text-faint uppercase">
-            {phase === 'hold' ? 'Mantener' : 'Descanso'}
+            {phase === 'hold' ? t('posing.holdPhase') : t('posing.restPhase')}
           </span>
         </Ring>
 
         <p className="mt-4 text-[20px] font-bold">{pose.name}</p>
         <p className="text-[12px] text-faint">
-          Pose {index + 1} de {poses.length} · {formatDuration(elapsedRef.current)} transcurridos
+          {t('posing.poseOf', {
+            n: index + 1,
+            total: poses.length,
+            time: formatDuration(elapsedRef.current),
+          })}
         </p>
 
         <div className="mt-4 flex gap-2">
           <Button variant="secondary" onClick={() => setPaused((p) => !p)}>
             {paused ? <Play size={16} /> : <Pause size={16} />}
-            {paused ? 'Reanudar' : 'Pausar'}
+            {paused ? t('posing.resume') : t('posing.pause')}
           </Button>
           <Button
             variant="secondary"
@@ -265,7 +278,7 @@ function PosingTimer({ division, onClose }: { division: Division; onClose: () =>
         </div>
 
         <div className="mt-5 w-full">
-          <Label hint={`${restSeconds}s`}>Descanso entre poses</Label>
+          <Label hint={t('posing.restSeconds', { n: restSeconds })}>{t('posing.restBetween')}</Label>
           <Stepper value={restSeconds} onChange={setRestSeconds} step={5} min={5} max={90} suffix="s" />
         </div>
 
@@ -279,7 +292,7 @@ function PosingTimer({ division, onClose }: { division: Division; onClose: () =>
         </ul>
 
         <div className="mt-4 w-full">
-          <SectionTitle>Checklist de la sesion</SectionTitle>
+          <SectionTitle>{t('posing.checklist')}</SectionTitle>
           <div className="space-y-1">
             {poses.map((p) => (
               <button

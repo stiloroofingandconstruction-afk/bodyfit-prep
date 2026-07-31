@@ -3,6 +3,7 @@ import { AlertTriangle, BadgeCheck, Film, Play, WifiOff } from 'lucide-react';
 import { fmtDuration } from '@/domain/media';
 import { cx } from '@/lib/utils';
 import type { ExerciseMedia } from '@/domain/types';
+import { t } from '@/i18n';
 
 interface Props {
   media?: ExerciseMedia;
@@ -49,7 +50,7 @@ export function ExerciseVideo({ media, title, className }: Props) {
               {failed ? 'No se pudo cargar el video' : 'Sin video configurado'}
             </p>
             <p className="mt-1 text-[11px] text-faint">
-              Puedes anadir el tuyo desde Ajustes → Videos de ejercicios
+              {t('vid.addYourOwn')}
             </p>
           </div>
         )}
@@ -68,8 +69,8 @@ export function ExerciseVideo({ media, title, className }: Props) {
       >
         <div className="px-6 text-center">
           <WifiOff size={24} className="mx-auto mb-2 text-faint" />
-          <p className="text-[13px] text-muted">Sin conexion</p>
-          <p className="mt-1 text-[11px] text-faint">La guia escrita sigue disponible</p>
+          <p className="text-[13px] text-muted">{t('video.offline')}</p>
+          <p className="mt-1 text-[11px] text-faint">{t('video.writtenGuideAvailable')}</p>
         </div>
       </div>
     );
@@ -81,7 +82,7 @@ export function ExerciseVideo({ media, title, className }: Props) {
       <div className={className}>
         <button
           onClick={() => setPlaying(true)}
-          aria-label={`Reproducir video de ${title}`}
+          aria-label={t('vid.play', { title })}
           className="group relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-2xl border border-line bg-surface2"
         >
           {media?.videoPoster ? (
@@ -121,7 +122,7 @@ export function ExerciseVideo({ media, title, className }: Props) {
           preload="metadata"
           poster={media?.videoPoster}
           onError={() => setFailed(true)}
-          aria-label={`Video de ${title}`}
+          aria-label={t('vid.videoOf', { title })}
           className="aspect-video w-full rounded-2xl border border-line bg-black"
         >
           {media?.videoWebmUrl && <source src={media.videoWebmUrl} type="video/webm" />}
@@ -137,7 +138,7 @@ export function ExerciseVideo({ media, title, className }: Props) {
     <div className={className}>
       <iframe
         src={`https://www.youtube-nocookie.com/embed/${media!.youtubeId}?rel=0&modestbranding=1&playsinline=1`}
-        title={`Video de ${title}`}
+        title={t('vid.videoOf', { title })}
         allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
         loading="lazy"
@@ -169,8 +170,7 @@ function MediaMeta({ media }: { media?: ExerciseMedia }) {
       {!media.verified && (
         <p className="flex items-start gap-1.5 rounded-lg border border-carbs/25 bg-carbs/8 px-2 py-1.5 text-[11px] text-carbs">
           <AlertTriangle size={11} className="mt-0.5 shrink-0" />
-          Video sin verificar. Confirma que tienes permiso o licencia para usarlo y marcalo como
-          verificado en Ajustes → Videos.
+          {t('vid.unverifiedNote')}
         </p>
       )}
     </div>

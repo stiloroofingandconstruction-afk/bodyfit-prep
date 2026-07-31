@@ -20,9 +20,16 @@ import type {
 import { templateFor } from './techniqueTemplates';
 import { AUTHORED_UPPER } from './techniqueAuthoredA';
 import { AUTHORED_LOWER } from './techniqueAuthoredB';
+import { AUTHORED_UPPER_2 } from './techniqueAuthoredC';
+import { AUTHORED_LOWER_2 } from './techniqueAuthoredD';
 
-/** Guias escritas individualmente para los ejercicios principales. */
-const AUTHORED: Record<string, ExerciseTechnique> = { ...AUTHORED_UPPER, ...AUTHORED_LOWER };
+/** Guias escritas individualmente, una por ejercicio. */
+const AUTHORED: Record<string, ExerciseTechnique> = {
+  ...AUTHORED_UPPER,
+  ...AUTHORED_LOWER,
+  ...AUTHORED_UPPER_2,
+  ...AUTHORED_LOWER_2,
+};
 
 interface Opts {
   secondary?: MuscleGroup[];
@@ -321,7 +328,7 @@ e('remo-barra', 'Remo con barra', 'espalda', 'barra', true, 'traccion-horizontal
       'Deja el peso en el suelo entre series en lugar de aguantar la posicion.',
     ],
     contraindications: [
-      'Sensibilidad o dolor lumbar: usa la version con pecho apoyado o en polea.',
+      'Sensibilidad o dolor lumbar: usa la version con pecho apoyado o en polea. Si el dolor persiste, consulta con un profesional sanitario.',
     ],
   },
 });
@@ -358,7 +365,8 @@ e('remo-polea', 'Remo en polea baja', 'espalda', 'polea', true, 'traccion-horizo
   difficulty: 'principiante',
   aliases: ['seated row', 'remo sentado'],
   subs: ['remo-t', 'remo-pecho-apoyado'],
-  lumbarSafe: ['remo-pecho-apoyado'],
+  // Sin `lumbarSafe`: este ejercicio ya es de carga lumbar baja, no necesita
+  // una alternativa mas segura que si mismo.
   tags: ['principiante', 'tension-constante'],
   tech: {
     safety: [

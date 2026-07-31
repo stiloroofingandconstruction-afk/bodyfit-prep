@@ -99,7 +99,8 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Empuja hacia arriba y hacia dentro, sin llegar a chocar las mancuernas.',
       'Manten media flexion de codo arriba para no perder tension.',
     ],
-    breathing: 'Inspira al bajar, expulsa el aire durante el empuje.',
+    breathing:
+      'Inspira al bajar y expulsa durante el empuje. En inclinado el diafragma trabaja con menos margen: no encadenes repeticiones en apnea.',
     rangeOfMotion:
       'Baja hasta notar estiramiento en el pectoral superior. La mancuerna permite ir mas abajo que la barra: aprovechalo, pero sin forzar el hombro.',
     tempo: '3-1-1-0',
@@ -243,7 +244,8 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Empuja hacia arriba abriendo el pecho, sin encoger los hombros.',
       'Termina sin bloquear los codos de golpe.',
     ],
-    breathing: 'Inspira al bajar, expulsa el aire al empujar.',
+    breathing:
+      'Inspira al bajar y expulsa al empujar. Manten el abdomen firme durante toda la serie: es lo que impide que las piernas se balanceen.',
     rangeOfMotion:
       'Hasta que el hombro alcance la altura del codo. Bajar mas aumenta mucho el estres articular sin anadir estimulo.',
     tempo: '3-0-1-0',
@@ -430,7 +432,7 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Este ejercicio tiene carga lumbar ALTA. Si tu zona baja esta sensible, no lo hagas hoy.',
     ],
     contraindications: [
-      'Sensibilidad o dolor lumbar activo. Usa remo con pecho apoyado o remo en polea.',
+      'Sensibilidad o dolor lumbar activo. Usa remo con pecho apoyado o remo en polea, y si el dolor persiste consultalo con un profesional sanitario.',
     ],
     lumbarAdaptation:
       'La alternativa directa es el remo con pecho apoyado en banco inclinado: mismo trabajo de espalda, carga lumbar practicamente nula. Si prefieres mantener el patron, reduce la carga y apoya la frente en un soporte.',
@@ -502,7 +504,8 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Manten un segundo la contraccion con el pecho alto.',
       'Vuelve controlado dejando que la escapula se estire.',
     ],
-    breathing: 'Expulsa el aire al tirar, inspira al volver.',
+    breathing:
+      'Expulsa al llevar el agarre al abdomen, inspira mientras la polea estira los brazos.',
     rangeOfMotion:
       'Estiramiento escapular completo delante y contraccion con los codos pasando la linea del torso.',
     tempo: '2-1-1-1',
@@ -689,7 +692,8 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Manten un instante arriba sin encoger el trapecio.',
       'Baja en 3 segundos resistiendo el peso.',
     ],
-    breathing: 'Expulsa el aire al subir, inspira al bajar.',
+    breathing:
+      'Expulsa al abrir los brazos, inspira al bajarlos. Son series largas: no aguantes el aire.',
     rangeOfMotion:
       'Desde los muslos hasta la horizontal. Subir por encima del hombro pasa el trabajo al trapecio.',
     tempo: '3-1-1-0 · la bajada lenta es la mitad util del ejercicio',
@@ -777,7 +781,8 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Junta las escapulas sin encoger los hombros.',
       'Vuelve controlado a la extension completa.',
     ],
-    breathing: 'Expulsa el aire al tirar, inspira al volver.',
+    breathing:
+      'Expulsa al separar la cuerda frente a la cara, inspira al dejar que los brazos vuelvan.',
     rangeOfMotion:
       'Desde brazos extendidos hasta la posicion de doble biceps con los antebrazos verticales.',
     tempo: '2-1-2-0',
@@ -797,7 +802,9 @@ export const AUTHORED_UPPER: Record<string, T> = {
     hypertrophy: ['15–20 repeticiones. El objetivo es calidad de movimiento, no tamano.'],
     strength: ['No aplica.'],
     warnings: ['Si no puedes terminar con los antebrazos verticales, baja el peso.'],
-    contraindications: ['Ninguna relevante con carga ligera.'],
+    contraindications: [
+      'Con carga ligera no hay contraindicaciones destacables. Si aparece dolor de hombro, reduce el rango antes que el peso.',
+    ],
   },
 
   /* ══════════════════════════════════════════════════════════════ BICEPS ══ */
@@ -820,7 +827,8 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Sube hasta que el antebrazo pase la vertical y aprieta un instante.',
       'Baja en 3 segundos hasta la extension completa.',
     ],
-    breathing: 'Expulsa el aire al subir, inspira al bajar.',
+    breathing:
+      'Expulsa al flexionar los codos, inspira mientras la barra baja hasta los muslos.',
     rangeOfMotion:
       'Extension completa abajo y flexion maxima arriba sin adelantar el codo.',
     tempo: '3-0-1-1',
@@ -843,7 +851,9 @@ export const AUTHORED_UPPER: Record<string, T> = {
     ],
     strength: ['6–8 repeticiones estrictas. El curl no es un ejercicio de fuerza maxima.'],
     warnings: ['El balanceo lumbar para subir el peso es el error mas comun y el mas costoso.'],
-    contraindications: ['Molestia en la cara interna del codo o tendinitis del biceps distal.'],
+    contraindications: [
+      'Molestia en la cara interna del codo o tendinitis del biceps distal. Si no cede al bajar la carga, consulta con un profesional sanitario.',
+    ],
     lumbarAdaptation:
       'Apoya la espalda contra una pared durante toda la serie. Elimina el balanceo, protege la lumbar y ademas hace el ejercicio mas estricto.',
   },
@@ -910,8 +920,10 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Aprieta arriba un instante y baja controlado.',
       'Puedes alternar brazos o subir ambos a la vez.',
     ],
-    breathing: 'Expulsa el aire al subir, inspira al bajar.',
-    rangeOfMotion: 'Extension completa abajo, antebrazo pasando la vertical arriba.',
+    breathing:
+      'Expulsa al subir con el pulgar arriba, inspira mientras la mancuerna vuelve al costado.',
+    rangeOfMotion:
+      'Extension completa abajo y antebrazo pasando la vertical arriba, con el pulgar siempre apuntando al techo.',
     tempo: '3-0-1-1',
     commonMistakes: [
       'Rotar la muneca durante la subida.',
@@ -925,7 +937,7 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Combina bien con el curl con barra en la misma sesion: trabajan musculos distintos.',
     ],
     strength: ['8–10 repeticiones. El agarre neutro permite algo mas de carga que el supino.'],
-    warnings: ['Ninguna especifica con carga moderada.'],
+    warnings: ['Sin riesgos destacables mientras la carga permita controlar la bajada.'],
     contraindications: ['Dolor de codo persistente.'],
     lumbarAdaptation: 'Hazlo sentado en un banco con respaldo para eliminar el balanceo.',
   },
@@ -949,7 +961,8 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Baja en 3 segundos controlando hasta casi la extension completa.',
       'No bloquees el codo abajo: el biceps queda muy expuesto en esa posicion.',
     ],
-    breathing: 'Expulsa el aire al subir, inspira al bajar.',
+    breathing:
+      'Expulsa al flexionar, inspira durante la bajada: es la fase que mas hay que controlar aqui.',
     rangeOfMotion:
       'Desde casi extension completa hasta la flexion maxima. La parte baja es la mas exigente.',
     tempo: '3-0-1-1',
@@ -992,7 +1005,8 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Sube hasta la contraccion completa.',
       'Baja resistiendo la tension del cable hasta la extension total.',
     ],
-    breathing: 'Expulsa el aire al subir, inspira al bajar.',
+    breathing:
+      'Expulsa al cerrar el codo, inspira mientras la polea tira del brazo hacia la extension.',
     rangeOfMotion: 'Extension completa abajo, flexion maxima arriba, siempre con tension.',
     tempo: '3-1-1-1',
     commonMistakes: [
@@ -1007,7 +1021,7 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Excelente como ultimo ejercicio de brazo, cuando la tension constante ya no perdona.',
     ],
     strength: ['No aplica.'],
-    warnings: ['Ninguna especifica.'],
+    warnings: ['Sin riesgos especificos con carga moderada y recorrido controlado.'],
     contraindications: ['Dolor de codo.'],
     lumbarAdaptation: 'Hazlo sentado o con la espalda apoyada para evitar cualquier balanceo.',
   },
@@ -1052,7 +1066,7 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'La cuerda mejora la contraccion final; la barra permite mas carga.',
     ],
     strength: ['No aplica: para fuerza de triceps usa press cerrado.'],
-    warnings: ['Ninguna especifica.'],
+    warnings: ['Sin riesgos especificos con carga moderada y recorrido controlado.'],
     contraindications: ['Molestia de codo que no cede al bajar la carga.'],
     lumbarAdaptation:
       'Manten el torso alto y evita inclinarte sobre la barra. Con esa correccion la carga lumbar es minima.',
@@ -1077,7 +1091,8 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Baja hasta notar estiramiento en el triceps.',
       'Extiende sin bloquear de golpe.',
     ],
-    breathing: 'Inspira al bajar, expulsa el aire al extender.',
+    breathing:
+      'Inspira mientras la barra baja hacia la frente, expulsa al extender los codos.',
     rangeOfMotion:
       'Hasta el estiramiento comodo del triceps. Llevar la barra por detras de la cabeza aumenta el estiramiento pero tambien la exigencia del hombro.',
     tempo: '3-0-1-0',
@@ -1099,7 +1114,9 @@ export const AUTHORED_UPPER: Record<string, T> = {
     warnings: [
       'Es el ejercicio de triceps con mas incidencia de molestias de codo. Carga con cabeza.',
     ],
-    contraindications: ['Tendinitis o dolor en la insercion del triceps.'],
+    contraindications: [
+      'Tendinitis o dolor en la insercion del triceps. Si persiste tras reducir carga y rango, consulta con un profesional sanitario.',
+    ],
     lumbarAdaptation: 'Tumbado, la carga lumbar es nula. Apoya los pies en el banco si arqueas.',
   },
 
@@ -1122,7 +1139,8 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Baja hasta notar estiramiento claro en el triceps.',
       'Extiende hasta arriba sin bloquear de golpe.',
     ],
-    breathing: 'Inspira al bajar, expulsa el aire al extender.',
+    breathing:
+      'Inspira mientras el peso baja por detras de la cabeza, expulsa al extender arriba.',
     rangeOfMotion: 'Estiramiento completo por detras de la cabeza hasta extension total arriba.',
     tempo: '3-1-1-0',
     commonMistakes: [
@@ -1168,7 +1186,8 @@ export const AUTHORED_UPPER: Record<string, T> = {
       'Empuja con las palmas hasta extender los codos.',
       'Manten el cuerpo cerca del banco durante todo el recorrido.',
     ],
-    breathing: 'Inspira al bajar, expulsa el aire al empujar.',
+    breathing:
+      'Inspira al bajar y expulsa al empujar. Al tener el hombro en rotacion interna, una respiracion tranquila ayuda a no encoger los trapecios.',
     rangeOfMotion: 'Hasta 90 grados de codo. Bajar mas fuerza la rotacion interna del hombro.',
     tempo: '2-0-1-0',
     commonMistakes: [

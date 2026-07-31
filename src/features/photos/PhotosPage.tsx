@@ -15,6 +15,8 @@ import { useUnits } from '@/lib/useUnits';
 import { usePhotoStore } from '@/store/photoStore';
 import { useActivePrep, useCountdown, useCurrentWeight, usePhotos } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
+import { angleLabel } from '@/i18n/labels';
+import { t } from '@/i18n';
 
 const ANGLES = Object.keys(ANGLE_LABEL) as PhotoAngle[];
 
@@ -78,16 +80,16 @@ export default function PhotosPage() {
         weight,
         ...(prep && cd ? { prepWeek: Math.max(0, cd.weeksOut) } : {}),
       });
-      toast(`Foto de ${ANGLE_LABEL[targetAngle].toLowerCase()} guardada`);
+      toast(t('photos.savedAngle', { angle: angleLabel(targetAngle).toLowerCase() }));
     } catch (err) {
       console.error('[fotos] fallo al guardar', err);
-      toast('No se pudo guardar la foto. Intentalo de nuevo.', 'error');
+      toast(t('photos.saveFailed'), 'error');
     }
   };
 
   return (
     <>
-      <PageHeader title="Fotos de progreso" subtitle={`${photos.length} fotos guardadas`} back />
+      <PageHeader title={t('photos.title')} subtitle={t('photos.saved', { n: photos.length })} back />
 
       <Page>
         <ProgressTabs />
@@ -96,15 +98,14 @@ export default function PhotosPage() {
           <div className="flex gap-2.5">
             <Lock size={15} className="mt-0.5 shrink-0 text-brand" />
             <p className="text-[12px] text-muted">
-              Las fotos se guardan cifradas por el navegador en este dispositivo (IndexedDB) y no se
-              suben a ningun servidor. Solo salen de aqui si tu las exportas.
+              {t('photos.privacy')}
             </p>
           </div>
         </Card>
 
         {/* ─────────────────────────────────────── captura por angulo */}
         <div className="mt-4">
-          <SectionTitle>Anadir foto de hoy</SectionTitle>
+          <SectionTitle>{t('photos.addToday')}</SectionTitle>
           <div className="grid grid-cols-2 gap-2">
             {ANGLES.map((a) => (
               <label
@@ -118,7 +119,7 @@ export default function PhotosPage() {
                   onChange={(e) => onPick(e.target.files?.[0], a)}
                 />
                 <Plus size={15} className="shrink-0 text-brand" />
-                <span className="truncate">{ANGLE_LABEL[a]}</span>
+                <span className="truncate">{angleLabel(a)}</span>
               </label>
             ))}
           </div>
@@ -127,11 +128,11 @@ export default function PhotosPage() {
         <div className="mt-4 flex items-center justify-between gap-2">
           <div className="scroll-momentum -mx-4 flex gap-2 overflow-x-auto px-4">
             <Chip active={angle === null} onClick={() => setAngle(null)}>
-              Todos
+              {t('photos.all')}
             </Chip>
             {ANGLES.map((a) => (
               <Chip key={a} active={angle === a} onClick={() => setAngle(angle === a ? null : a)}>
-                {ANGLE_LABEL[a]}
+                {angleLabel(a)}
               </Chip>
             ))}
           </div>
@@ -140,18 +141,18 @@ export default function PhotosPage() {
         {photos.length >= 2 && (
           <Button variant="secondary" block className="mt-3" onClick={() => setComparing(true)}>
             <Columns2 size={16} />
-            Comparar lado a lado
+            {t('photos.compareSideBySide')}
           </Button>
         )}
 
         {/* ─────────────────────────────────────── galeria */}
         <div className="mt-5">
-          <SectionTitle>Galeria</SectionTitle>
+          <SectionTitle>{t('photos.gallery')}</SectionTitle>
           {filtered.length === 0 ? (
             <EmptyState
               icon={<Camera size={22} />}
-              title="Sin fotos"
-              description="Misma luz, misma pose, mismo momento del dia. Las fotos ven lo que la bascula no."
+              title={t('photos.empty')}
+              description={t('body.photosNote')}
             />
           ) : (
             <div className="grid grid-cols-3 gap-2">
@@ -160,7 +161,7 @@ export default function PhotosPage() {
                   {urls.get(p.id) ? (
                     <img
                       src={urls.get(p.id)}
-                      alt={`${ANGLE_LABEL[p.angle]} ${p.date}`}
+                      alt={`${angleLabel(p.angle)} ${p.date}`}
                       className="aspect-[3/4] w-full rounded-xl border border-line object-cover"
                       loading="lazy"
                     />
@@ -175,7 +176,7 @@ export default function PhotosPage() {
                   <button
                     onClick={() => removePhoto(p.id)}
                     className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur"
-                    aria-label="Eliminar foto"
+                    aria-label={t('photos.deletePhoto')}
                   >
                     <Trash2 size={11} />
                   </button>
@@ -221,26 +222,29 @@ function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: (
   const [slider, setSlider] = useState(50);
 
   return (
-    <Sheet open onClose={onClose} title="Comparar progreso" height="full">
+    <Sheet open onClose={onClose} title={t('photos.compareTitle')} height="full">
       <div className="mb-3 flex flex-wrap gap-2">
         {ANGLES.map((a) => (
           <Chip key={a} active={angle === a} onClick={() => setAngle(a)}>
-            {ANGLE_LABEL[a]}
+            {angleLabel(a)}
           </Chip>
         ))}
       </div>
 
       {ofAngle.length < 2 ? (
         <EmptyState
-          title="Necesitas dos fotos"
-          description={`Solo hay ${ofAngle.length} foto de ${ANGLE_LABEL[angle].toLowerCase()}. Anade otra para comparar.`}
+          title={t('photos.needTwo')}
+          description={t('photos.needTwoDesc', {
+            n: ofAngle.length,
+            angle: angleLabel(angle).toLowerCase(),
+          })}
         />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Antes</Label>
-              <Select aria-label="Foto anterior" value={leftId} onChange={(e) => setLeftId(e.target.value)}>
+              <Label>{t('photos.before')}</Label>
+              <Select aria-label={t('photos.previousPhoto')} value={leftId} onChange={(e) => setLeftId(e.target.value)}>
                 {ofAngle.map((p) => (
                   <option key={p.id} value={p.id}>
                     {shortDate(p.date)}
@@ -250,8 +254,8 @@ function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: (
               </Select>
             </div>
             <div>
-              <Label>Ahora</Label>
-              <Select aria-label="Foto actual" value={rightId} onChange={(e) => setRightId(e.target.value)}>
+              <Label>{t('photos.now')}</Label>
+              <Select aria-label={t('photos.currentPhoto')} value={rightId} onChange={(e) => setRightId(e.target.value)}>
                 {ofAngle.map((p) => (
                   <option key={p.id} value={p.id}>
                     {shortDate(p.date)}
@@ -264,23 +268,27 @@ function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: (
 
           {/* Lado a lado */}
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <Framed photo={left} url={left ? urls.get(left.id) : undefined} label="Antes" />
-            <Framed photo={right} url={right ? urls.get(right.id) : undefined} label="Ahora" />
+            <Framed photo={left} url={left ? urls.get(left.id) : undefined} label={t('photos.before')} />
+            <Framed photo={right} url={right ? urls.get(right.id) : undefined} label={t('photos.now')} />
           </div>
 
           {/* Superposicion con control deslizante */}
           <div className="mt-5">
-            <SectionTitle>Superposicion</SectionTitle>
+            <SectionTitle>{t('photos.overlay')}</SectionTitle>
             <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl border border-line bg-surface2">
               {left && urls.get(left.id) && (
-                <img src={urls.get(left.id)} alt="Antes" className="absolute inset-0 size-full object-cover" />
+                <img
+                  src={urls.get(left.id)}
+                  alt={t('photos.before')}
+                  className="absolute inset-0 size-full object-cover"
+                />
               )}
               {right && urls.get(right.id) && (
                 <div
                   className="absolute inset-0 overflow-hidden"
                   style={{ clipPath: `inset(0 0 0 ${slider}%)` }}
                 >
-                  <img src={urls.get(right.id)} alt="Ahora" className="size-full object-cover" />
+                  <img src={urls.get(right.id)} alt={t('photos.now')} className="size-full object-cover" />
                 </div>
               )}
               <div
@@ -295,7 +303,7 @@ function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: (
               max={100}
               value={slider}
               onChange={(e) => setSlider(Number(e.target.value))}
-              aria-label="Control deslizante de comparacion de fotos"
+              aria-label={t('photos.slider')}
               aria-valuetext={`${slider}%`}
               className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full outline-none [&::-webkit-slider-thumb]:size-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-brand"
               style={{
@@ -303,15 +311,14 @@ function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: (
               }}
             />
             <p className="mt-2 text-center text-[11px] text-faint">
-              Arrastra para desvelar la foto reciente. El encuadre solo coincide si tomaste ambas en
-              la misma posicion.
+              {t('photos.dragNote')}
             </p>
           </div>
 
           {left && right && (
             <Card className="mt-4">
               <div className="flex items-center justify-between text-[13px]">
-                <span className="text-muted">Diferencia de peso</span>
+                <span className="text-muted">{t('photos.weightDiff')}</span>
                 <span className="tabular font-semibold">
                   {left.weight != null && right.weight != null
                     ? u.fmtWeightDelta(right.weight - left.weight)
@@ -319,7 +326,7 @@ function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: (
                 </span>
               </div>
               <div className="mt-1.5 flex items-center justify-between text-[13px]">
-                <span className="text-muted">Dias transcurridos</span>
+                <span className="text-muted">{t('photos.daysElapsed')}</span>
                 <span className="tabular font-semibold">
                   {Math.round(
                     (new Date(right.date).getTime() - new Date(left.date).getTime()) / 86400000,

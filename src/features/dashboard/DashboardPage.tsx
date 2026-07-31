@@ -28,6 +28,7 @@ import {
 } from '@/store/selectors';
 import { useTrainingStore } from '@/store/trainingStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { t } from '@/i18n';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -107,20 +108,24 @@ export default function DashboardPage() {
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Action
             icon={<Plus size={17} />}
-            label="Registrar comida"
+            label={t('nut.logMeal')}
             onClick={() => setAdding(true)}
             primary
           />
-          <Action icon={<Wand2 size={17} />} label="Completar macros" onClick={() => setSmart('auto')} />
+          <Action
+            icon={<Wand2 size={17} />}
+            label={t('home.completeMacros')}
+            onClick={() => setSmart('auto')}
+          />
           <Action
             icon={<Dumbbell size={17} />}
-            label={active ? 'Continuar entreno' : 'Empezar entreno'}
+            label={active ? t('home.continueWorkout') : t('home.startWorkout')}
             onClick={() => {
-              if (!active) startWorkout('Entreno libre');
+              if (!active) startWorkout(t('home.freeWorkout'));
               navigate('/entrenamiento/activo');
             }}
           />
-          <Action icon={<Scale size={17} />} label="Pesarme" onClick={() => setWeighing(true)} />
+          <Action icon={<Scale size={17} />} label={t('home.weighIn')} onClick={() => setWeighing(true)} />
         </div>
 
         {checkinPending && (
@@ -130,16 +135,16 @@ export default function DashboardPage() {
           >
             <CalendarCheck size={18} className="shrink-0 text-violet" />
             <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-semibold text-violet">Toca check-in semanal</p>
-              <p className="text-[12px] text-muted">Revisa la semana y ajusta las calorias</p>
+              <p className="text-[14px] font-semibold text-violet">{t('home.checkinDue')}</p>
+              <p className="text-[12px] text-muted">{t('home.reviewWeek')}</p>
             </div>
           </Link>
         )}
 
         {/* ------------------------------------------------------- entreno */}
         <div className="mt-5">
-          <SectionTitle action={<ActionLink to="/entrenamiento">Ver todo</ActionLink>}>
-            Entrenamiento de hoy
+          <SectionTitle action={<ActionLink to="/entrenamiento">{t('home.viewAll')}</ActionLink>}>
+            {t('home.todayWorkout')}
           </SectionTitle>
           <Card>
             {todayWorkouts.length > 0 ? (
@@ -149,18 +154,19 @@ export default function DashboardPage() {
                     <div className="min-w-0">
                       <p className="truncate text-[15px] font-medium">{w.name}</p>
                       <p className="text-[12px] tabular text-faint">
-                        {workoutSetCount(w)} series · {u.numWeight(workoutVolume(w), 0)} {u.w}
+                        {workoutSetCount(w)} {t('home.sets')} · {u.numWeight(workoutVolume(w), 0)}{' '}
+                        {u.w}
                       </p>
                     </div>
                     <span className="shrink-0 rounded-full bg-brand/15 px-2.5 py-1 text-[11px] font-semibold text-brand">
-                      Completado
+                      {t('home.completed')}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
               <p className="py-2 text-center text-[13px] text-muted">
-                {active ? 'Tienes un entreno en curso' : 'Sin entreno registrado hoy'}
+                {active ? t('home.workoutInProgress') : t('home.noWorkoutToday')}
               </p>
             )}
           </Card>
@@ -168,14 +174,14 @@ export default function DashboardPage() {
 
         {/* ---------------------------------------------------------- peso */}
         <div className="mt-5">
-          <SectionTitle action={<ActionLink to="/cuerpo">Ver todo</ActionLink>}>
-            Peso corporal
+          <SectionTitle action={<ActionLink to="/cuerpo">{t('home.viewAll')}</ActionLink>}>
+            {t('body.bodyWeight')}
           </SectionTitle>
           <Card>
             <div className="mb-3 flex items-end justify-between">
-              <Stat label="Actual" value={u.numWeight(weight)} unit={u.w} />
+              <Stat label={t('home.current')} value={u.numWeight(weight)} unit={u.w} />
               <Stat
-                label="Tendencia semanal"
+                label={t('home.weeklyTrend')}
                 value={u.fmtWeightDelta(trend).replace(` ${u.w}`, '')}
                 unit={u.w}
                 tone={
@@ -187,7 +193,7 @@ export default function DashboardPage() {
                 }
               />
               {profile.goalWeight && (
-                <Stat label="Objetivo" value={u.numWeight(profile.goalWeight)} unit={u.w} />
+                <Stat label={t('home.target')} value={u.numWeight(profile.goalWeight)} unit={u.w} />
               )}
             </div>
             <LineChart
@@ -197,19 +203,23 @@ export default function DashboardPage() {
               unit={` ${u.w}`}
             />
             <p className="mt-2 text-center text-[11px] text-faint">
-              La linea punteada es la media movil: filtra el ruido diario de agua y glucogeno
+              {t('body.trendNote')}
             </p>
           </Card>
         </div>
 
         {/* --------------------------------------------------------- resumen */}
         <div className="mt-5">
-          <SectionTitle>Resumen de hoy</SectionTitle>
+          <SectionTitle>{t('home.todaySummary')}</SectionTitle>
           <Card>
             <div className="grid grid-cols-3 gap-3">
-              <Stat label="Alimentos" value={entries.length} />
-              <Stat label="Kcal restantes" value={Math.round(remaining.kcal)} tone="text-brand" />
-              <Stat label="Proteina falta" value={`${Math.round(remaining.protein)}g`} tone="text-protein" />
+              <Stat label={t('home.foods')} value={entries.length} />
+              <Stat label={t('home.kcalLeft')} value={Math.round(remaining.kcal)} tone="text-brand" />
+              <Stat
+                label={t('home.proteinLeft')}
+                value={`${Math.round(remaining.protein)} g`}
+                tone="text-protein"
+              />
             </div>
           </Card>
         </div>
