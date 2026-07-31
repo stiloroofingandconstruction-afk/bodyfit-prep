@@ -12,6 +12,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/apple-touch-icon.png', 'icons/favicon.png'],
       manifest: {
+        // `id` fija la identidad de la app: sin el, un cambio de start_url
+        // haria que el navegador la trate como una instalacion distinta.
+        id: '/',
         name: 'BodyFit Prep',
         short_name: 'BodyFit',
         description: 'Entrenamiento, nutricion inteligente y seguimiento fisico',
