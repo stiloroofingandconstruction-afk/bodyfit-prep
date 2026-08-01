@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Input, Label, Segmented, Select, Slider } from '@/components/ui/Field';
+import { Input, Label, NumberField, Segmented, Select, Slider } from '@/components/ui/Field';
 import { ACTIVITY_LEVELS, computeTargets } from '@/domain/energy';
 import { activityLabel } from '@/i18n/labels';
 import { parseBackup, restoreBackup } from '@/services/backup';
@@ -329,12 +329,15 @@ export default function OnboardingPage() {
               </div>
               <div>
                 <Label>{t('field.height')}</Label>
-                <Input
-                  inputMode="decimal"
-                  value={u.numLength(draft.heightCm, u.lengthUnit === 'cm' ? 0 : 1)}
-                  onChange={(e) =>
-                    set({ heightCm: u.toCanonicalLength(Number(e.target.value) || 0) })
-                  }
+                <NumberField
+                  aria-label={t('field.height')}
+                  value={u.toDisplayLength(draft.heightCm)}
+                  decimals={u.lengthUnit === 'cm' ? 0 : 1}
+                  // Vaciarlo no borra la altura: al salir del campo vuelve la
+                  // ultima valida. Sin altura no hay calculo de macros.
+                  onChange={(v) => {
+                    if (v != null && v > 0) set({ heightCm: u.toCanonicalLength(v) });
+                  }}
                   suffix={u.l}
                 />
               </div>
@@ -417,17 +420,17 @@ export default function OnboardingPage() {
             )}
 
             <div>
-              <Label hint={t('common.optional')}>{t('field.goalWeight')}</Label>
-              <Input
-                inputMode="decimal"
-                value={draft.goalWeight != null ? u.numWeight(draft.goalWeight) : ''}
-                onChange={(e) => {
-                  const v = Number(e.target.value);
-                  set({ goalWeight: v > 0 ? u.toCanonicalWeight(v) : undefined });
-                }}
+              <Label hint={t('field.goalWeightHint')}>{t('field.goalWeight')}</Label>
+              <NumberField
+                aria-label={t('field.goalWeight')}
+                value={draft.goalWeight != null ? u.toDisplayWeight(draft.goalWeight) : null}
+                onChange={(v) =>
+                  set({ goalWeight: v != null && v > 0 ? u.toCanonicalWeight(v) : undefined })
+                }
                 suffix={u.w}
                 placeholder="—"
               />
+              <p className="mt-1.5 text-[11px] text-faint">{t('field.goalWeightNote')}</p>
             </div>
           </div>
         )}

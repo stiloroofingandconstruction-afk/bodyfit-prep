@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react';
 import { cx } from '@/lib/utils';
 
@@ -27,6 +28,72 @@ export function Input({ className, suffix, ...rest }: InputProps) {
         {suffix}
       </span>
     </div>
+  );
+}
+
+interface NumberFieldProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'> {
+  /** Valor en la unidad que ve el usuario. `null` significa vacio. */
+  value: number | null;
+  /** Se llama con `null` cuando el campo queda vacio. */
+  onChange: (value: number | null) => void;
+  decimals?: number;
+  suffix?: string;
+}
+
+/**
+ * Campo numerico que se deja escribir y, sobre todo, se deja borrar.
+ *
+ * Un `<input>` cuyo `value` sale de formatear el numero guardado es imposible
+ * de vaciar: escribes "80", se guarda 80 y vuelve pintado como "80.0"; pulsas
+ * borrar, queda "80." que sigue valiendo 80, y el campo se repinta "80.0" otra
+ * vez. El texto nunca llega a estar vacio.
+ *
+ * La solucion es separar lo que el usuario esta escribiendo de lo que hay
+ * guardado: mientras el campo tiene el foco manda el texto tal cual, y solo al
+ * salir se vuelve a formatear a partir del valor real.
+ */
+export function NumberField({
+  value,
+  onChange,
+  decimals = 1,
+  suffix,
+  className,
+  onBlur,
+  ...rest
+}: NumberFieldProps) {
+  const [draft, setDraft] = useState<string | null>(null);
+
+  const formatted = value == null ? '' : value.toFixed(decimals);
+  const shown = draft ?? formatted;
+
+  return (
+    <Input
+      {...rest}
+      className={className}
+      suffix={suffix}
+      inputMode="decimal"
+      value={shown}
+      onChange={(e) => {
+        // La coma es lo natural en espanol; dentro se trabaja siempre con punto
+        const raw = e.target.value.replace(',', '.');
+        // Digitos y un unico punto decimal: nada mas
+        if (raw !== '' && !/^\d*\.?\d*$/.test(raw)) return;
+
+        setDraft(raw);
+        if (raw.trim() === '') {
+          onChange(null);
+          return;
+        }
+        const n = Number(raw);
+        if (Number.isFinite(n)) onChange(n);
+      }}
+      onBlur={(e) => {
+        // Fuera del campo vuelve a mandar el valor guardado, ya formateado
+        setDraft(null);
+        onBlur?.(e);
+      }}
+    />
   );
 }
 

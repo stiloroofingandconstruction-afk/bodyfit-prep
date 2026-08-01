@@ -189,6 +189,9 @@ export const es = {
   'field.height': 'Altura',
   'field.currentWeight': 'Peso actual',
   'field.goalWeight': 'Peso objetivo',
+  'field.goalWeightHint': 'opcional · al que quieres llegar',
+  'field.goalWeightNote':
+    'Es el peso al que quieres llegar. Sirve para calcular cuanto te falta y a que ritmo vas. Puedes dejarlo vacio y anadirlo cuando lo tengas claro.',
   'field.activity': 'Nivel de actividad',
   'field.goal': 'Objetivo',
   'field.pace': 'Ritmo',

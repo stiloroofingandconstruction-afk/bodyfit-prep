@@ -34,6 +34,48 @@ test.describe('Ajustes, unidades, idioma y datos', () => {
     assertClean(problems, 'cambio de unidades');
   });
 
+  test('el peso objetivo se puede escribir, corregir y dejar vacio', async ({ page }) => {
+    const problems = collectProblems(page);
+    await seedApp(page);
+    await page.goto('/ajustes');
+
+    const field = page.getByLabel('Peso objetivo');
+
+    // Escribir un valor
+    await field.fill('78');
+    await expect(field).toHaveValue('78');
+
+    /*
+     * Borrar de verdad. Antes el campo se repintaba formateado en cada tecla
+     * ("78" -> "78.0"), asi que el texto nunca llegaba a quedar vacio y el
+     * valor no habia forma de quitarlo.
+     */
+    await field.fill('');
+    await expect(field, 'el campo no se puede vaciar').toHaveValue('');
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const raw = localStorage.getItem('bodyfit:v1:profile');
+          const state = JSON.parse(raw!).state as { profile: { goalWeight?: number } };
+          return state.profile.goalWeight ?? null;
+        }),
+      )
+      .toBeNull();
+
+    // Corregir sobre lo escrito, digito a digito
+    await field.fill('7');
+    await field.press('8');
+    await expect(field).toHaveValue('78');
+    await field.press('Backspace');
+    await expect(field).toHaveValue('7');
+
+    // Al salir del campo se muestra ya formateado
+    await field.blur();
+    await expect(field).toHaveValue('7.0');
+
+    assertClean(problems, 'peso objetivo');
+  });
+
   test('cambiar a pulgadas afecta a las medidas', async ({ page }) => {
     await seedApp(page);
     await page.goto('/ajustes');

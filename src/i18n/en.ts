@@ -183,6 +183,9 @@ export const en: Partial<Record<keyof typeof es, string>> = {
   'field.height': 'Height',
   'field.currentWeight': 'Current weight',
   'field.goalWeight': 'Goal weight',
+  'field.goalWeightHint': 'optional · the one you want to reach',
+  'field.goalWeightNote':
+    'The weight you want to reach. It is used to work out how far you have to go and at what pace. You can leave it empty and add it once you are sure.',
   'field.activity': 'Activity level',
   'field.goal': 'Goal',
   'field.pace': 'Pace',

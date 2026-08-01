@@ -41,6 +41,8 @@ for (const [query, expected] of [
   ['fairlife', 'fairlife-2'],
   ['rice krispies', 'rice-krispies'],
   ['nitro-tech', 'nitrotech'],
+  ['cell tech', 'cell-tech'],
+  ['celltech', 'cell-tech'],
   ['brocoli', 'brocoli'],
   ['brócoli', 'brocoli'],
   ['platano', 'platano'],

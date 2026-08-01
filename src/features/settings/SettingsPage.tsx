@@ -16,7 +16,7 @@ import {
 import { Page, PageHeader } from '@/components/ui/PageHeader';
 import { Card, SectionTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input, Label, Segmented, Select, Slider } from '@/components/ui/Field';
+import { Input, Label, NumberField, Segmented, Select, Slider } from '@/components/ui/Field';
 import { Stat } from '@/components/ui/Misc';
 import { ACTIVITY_LEVELS, ageFrom, bmr, tdee } from '@/domain/energy';
 import { activityLabel } from '@/i18n/labels';
@@ -132,26 +132,24 @@ export default function SettingsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>{t('field.height')}</Label>
-                <Input
+                <NumberField
                   aria-label={t('field.height')}
-                  inputMode="decimal"
-                  value={u.numLength(profile.heightCm, u.lengthUnit === 'cm' ? 0 : 1)}
-                  onChange={(e) =>
-                    update({ heightCm: u.toCanonicalLength(Number(e.target.value) || 0) })
-                  }
+                  value={u.toDisplayLength(profile.heightCm)}
+                  decimals={u.lengthUnit === 'cm' ? 0 : 1}
+                  onChange={(v) => {
+                    if (v != null && v > 0) update({ heightCm: u.toCanonicalLength(v) });
+                  }}
                   suffix={u.l}
                 />
               </div>
               <div>
-                <Label hint={t('common.optional')}>{t('field.goalWeight')}</Label>
-                <Input
+                <Label hint={t('field.goalWeightHint')}>{t('field.goalWeight')}</Label>
+                <NumberField
                   aria-label={t('field.goalWeight')}
-                  inputMode="decimal"
-                  value={profile.goalWeight != null ? u.numWeight(profile.goalWeight) : ''}
-                  onChange={(e) => {
-                    const v = Number(e.target.value);
-                    update({ goalWeight: v > 0 ? u.toCanonicalWeight(v) : undefined });
-                  }}
+                  value={profile.goalWeight != null ? u.toDisplayWeight(profile.goalWeight) : null}
+                  onChange={(v) =>
+                    update({ goalWeight: v != null && v > 0 ? u.toCanonicalWeight(v) : undefined })
+                  }
                   suffix={u.w}
                   placeholder="—"
                 />

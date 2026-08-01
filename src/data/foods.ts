@@ -120,6 +120,18 @@ export const FOODS: Food[] = [
     ['casein', 'proteina nocturna'], { servings: [S('1 scoop', 33)] }),
   f('proteina-vegana', 'Proteina vegetal en polvo', 'suplemento', 'protein', [375, 75, 8, 5, 4],
     ['proteina vegana', 'plant protein'], { servings: [S('1 scoop', 32)] }),
+  /*
+   * Cell-Tech es sobre todo carbohidrato rapido con creatina: en un dia de
+   * definicion pesa mucho mas de lo que la gente cree. Se declara con rol
+   * `carb` para que el generador lo trate como lo que es y no como un extra
+   * gratis. Valores de la formula clasica (2 scoops = 76 g, 260 kcal).
+   */
+  f('cell-tech', 'Cell-Tech', 'suplemento', 'carb', [342, 0, 81.6, 0, 0],
+    ['celltech', 'cell tech', 'cell-tech', 'creatina cell tech', 'muscletech cell'],
+    { brand: 'MuscleTech', servings: [S('1 scoop', 38), S('2 scoops', 76)] }),
+  f('cell-tech-elite', 'Cell-Tech Elite', 'suplemento', 'carb', [253, 0, 60, 0, 0],
+    ['celltech elite', 'cell tech elite'],
+    { brand: 'MuscleTech', servings: [S('1 scoop', 39), S('2 scoops', 79)] }),
   f('creatina', 'Creatina monohidrato', 'suplemento', 'free', [0, 0, 0, 0, 0],
     ['creatine', 'creatina'], { servings: [S('1 scoop', 5)] }),
   f('barra-proteica', 'Barra proteica', 'snack', 'protein', [380, 33, 40, 12, 8],
