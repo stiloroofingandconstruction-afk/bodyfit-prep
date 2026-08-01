@@ -14,6 +14,8 @@ interface TrainingState {
   active: Workout | null;
 
   startWorkout: (name: string, routineId?: string, dayIndex?: number) => void;
+  /** Repite un entreno anterior: mismos ejercicios y series, sin marcar. */
+  repeatWorkout: (workoutId: string) => boolean;
   addExercise: (exerciseId: string) => void;
   removeExercise: (workoutExerciseId: string) => void;
   /** Cambia el ejercicio de un hueco conservando las series ya registradas. */
@@ -52,6 +54,7 @@ export const useTrainingStore = create<TrainingState>()(
         exerciseId: re.exerciseId,
         exerciseName: EXERCISE_BY_ID.get(re.exerciseId)?.name ?? re.exerciseId,
         restSeconds: re.restSeconds,
+        repRange: re.repRange,
         sets: Array.from({ length: re.sets }, () => emptySet()),
       }));
 
@@ -64,6 +67,39 @@ export const useTrainingStore = create<TrainingState>()(
       }) as Workout;
 
       set({ active: workout });
+    },
+
+    /**
+     * Vuelve a montar una sesion anterior con los pesos y repeticiones que se
+     * hicieron, pero sin marcar ninguna serie. Es lo que hace la gente en el
+     * gimnasio: repetir lo del otro dia e intentar mejorarlo.
+     */
+    repeatWorkout: (workoutId) => {
+      const source = get().workouts.find((w) => w.id === workoutId && !w.deletedAt);
+      if (!source) return false;
+
+      const exercises: WorkoutExercise[] = source.exercises.map((e) => ({
+        id: uid(),
+        exerciseId: e.exerciseId,
+        exerciseName: e.exerciseName,
+        ...(e.restSeconds != null ? { restSeconds: e.restSeconds } : {}),
+        ...(e.repRange ? { repRange: e.repRange } : {}),
+        sets: e.sets.map((st) =>
+          emptySet({ weight: st.weight, reps: st.reps, type: st.type }),
+        ),
+      }));
+      if (!exercises.length) return false;
+
+      set({
+        active: newEntity<Omit<Workout, keyof Entity>>({
+          date: today(),
+          name: source.name,
+          ...(source.routineId ? { routineId: source.routineId } : {}),
+          startedAt: nowISO(),
+          exercises,
+        }) as Workout,
+      });
+      return true;
     },
 
     addExercise: (exerciseId) =>

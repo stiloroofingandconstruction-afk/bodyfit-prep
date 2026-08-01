@@ -1,9 +1,8 @@
 import { useRef, useState } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Input, Label, NumberField, Segmented, Select, Slider } from '@/components/ui/Field';
-import { ACTIVITY_LEVELS, computeTargets } from '@/domain/energy';
-import { activityLabel } from '@/i18n/labels';
+import { Label, NumberField, Segmented, Slider } from '@/components/ui/Field';
+import { computeTargets } from '@/domain/energy';
 import { parseBackup, restoreBackup } from '@/services/backup';
 import { toast } from '@/store/uiStore';
 import { t } from '@/i18n';
@@ -12,74 +11,59 @@ import { cx } from '@/lib/utils';
 import { makeUnits } from '@/lib/useUnits';
 import { DEFAULT_PROFILE, useProfileStore } from '@/store/profileStore';
 import { useBodyStore } from '@/store/bodyStore';
-import { usePrepStore } from '@/store/prepStore';
-import { useSettingsStore, type Experience } from '@/store/settingsStore';
-import { addDays } from '@/lib/date';
-import type { ActivityLevel, Goal, Profile, Sex } from '@/domain/types';
-import type { Division } from '@/domain/competition';
-import type { WeightUnit } from '@/domain/units';
+import { useSettingsStore } from '@/store/settingsStore';
+import type { Goal, Profile, Sex } from '@/domain/types';
+import type { WeightUnit, LengthUnit } from '@/domain/units';
 
-/** Solo dibuja la barra de progreso: de estos pasos no se muestra ningun texto. */
-const STEP_COUNT = 5;
+/**
+ * Onboarding en tres preguntas.
+ *
+ * Antes preguntaba doce cosas repartidas en cinco pantallas: division, nombre
+ * del show, experiencia, dias de entrenamiento, molestias, nivel de actividad,
+ * ritmo, proteina y grasa por kilo. Nada de eso hace falta para dibujar la
+ * primera pantalla, y todo se puede cambiar despues en Ajustes.
+ *
+ * Aqui solo se pide lo que no se puede deducir de ninguna otra forma: sexo y
+ * edad, altura y peso, y hacia donde vas. El resto arranca con valores
+ * razonables y se afina cuando el usuario tenga motivos para hacerlo.
+ */
+const QUESTIONS = 3;
+
+/**
+ * Sistema de unidades segun el idioma del telefono.
+ *
+ * Un usuario en Estados Unidos que ve kilogramos en la primera pantalla piensa
+ * que la app no es para el. Es la unica preferencia que se puede acertar sin
+ * preguntar, asi que se acierta y se deja de preguntar.
+ */
+function localeUnits(): { weightUnit: WeightUnit; lengthUnit: LengthUnit } {
+  const tag = typeof navigator !== 'undefined' ? navigator.language : 'es';
+  const imperial = /^en-(US|LR|MM)\b/i.test(tag);
+  return imperial ? { weightUnit: 'lb', lengthUnit: 'in' } : { weightUnit: 'kg', lengthUnit: 'cm' };
+}
 
 export default function OnboardingPage() {
   const complete = useProfileStore((s) => s.completeOnboarding);
   const upsertBody = useBodyStore((s) => s.upsert);
-  const updateSettings = useSettingsStore((s) => s.update);
   const setUnits = useSettingsStore((s) => s.setUnits);
-  const createPrep = usePrepStore((s) => s.createPrep);
 
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<Profile>(DEFAULT_PROFILE);
-  const [weight, setWeight] = useState(80);
-
-  /* Competencia */
-  const [purpose, setPurpose] = useState<'recreativo' | 'competencia'>('recreativo');
-  const [experience, setExperience] = useState<Experience>('intermedio');
-  const [trainingDays, setTrainingDays] = useState(4);
-  const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
-  const [showName, setShowName] = useState('');
-  const [division, setDivision] = useState<Division>("Men's Physique");
-  const [showDate, setShowDate] = useState(addDays(toISODate(), 112));
-  const [discomforts, setDiscomforts] = useState('');
+  const [weight, setWeight] = useState(DEFAULT_PROFILE.startWeight);
+  const [units] = useState(localeUnits);
 
   /* Restaurar una copia sin haber completado el onboarding */
   const restoreRef = useRef<HTMLInputElement>(null);
   const [restoring, setRestoring] = useState(false);
 
-  // El onboarding aun no ha guardado la preferencia, asi que construye el API
-  // de unidades con lo que el usuario acaba de elegir en el paso anterior.
-  const u = makeUnits(weightUnit, weightUnit === 'kg' ? 'cm' : 'in');
-
+  const u = makeUnits(units.weightUnit, units.lengthUnit);
   const set = (patch: Partial<Profile>) => setDraft((d) => ({ ...d, ...patch }));
   const targets = computeTargets(draft, weight);
 
   const finish = () => {
+    setUnits(units);
     complete({ ...draft, startWeight: weight });
     upsertBody({ date: toISODate(), weight });
-
-    setUnits({ weightUnit });
-    updateSettings({
-      experience,
-      trainingDaysPerWeek: trainingDays,
-      competitionMode: purpose === 'competencia',
-      division,
-      discomforts: discomforts.split(',').map((s) => s.trim()).filter(Boolean),
-    });
-
-    // Solo se crea la competencia si el usuario dio una fecha; todo es omitible
-    if (purpose === 'competencia' && showName.trim()) {
-      createPrep({
-        showName: showName.trim(),
-        federation: 'Otra',
-        division,
-        category: '',
-        showDate,
-        prepStartDate: toISODate(),
-        startWeight: weight,
-        status: 'activo',
-      });
-    }
   };
 
   return (
@@ -87,19 +71,20 @@ export default function OnboardingPage() {
       {/* <main> y no <div>: sin landmark principal, un lector de pantalla no
           tiene forma de saltar directo al contenido. */}
       <main className="mx-auto w-full max-w-lg flex-1 px-5 pt-[max(2rem,env(safe-area-inset-top))] pb-6">
-        {/* Progreso */}
+        {/* La bienvenida no cuenta como pregunta: la barra mide las tres que hay */}
         <div className="mb-8 flex gap-1.5">
-          {Array.from({ length: STEP_COUNT }, (_, i) => (
+          {Array.from({ length: QUESTIONS }, (_, i) => (
             <div
               key={i}
               className={cx(
                 'h-1 flex-1 rounded-full transition-colors',
-                i <= step ? 'bg-brand' : 'bg-line',
+                i < step ? 'bg-brand' : 'bg-line',
               )}
             />
           ))}
         </div>
 
+        {/* ──────────────────────────────────────────────── bienvenida ── */}
         {step === 0 && (
           <div className="fade-enter flex flex-col items-center pt-10 text-center">
             <div className="mb-6 flex size-20 items-center justify-center rounded-3xl bg-brand">
@@ -113,18 +98,10 @@ export default function OnboardingPage() {
               </svg>
             </div>
             <h1 className="text-[32px] leading-tight font-bold tracking-tight">BodyFit Prep</h1>
-            <p className="mt-3 max-w-xs text-[15px] text-muted">
-              {t('ob.tagline')}
-            </p>
+            <p className="mt-3 max-w-xs text-[15px] text-muted">{t('ob.tagline')}</p>
 
             <ul className="mt-8 w-full space-y-3 text-left">
-              {[
-                t('ob.feature1'),
-                t('ob.feature2'),
-                t('ob.feature3'),
-                t('ob.feature4'),
-                t('ob.feature5'),
-              ].map((f) => (
+              {[t('ob.feature1'), t('ob.feature2'), t('ob.feature3')].map((f) => (
                 <li key={f} className="flex items-start gap-3 text-[14px] text-muted">
                   <Check size={17} className="mt-0.5 shrink-0 text-brand" />
                   {f}
@@ -180,129 +157,12 @@ export default function OnboardingPage() {
           </div>
         )}
 
+        {/* ───────────────────────────────────────── 1 · quien eres ── */}
         {step === 1 && (
-          <div className="fade-enter space-y-5">
+          <div className="fade-enter space-y-6">
             <div>
-              <h2 className="text-[26px] leading-tight font-bold">{t('ob.purposeTitle')}</h2>
-              <p className="mt-1 text-[14px] text-muted">
-                {t('ob.purposeHint')}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              {(
-                [
-                  ['recreativo', t('ob.purposeRecreational'), t('ob.purposeRecreationalDesc')],
-                  ['competencia', t('ob.purposeCompetition'), t('ob.purposeCompetitionDesc')],
-                ] as ['recreativo' | 'competencia', string, string][]
-              ).map(([value, title, desc]) => (
-                <button
-                  key={value}
-                  onClick={() => setPurpose(value)}
-                  className={cx(
-                    'pressable w-full rounded-2xl border p-4 text-left transition-colors',
-                    purpose === value ? 'border-brand bg-brand/10' : 'border-line bg-surface',
-                  )}
-                >
-                  <p className={cx('text-[16px] font-semibold', purpose === value && 'text-brand')}>
-                    {title}
-                  </p>
-                  <p className="mt-0.5 text-[13px] text-muted">{desc}</p>
-                </button>
-              ))}
-            </div>
-
-            {purpose === 'competencia' && (
-              <div className="space-y-4 rounded-2xl border border-line bg-surface p-4">
-                <div>
-                  <Label hint={t('ob.showNameHint')}>{t('prep.showName')}</Label>
-                  <Input
-                    value={showName}
-                    onChange={(e) => setShowName(e.target.value)}
-                    placeholder={t('ob.showNamePlaceholder')}
-                  />
-                </div>
-                <div>
-                  <Label>{t('prep.division')}</Label>
-                  <Select aria-label={t('prep.division')} value={division} onChange={(e) => setDivision(e.target.value as Division)}>
-                    {(
-                      [
-                        "Men's Physique", 'Classic Physique', 'Bodybuilding',
-                        'Bikini', 'Wellness', 'Figure', 'Womens Physique',
-                      ] as Division[]
-                    ).map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </Select>
-                </div>
-                <div>
-                  <Label>{t('prep.showDate')}</Label>
-                  <Input type="date" value={showDate} onChange={(e) => setShowDate(e.target.value)} />
-                </div>
-              </div>
-            )}
-
-            <div>
-              <Label>{t('field.experience')}</Label>
-              <Select aria-label={t('field.experience')} value={experience} onChange={(e) => setExperience(e.target.value as Experience)}>
-                <option value="principiante">{t('exp.beginner')}</option>
-                <option value="intermedio">{t('exp.intermediate')}</option>
-                <option value="avanzado">{t('exp.advanced')}</option>
-                <option value="competidor">{t('exp.competitor')}</option>
-              </Select>
-            </div>
-
-            <div>
-              <Label hint={t('field.days', { n: trainingDays })}>{t('field.trainingDaysWeek')}</Label>
-              <Slider
-                aria-label={t('field.trainingDaysWeek')}
-                value={trainingDays}
-                onChange={setTrainingDays}
-                min={1}
-                max={7}
-                step={1}
-                labels={['1', '4', '7']}
-              />
-            </div>
-
-            <div>
-              <Label>{t('ob.weightUnits')}</Label>
-              <Segmented
-                value={weightUnit}
-                onChange={setWeightUnit}
-                options={[
-                  { value: 'kg', label: t('units.kg') },
-                  { value: 'lb', label: t('units.lb') },
-                ]}
-              />
-            </div>
-
-            <div>
-              <Label hint={t('ob.discomfortsHint')}>{t('ob.discomforts')}</Label>
-              <Input
-                value={discomforts}
-                onChange={(e) => setDiscomforts(e.target.value)}
-                placeholder={t('field.discomfortsPlaceholder')}
-              />
-              <p className="mt-1.5 text-[11px] text-faint">
-                {t('ob.discomfortsNote')}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="fade-enter space-y-5">
-            <div>
-              <h2 className="text-[26px] leading-tight font-bold">{t('ob.dataTitle')}</h2>
-              <p className="mt-1 text-[14px] text-muted">
-                {t('ob.dataHint')}
-              </p>
-            </div>
-
-            <div>
-              <Label>{t('ob.nameQuestion')}</Label>
-              <Input value={draft.name} onChange={(e) => set({ name: e.target.value })} placeholder={t('field.yourName')} />
+              <h2 className="text-[26px] leading-tight font-bold">{t('ob.q1Title')}</h2>
+              <p className="mt-1 text-[14px] text-muted">{t('ob.q1Hint')}</p>
             </div>
 
             <div>
@@ -317,30 +177,39 @@ export default function OnboardingPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>{t('field.birth')}</Label>
-                <Input
-                  type="date"
-                  value={draft.birthDate}
-                  max={toISODate()}
-                  onChange={(e) => set({ birthDate: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>{t('field.height')}</Label>
-                <NumberField
-                  aria-label={t('field.height')}
-                  value={u.toDisplayLength(draft.heightCm)}
-                  decimals={u.lengthUnit === 'cm' ? 0 : 1}
-                  // Vaciarlo no borra la altura: al salir del campo vuelve la
-                  // ultima valida. Sin altura no hay calculo de macros.
-                  onChange={(v) => {
-                    if (v != null && v > 0) set({ heightCm: u.toCanonicalLength(v) });
-                  }}
-                  suffix={u.l}
-                />
-              </div>
+            <div>
+              <Label>{t('field.birth')}</Label>
+              <input
+                type="date"
+                aria-label={t('field.birthDate')}
+                value={draft.birthDate}
+                max={toISODate()}
+                onChange={(e) => set({ birthDate: e.target.value })}
+                className="h-12 w-full rounded-2xl border border-line bg-surface2 px-3.5 text-[15px] outline-none transition-colors focus:border-brand/60"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ───────────────────────────── 2 · cuanto mides y pesas ── */}
+        {step === 2 && (
+          <div className="fade-enter space-y-6">
+            <div>
+              <h2 className="text-[26px] leading-tight font-bold">{t('ob.q2Title')}</h2>
+              <p className="mt-1 text-[14px] text-muted">{t('ob.q2Hint')}</p>
+            </div>
+
+            <div>
+              <Label>{t('field.height')}</Label>
+              <NumberField
+                aria-label={t('field.height')}
+                value={u.toDisplayLength(draft.heightCm)}
+                decimals={u.lengthUnit === 'cm' ? 0 : 1}
+                onChange={(v) => {
+                  if (v != null && v > 0) set({ heightCm: u.toCanonicalLength(v) });
+                }}
+                suffix={u.l}
+              />
             </div>
 
             <div>
@@ -352,30 +221,18 @@ export default function OnboardingPage() {
                 min={u.weightUnit === 'kg' ? 40 : 88}
                 max={u.weightUnit === 'kg' ? 180 : 397}
                 step={u.weightUnit === 'kg' ? 0.5 : 1}
-                labels={
-                  u.weightUnit === 'kg' ? ['40', '110', '180'] : ['88', '242', '397']
-                }
+                labels={u.weightUnit === 'kg' ? ['40', '110', '180'] : ['88', '242', '397']}
               />
-            </div>
-
-            <div>
-              <Label>{t('field.activity')}</Label>
-              <Select aria-label={t('field.activity')} value={draft.activity} onChange={(e) => set({ activity: e.target.value as ActivityLevel })}>
-                {ACTIVITY_LEVELS.map((level) => (
-                  <option key={level} value={level}>
-                    {activityLabel(level)}
-                  </option>
-                ))}
-              </Select>
             </div>
           </div>
         )}
 
+        {/* ────────────────────────────────────────── 3 · que buscas ── */}
         {step === 3 && (
-          <div className="fade-enter space-y-5">
+          <div className="fade-enter space-y-6">
             <div>
-              <h2 className="text-[26px] leading-tight font-bold">{t('ob.goalTitle')}</h2>
-              <p className="mt-1 text-[14px] text-muted">{t('ob.goalHint')}</p>
+              <h2 className="text-[26px] leading-tight font-bold">{t('ob.q3Title')}</h2>
+              <p className="mt-1 text-[14px] text-muted">{t('ob.q3Hint')}</p>
             </div>
 
             <div className="space-y-2">
@@ -394,7 +251,9 @@ export default function OnboardingPage() {
                     draft.goal === value ? 'border-brand bg-brand/10' : 'border-line bg-surface',
                   )}
                 >
-                  <p className={cx('text-[16px] font-semibold', draft.goal === value && 'text-brand')}>
+                  <p
+                    className={cx('text-[16px] font-semibold', draft.goal === value && 'text-brand')}
+                  >
                     {title}
                   </p>
                   <p className="mt-0.5 text-[13px] text-muted">{desc}</p>
@@ -402,107 +261,40 @@ export default function OnboardingPage() {
               ))}
             </div>
 
-            {draft.goal !== 'mantenimiento' && (
-              <div>
-                <Label hint={`${u.fmtWeight((weight * draft.paceWeekPct) / 100, 2)} / ${t('common.week').toLowerCase()}`}>
-                  {t('field.pace')}
-                </Label>
-                <Slider
-                  aria-label={t('field.pace')}
-                  value={draft.paceWeekPct}
-                  onChange={(v) => set({ paceWeekPct: v })}
-                  min={0.25}
-                  max={1}
-                  step={0.05}
-                  labels={[t('field.paceSlow'), t('field.paceModerate'), t('field.paceAggressive')]}
-                />
-              </div>
-            )}
-
-            <div>
-              <Label hint={t('field.goalWeightHint')}>{t('field.goalWeight')}</Label>
-              <NumberField
-                aria-label={t('field.goalWeight')}
-                value={draft.goalWeight != null ? u.toDisplayWeight(draft.goalWeight) : null}
-                onChange={(v) =>
-                  set({ goalWeight: v != null && v > 0 ? u.toCanonicalWeight(v) : undefined })
-                }
-                suffix={u.w}
-                placeholder="—"
-              />
-              <p className="mt-1.5 text-[11px] text-faint">{t('field.goalWeightNote')}</p>
-            </div>
-          </div>
-        )}
-
-        {step === 4 && (
-          <div className="fade-enter space-y-5">
-            <div>
-              <h2 className="text-[26px] leading-tight font-bold">{t('ob.macrosTitle')}</h2>
-              <p className="mt-1 text-[14px] text-muted">
-                {t('ob.macrosHint')}
-              </p>
-            </div>
-
+            {/*
+              El objetivo calculado se muestra como resultado, no como un paso
+              mas que rellenar: quien quiera afinar proteina y grasa lo hara en
+              Ajustes, y quien no, arranca con un plan correcto sin tocar un
+              solo control.
+            */}
             <div className="rounded-3xl border border-line bg-surface p-5 text-center">
-              <p className="text-[11px] tracking-wider text-faint uppercase">{t('ob.dailyTarget')}</p>
-              <p className="mt-1 text-[44px] leading-[1.1] font-bold tabular text-brand">{targets.kcal}</p>
+              <p className="text-[11px] tracking-wider text-faint uppercase">
+                {t('ob.resultTitle')}
+              </p>
+              <p className="mt-1 text-[44px] leading-[1.1] font-bold tabular text-brand">
+                {targets.kcal}
+              </p>
               <p className="text-[12px] text-faint">kcal</p>
 
               <div className="mt-4 grid grid-cols-3 gap-2 border-t border-line pt-4">
                 <div>
-                  <p className="text-[18px] font-semibold tabular text-protein">{targets.protein}g</p>
+                  <p className="text-[18px] font-semibold tabular text-protein">
+                    {targets.protein} g
+                  </p>
                   <p className="text-[11px] text-faint">{t('field.protein')}</p>
                 </div>
                 <div>
-                  <p className="text-[18px] font-semibold tabular text-carbs">{targets.carbs}g</p>
+                  <p className="text-[18px] font-semibold tabular text-carbs">{targets.carbs} g</p>
                   <p className="text-[11px] text-faint">{t('field.carbs')}</p>
                 </div>
                 <div>
-                  <p className="text-[18px] font-semibold tabular text-fat">{targets.fat}g</p>
+                  <p className="text-[18px] font-semibold tabular text-fat">{targets.fat} g</p>
                   <p className="text-[11px] text-faint">{t('field.fat')}</p>
                 </div>
               </div>
             </div>
 
-            <div>
-              <Label
-                hint={`${u.toDisplayPerWeight(draft.proteinPerKg).toFixed(2)} ${u.perW}`}
-              >
-                {t('field.perWeightUnit', { unit: t('field.protein') })}
-              </Label>
-              <Slider
-                aria-label={t('field.perWeightUnit', { unit: t('field.protein') })}
-                value={u.toDisplayPerWeight(draft.proteinPerKg)}
-                onChange={(v) => set({ proteinPerKg: u.toCanonicalPerWeight(v) })}
-                {...u.perWeightRange(1.2, 3)}
-                labels={[
-                  u.toDisplayPerWeight(1.2).toFixed(2),
-                  u.toDisplayPerWeight(2.1).toFixed(2),
-                  u.toDisplayPerWeight(3).toFixed(2),
-                ]}
-              />
-            </div>
-            <div>
-              <Label hint={`${u.toDisplayPerWeight(draft.fatPerKg).toFixed(2)} ${u.perW}`}>
-                {t('field.perWeightUnit', { unit: t('field.fat') })}
-              </Label>
-              <Slider
-                aria-label={t('field.perWeightUnit', { unit: t('field.fat') })}
-                value={u.toDisplayPerWeight(draft.fatPerKg)}
-                onChange={(v) => set({ fatPerKg: u.toCanonicalPerWeight(v) })}
-                {...u.perWeightRange(0.5, 1.5)}
-                labels={[
-                  u.toDisplayPerWeight(0.5).toFixed(2),
-                  u.toDisplayPerWeight(1).toFixed(2),
-                  u.toDisplayPerWeight(1.5).toFixed(2),
-                ]}
-              />
-            </div>
-
-            <p className="text-[12px] text-faint">
-              {t('ob.carbsNote')}
-            </p>
+            <p className="text-[12px] text-faint">{t('ob.resultNote')}</p>
           </div>
         )}
       </main>
@@ -514,14 +306,14 @@ export default function OnboardingPage() {
               {t('ob.back')}
             </Button>
           )}
-          {step < STEP_COUNT - 1 ? (
+          {step < QUESTIONS ? (
             <Button variant="primary" size="lg" block onClick={() => setStep((s) => s + 1)}>
               {t('ob.continue')}
               <ArrowRight size={18} />
             </Button>
           ) : (
             <Button variant="primary" size="lg" block onClick={finish}>
-              {t('ob.start')}
+              {t('ob.finish')}
               <ArrowRight size={18} />
             </Button>
           )}

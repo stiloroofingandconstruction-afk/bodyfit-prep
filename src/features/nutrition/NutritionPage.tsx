@@ -1,5 +1,15 @@
 import { useMemo, useState } from 'react';
-import { CalendarRange, ChevronLeft, ChevronRight, Copy, Plus, Sparkles, Trash2, Wand2 } from 'lucide-react';
+import {
+  CalendarRange,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Plus,
+  RotateCcw,
+  Sparkles,
+  Trash2,
+  Wand2,
+} from 'lucide-react';
 import { Page, PageHeader } from '@/components/ui/PageHeader';
 import { Card, SectionTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -16,6 +26,7 @@ import { DAY_TYPE_LABEL, type NutritionDayType } from '@/domain/prepTypes';
 import { dayTypeLabel } from '@/i18n/labels';
 import { t, type Dict } from '@/i18n';
 import { addDays, friendlyDate, today } from '@/lib/date';
+import { alive } from '@/store/persist';
 import { fmtNum } from '@/lib/utils';
 import { sumMacros } from '@/domain/macros';
 import { useNutritionStore } from '@/store/nutritionStore';
@@ -51,6 +62,8 @@ export default function NutritionPage() {
 
   const { entries, consumed, target, remaining } = useDayNutrition(date);
   const duplicateDay = useNutritionStore((s) => s.duplicateDay);
+  const repeatSlot = useNutritionStore((s) => s.repeatSlot);
+  const allEntries = useNutritionStore((s) => s.entries);
   const dayTypes = useNutritionStore((s) => s.dayTypes);
   const setDayType = useNutritionStore((s) => s.setDayType);
   const currentDayType: NutritionDayType = dayTypes[date] ?? 'entrenamiento';
@@ -65,7 +78,24 @@ export default function NutritionPage() {
     return map;
   }, [entries]);
 
-  const visibleSlots = SLOTS.filter((s) => bySlot.has(s.key) || s.key === defaultSlot());
+  /*
+   * Que habia ayer en cada franja. La comida se repite mucho mas de lo que
+   * la gente admite, y volver a teclearla entera es el trabajo mas tonto que
+   * hace un usuario en toda la app.
+   */
+  const yesterday = addDays(date, -1);
+  const yesterdayBySlot = useMemo(() => {
+    const map = new Map<MealSlot, number>();
+    for (const e of alive(allEntries)) {
+      if (e.date !== yesterday) continue;
+      map.set(e.slot, (map.get(e.slot) ?? 0) + 1);
+    }
+    return map;
+  }, [allEntries, yesterday]);
+
+  const visibleSlots = SLOTS.filter(
+    (s) => bySlot.has(s.key) || s.key === defaultSlot() || yesterdayBySlot.has(s.key),
+  );
 
   return (
     <>
@@ -162,6 +192,20 @@ export default function NutritionPage() {
                       </span>
                     </button>
                   ))}
+
+                  {/* Repetir lo de ayer: un toque en vez de rehacer la comida entera */}
+                  {list.length === 0 && yesterdayBySlot.has(slot.key) && (
+                    <button
+                      onClick={() => {
+                        const n = repeatSlot(yesterday, date, slot.key);
+                        if (n > 0) toast(t('nut.repeated', { n }));
+                      }}
+                      className="pressable flex w-full items-center justify-center gap-1.5 rounded-2xl border border-brand/30 bg-brand/10 py-3 text-[14px] font-medium text-brand"
+                    >
+                      <RotateCcw size={15} />
+                      {t('nut.repeatYesterdayCount', { n: yesterdayBySlot.get(slot.key)! })}
+                    </button>
+                  )}
 
                   <button
                     onClick={() => setAddTo(slot.key)}

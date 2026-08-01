@@ -6,6 +6,7 @@
  * busqueda y el generador de comidas hacen lo que prometen.
  */
 import { FOODS, FOOD_BY_ID } from '../src/data/foods';
+import { EXERCISE_BY_ID } from '../src/data/exercises';
 import { parseFoodPhrase, searchFoods, setCatalog } from '../src/data/foodSearch';
 import { solvePortions } from '../src/domain/solver';
 import { suggestComplement, suggestMeals } from '../src/domain/autoMeal';
@@ -13,7 +14,13 @@ import { computeTargets, tdee } from '../src/domain/energy';
 import { macrosFor } from '../src/domain/macros';
 import { analyzeCheckin } from '../src/domain/checkin';
 import { navyBodyFat } from '../src/domain/body';
-import { estimate1RM } from '../src/domain/training';
+import {
+  defaultIncrement,
+  defaultRepRange,
+  estimate1RM,
+  lastSessionOf,
+  suggestProgression,
+} from '../src/domain/training';
 import { runCompetitionTests } from './smoke-competition.mts';
 import { runUnitsTests } from './smoke-units.mts';
 import { runContentTests } from './smoke-content.mts';
@@ -231,6 +238,81 @@ check(
 );
 check('sin ids duplicados', new Set(FOODS.map((f) => f.id)).size === FOODS.length);
 console.log(`   ${FOODS.length} alimentos en la base local`);
+
+
+/* ------------------------------------------- ultima sesion y progresion -- */
+line('Ultima sesion y progresion sugerida');
+
+const mkSet = (weight: number, reps: number, extra: Record<string, unknown> = {}) => ({
+  id: `s${weight}-${reps}-${Math.random()}`,
+  weight,
+  reps,
+  done: true,
+  type: 'normal' as const,
+  ...extra,
+});
+
+const mkWorkout = (id: string, date: string, exerciseId: string, sets: ReturnType<typeof mkSet>[]) => ({
+  id,
+  createdAt: '',
+  updatedAt: '',
+  date,
+  name: 'Test',
+  startedAt: `${date}T10:00:00.000Z`,
+  exercises: [{ id: `e-${id}`, exerciseId, exerciseName: exerciseId, sets }],
+});
+
+const historial = [
+  mkWorkout('w1', '2026-07-01', 'press-banca', [mkSet(100, 8), mkSet(100, 8)]),
+  mkWorkout('w2', '2026-07-08', 'press-banca', [mkSet(102.5, 6), mkSet(102.5, 6), mkSet(102.5, 5)]),
+  mkWorkout('w3', '2026-07-10', 'sentadilla', [mkSet(140, 5)]),
+];
+
+const ultima = lastSessionOf(historial, 'press-banca');
+check('encuentra la ultima sesion del ejercicio', ultima?.date === '2026-07-08', ultima?.date);
+check('trae las series de ese dia', ultima?.sets.length === 3, `${ultima?.sets.length}`);
+check('calcula el peso mas alto del dia', ultima?.topWeight === 102.5, `${ultima?.topWeight}`);
+check('ignora los ejercicios de otros dias', lastSessionOf(historial, 'peso-muerto') === null);
+check(
+  'puede excluir la sesion en curso',
+  lastSessionOf(historial, 'press-banca', 'w2')?.date === '2026-07-01',
+);
+
+// Calentamientos y series sin marcar no cuentan como ultima sesion
+const soloCalentamiento = [
+  mkWorkout('w4', '2026-07-20', 'remo-barra', [mkSet(40, 10, { type: 'calentamiento' })]),
+];
+check('el calentamiento solo no cuenta como sesion', lastSessionOf(soloCalentamiento, 'remo-barra') === null);
+
+/* ── progresion ── */
+const subir = suggestProgression([mkSet(100, 8), mkSet(100, 8)], [6, 8], 2.5);
+check('completar el rango alto sube el peso', subir?.kind === 'subir-peso' && subir.weight === 102.5, `${subir?.weight}`);
+check('al subir el peso se vuelve al rango bajo', subir?.reps === 6, `${subir?.reps}`);
+
+const consolidar = suggestProgression([mkSet(100, 8), mkSet(100, 4)], [6, 8], 2.5);
+check('quedarse corto manda consolidar', consolidar?.kind === 'consolidar' && consolidar.weight === 100);
+
+const sumarRep = suggestProgression([mkSet(100, 6), mkSet(100, 7)], [6, 8], 2.5);
+check('en medio del rango suma una repeticion', sumarRep?.kind === 'sumar-repeticion' && sumarRep.reps === 7, `${sumarRep?.reps}`);
+
+check('sin series efectivas no hay sugerencia', suggestProgression([], [6, 8]) === null);
+check(
+  'sin peso registrado no hay sugerencia',
+  suggestProgression([mkSet(0, 12)], [8, 12]) === null,
+);
+
+/* ── rangos por defecto ── */
+check('un basico compuesto usa 6-10', JSON.stringify(defaultRepRange({ compound: true, pattern: 'empuje-horizontal' })) === '[6,10]');
+check('un aislamiento usa 10-15', JSON.stringify(defaultRepRange({ compound: false, pattern: 'aislamiento' })) === '[10,15]');
+check('el core usa 8-15', JSON.stringify(defaultRepRange({ compound: false, pattern: 'core-antiextension' })) === '[8,15]');
+check('el incremento distingue basico de aislamiento', defaultIncrement(true) === 2.5 && defaultIncrement(false) === 1);
+
+// Con los ejercicios reales del catalogo la sugerencia no debe descuadrarse
+const banca = FOOD_BY_ID ? EXERCISE_BY_ID.get('press-banca') : undefined;
+check(
+  'el rango del press de banca sale del propio ejercicio',
+  banca ? defaultRepRange({ compound: banca.compound, pattern: banca.pattern })[1] <= 12 : false,
+);
 
 /* ============================== SUITE DE COMPETENCIA ================== */
 runCompetitionTests(check, line);

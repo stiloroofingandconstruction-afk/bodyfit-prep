@@ -39,6 +39,15 @@ interface SettingsState {
   /** El usuario ya vio el aviso general de la app. */
   acknowledgedDisclaimer: boolean;
 
+  /**
+   * Modo desarrollador.
+   *
+   * Diagnostico, la prueba de iPhone y la configuracion de videos son
+   * herramientas de mantenimiento, no funciones del producto. Siguen ahi
+   * enteras, pero solo aparecen cuando se activan a proposito.
+   */
+  devMode: boolean;
+
   setUnits: (patch: Partial<Pick<SettingsState, 'weightUnit' | 'lengthUnit'>>) => void;
   setLocaleSetting: (locale: Locale) => void;
   update: (patch: Partial<SettingsState>) => void;
@@ -70,6 +79,7 @@ export const useSettingsStore = create<SettingsState>()(
       exerciseMedia: {},
       reminders: [],
       acknowledgedDisclaimer: false,
+      devMode: false,
 
       setUnits: (patch) => set(patch),
 

@@ -86,14 +86,14 @@ export function workoutsCSV(workouts: Workout[], u: ExportUnits): string {
       ex.sets.forEach((s, i) => {
         rows.push([
           w.date, w.name, ex.exerciseName, i + 1,
-          u.numWeight(s.weight), s.reps, s.rpe ?? '', s.type,
+          u.numWeight(s.weight), s.reps, s.rir ?? '', s.type,
         ]);
       });
     }
   }
   rows.sort((a, b) => String(a[0]).localeCompare(String(b[0])));
   return toCSV(
-    ['fecha', 'sesion', 'ejercicio', 'serie', `peso_${u.w}`, 'repeticiones', 'rpe', 'tipo'],
+    ['fecha', 'sesion', 'ejercicio', 'serie', `peso_${u.w}`, 'repeticiones', 'rir', 'tipo'],
     rows,
   );
 }

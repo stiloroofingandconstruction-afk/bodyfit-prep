@@ -42,6 +42,7 @@ export function App() {
   const hydrated = useHydrated();
   const onboarded = useProfileStore((s) => s.profile.onboarded);
   const locale = useSettingsStore((s) => s.locale);
+  const devMode = useSettingsStore((s) => s.devMode);
 
   useGlobalErrorLogging();
 
@@ -84,11 +85,24 @@ export function App() {
 
               {/* herramientas */}
               <Route path="/informes" element={<Reports />} />
-              <Route path="/ajustes/videos" element={<VideoSettings />} />
               <Route path="/ajustes/recordatorios" element={<RemindersPage />} />
               <Route path="/ajustes/datos" element={<DataBackup />} />
-              <Route path="/ajustes/diagnostico" element={<Diagnostics />} />
-              <Route path="/ajustes/diagnostico/iphone" element={<DeviceTest />} />
+
+              {/*
+                Herramientas de mantenimiento. No son funciones del producto:
+                sin el modo desarrollador activo la ruta ni siquiera existe,
+                asi que un enlace viejo o un marcador acaban en Ajustes en vez
+                de en una pantalla de diagnostico.
+              */}
+              {devMode ? (
+                <>
+                  <Route path="/ajustes/videos" element={<VideoSettings />} />
+                  <Route path="/ajustes/diagnostico" element={<Diagnostics />} />
+                  <Route path="/ajustes/diagnostico/iphone" element={<DeviceTest />} />
+                </>
+              ) : (
+                <Route path="/ajustes/*" element={<Navigate to="/ajustes" replace />} />
+              )}
             </Route>
 
             {/* La sesion en curso ocupa toda la pantalla: sin barra de pestanas */}

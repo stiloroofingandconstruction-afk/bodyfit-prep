@@ -223,7 +223,12 @@ export interface WorkoutSet {
   id: string;
   weight: number; // kg
   reps: number;
-  rpe?: number; // 5–10
+  /**
+   * Repeticiones en reserva: cuantas te quedaban al parar. 0 = fallo.
+   * Se guarda RIR y no RPE porque es lo que la gente estima de verdad al
+   * terminar la serie; el RPE equivalente es 10 - RIR.
+   */
+  rir?: number;
   done: boolean;
   type: 'normal' | 'calentamiento' | 'fallo' | 'dropset';
 }
@@ -235,6 +240,8 @@ export interface WorkoutExercise {
   sets: WorkoutSet[];
   notes?: string;
   restSeconds?: number;
+  /** Rango de repeticiones objetivo. Lo usa la progresion sugerida. */
+  repRange?: [number, number];
 }
 
 export interface Workout extends Entity {

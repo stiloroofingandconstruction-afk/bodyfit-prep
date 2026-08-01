@@ -1106,6 +1106,51 @@ export const en: Partial<Record<keyof typeof es, string>> = {
   'photos.savedAngle': '{angle} photo saved',
   'photos.saveFailed': 'The photo could not be saved. Try again.',
 
+  /* training: last session, progression and RIR */
+  'tr.lastTime': 'Last time',
+  'tr.lastTimeOn': 'Last time · {date}',
+  'tr.neverDone': 'First time with this exercise',
+  'tr.suggested': 'Today: {weight} × {reps}',
+  'tr.apply': 'Use',
+  'tr.applied': 'Sets set up with {weight} × {reps}',
+  'tr.progUp': 'You hit the top of the range: time to add weight',
+  'tr.progHold': 'Settle at this weight before going up',
+  'tr.progRep': 'Add one repetition',
+  'tr.rir': 'RIR',
+  'tr.rirLong': 'Reps in reserve',
+  'tr.rirHelp': 'How many you had left when you stopped. 0 = to failure.',
+  'tr.rirPlus': '5+',
+  'tr.repeatLast': 'Repeat: {name}',
+  'tr.repeatLastHint': 'Same exercises and weights from {date}, unchecked',
+  'tr.repeated': 'Session ready. Adjust whatever you need.',
+
+  /* nutrition: repeat and quick add */
+  'nut.repeatYesterday': 'Repeat yesterday’s',
+  'nut.repeatYesterdayCount': 'Repeat yesterday’s ({n})',
+  'nut.repeated': '{n} foods copied from yesterday',
+  'nut.quickAdd': 'Add {amount}',
+  'nut.frequent': 'Frequent',
+  'nut.addedQuick': '{food} · {amount}',
+
+  /* onboarding in three questions */
+  'ob.q1Title': 'Who are you?',
+  'ob.q1Hint': 'Sex and age are what your energy expenditure is calculated from.',
+  'ob.q2Title': 'How tall are you and what do you weigh?',
+  'ob.q2Hint': 'These are the only two numbers the app needs to start.',
+  'ob.q3Title': 'What are you after?',
+  'ob.q3Hint': 'You can change it whenever you like from Settings.',
+  'ob.resultTitle': 'Your daily target',
+  'ob.resultNote':
+    'Calculated with Mifflin-St Jeor. You can fine-tune activity, pace and macros in Settings whenever you want.',
+  'ob.finish': 'Get started',
+
+  /* developer mode */
+  'set.developer': 'Developer',
+  'set.devOn': 'Developer mode on',
+  'set.devOff': 'Developer mode off',
+  'set.devHint': 'Maintenance tools. They are not part of the product.',
+  'set.devTapsLeft': '{n} taps to go',
+
   /* data and backup */
   'data.title': 'Data and backup',
   'data.subtitle': 'Backups, storage and deletion',

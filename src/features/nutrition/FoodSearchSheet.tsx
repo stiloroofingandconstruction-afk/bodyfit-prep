@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Search, Star } from 'lucide-react';
+import { Check, Plus, Search, Star } from 'lucide-react';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { NumberPad } from '@/components/ui/NumberPad';
@@ -36,8 +36,8 @@ export function FoodSearchSheet({ open, onClose, slot, date, onCreateCustom }: P
   const lookup = useFoodLookup();
   const favorites = useNutritionStore((s) => s.favorites);
   const recent = useNutritionStore((s) => s.recent);
-  const toggleFavorite = useNutritionStore((s) => s.toggleFavorite);
   const addEntry = useNutritionStore((s) => s.addEntry);
+  const portions = useNutritionStore((s) => s.portions);
 
   useEffect(() => {
     if (open) {
@@ -64,11 +64,26 @@ export function FoodSearchSheet({ open, onClose, slot, date, onCreateCustom }: P
     return list.length ? list : catalog.slice(0, 20);
   }, [query, favorites, recent, lookup, catalog]);
 
+  /**
+   * Registra el alimento sin pasar por el paso de gramos.
+   *
+   * Es lo que baja el registro a dos toques: abrir el buscador y tocar la
+   * cantidad de siempre. Quien come 150 g de pollo cinco dias por semana no
+   * deberia teclear 150 cinco veces.
+   */
+  const quickAdd = (food: Food) => {
+    const grams = quickGrams(food, portions[food.id]);
+    addEntry({ food, grams, slot, date });
+    toast(t('nut.addedQuick', { food: food.name, amount: `${grams} ${food.unit}` }));
+    onClose();
+  };
+
   if (selected) {
     return (
       <GramsStep
         open={open}
         food={selected}
+        initialGrams={portions[selected.id]}
         onBack={() => setSelected(null)}
         onClose={onClose}
         onConfirm={(grams) => {
@@ -139,15 +154,22 @@ export function FoodSearchSheet({ open, onClose, slot, date, onCreateCustom }: P
                     {foodCategoryLabel(food.category)}
                   </span>
                 </button>
+                {/*
+                  Antes aqui habia una estrella de favorito. Competia con la
+                  fila entera por el pulgar y resolvia un problema que casi
+                  nadie tiene; el favorito vive ahora en el paso de gramos.
+                  Este boton resuelve el que se tiene cinco veces al dia.
+                */}
                 <button
-                  onClick={() => toggleFavorite(food.id)}
-                  className="pressable flex size-10 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface2"
-                  aria-label={t('nut.favorite')}
+                  onClick={() => quickAdd(food)}
+                  className="pressable flex h-12 shrink-0 items-center gap-1 rounded-2xl border border-brand/30 bg-brand/12 px-2.5 text-[13px] font-semibold text-brand tabular"
+                  aria-label={t('nut.quickAdd', {
+                    amount: `${quickGrams(food, portions[food.id])} ${food.unit}`,
+                  })}
                 >
-                  <Star
-                    size={16}
-                    className={cx(favorites.includes(food.id) ? 'fill-brand text-brand' : 'text-faint')}
-                  />
+                  <Plus size={14} />
+                  {quickGrams(food, portions[food.id])}
+                  <span className="text-[11px] font-normal">{food.unit}</span>
                 </button>
               </div>
             </li>
@@ -167,22 +189,44 @@ export function FoodSearchSheet({ open, onClose, slot, date, onCreateCustom }: P
   );
 }
 
+/**
+ * Cantidad que propone el alta rapida.
+ *
+ * Manda lo que el usuario uso la ultima vez. Si nunca lo ha registrado se
+ * usa su racion declarada, y como ultimo recurso una cantidad tipica del rol:
+ * 100 g de casi todo, pero no 100 g de aceite de oliva.
+ */
+function quickGrams(food: Food, remembered?: number): number {
+  if (remembered && remembered > 0) return remembered;
+  if (food.servings?.length) return food.servings[0].grams;
+  if (food.role === 'fat') return 15;
+  if (food.category === 'suplemento') return 30;
+  return 100;
+}
+
 /* ------------------------------------------------------- paso de gramos -- */
 
 function GramsStep({
   open,
   food,
+  initialGrams,
   onBack,
   onClose,
   onConfirm,
 }: {
   open: boolean;
   food: Food;
+  /** Ultima cantidad usada de este alimento, si la hay. */
+  initialGrams?: number;
   onBack: () => void;
   onClose: () => void;
   onConfirm: (grams: number) => void;
 }) {
-  const [raw, setRaw] = useState('');
+  // Arranca con lo de la ultima vez: casi siempre es la respuesta correcta
+  const [raw, setRaw] = useState(initialGrams ? String(initialGrams) : '');
+  const favorites = useNutritionStore((s) => s.favorites);
+  const toggleFavorite = useNutritionStore((s) => s.toggleFavorite);
+  const isFavorite = favorites.includes(food.id);
   const grams = Number(raw || 0);
   const macros = macrosFor(food, grams);
 
@@ -240,6 +284,17 @@ function GramsStep({
       </div>
 
       <NumberPad value={raw} onChange={setRaw} maxLength={4} />
+
+      <button
+        onClick={() => toggleFavorite(food.id)}
+        className={cx(
+          'pressable mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-2xl border text-[14px]',
+          isFavorite ? 'border-brand/30 bg-brand/12 text-brand' : 'border-line text-muted',
+        )}
+      >
+        <Star size={15} className={cx(isFavorite && 'fill-current')} />
+        {t('nut.favorite')}
+      </button>
     </Sheet>
   );
 }

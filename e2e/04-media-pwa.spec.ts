@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { assertClean, collectProblems, seedApp, shot } from './helpers';
+import { assertClean, collectProblems, enableDevMode, seedApp, shot } from './helpers';
 
 test.describe('Videos, fotos, historial y PWA', () => {
   test('la ficha de tecnica muestra la guia completa', async ({ page }, info) => {
@@ -44,6 +44,7 @@ test.describe('Videos, fotos, historial y PWA', () => {
     const problems = collectProblems(page);
     await seedApp(page);
 
+    await enableDevMode(page);
     await page.goto('/ajustes/videos');
     await page.getByPlaceholder('Buscar ejercicio').fill('press de banca');
     await page.getByRole('button', { name: /^Press de banca/ }).first().click();
@@ -80,6 +81,7 @@ test.describe('Videos, fotos, historial y PWA', () => {
       };
       localStorage.setItem('bodyfit:v1:settings', JSON.stringify(parsed));
     });
+    await enableDevMode(page);
     await page.goto('/ajustes/videos');
 
     const [download] = await Promise.all([

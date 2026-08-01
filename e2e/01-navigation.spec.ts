@@ -13,7 +13,7 @@ test.describe('Navegacion y salud de cada pantalla', () => {
     const problems = collectProblems(page);
     const { completeOnboarding } = await import('./helpers');
 
-    await completeOnboarding(page, { name: 'QA' });
+    await completeOnboarding(page);
     await expect(page.getByText(/Buen[oa]s/)).toBeVisible();
     await shot(page, '00-onboarding-completado', info);
     assertClean(problems, 'onboarding');

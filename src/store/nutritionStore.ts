@@ -14,12 +14,22 @@ interface NutritionState {
   favorites: string[];
   /** Ultimos alimentos usados (mas recientes primero, maximo 24). */
   recent: string[];
+  /**
+   * Ultima cantidad usada de cada alimento.
+   *
+   * Es lo que convierte el registro en dos toques: quien come 150 g de pollo
+   * casi siempre vuelve a comer 150 g, y volver a teclearlo cada dia es trabajo
+   * que la app puede ahorrarse.
+   */
+  portions: Record<string, number>;
 
   addEntry: (input: { food: Food; grams: number; slot: MealSlot; date?: string }) => FoodEntry;
   addEntries: (inputs: { food: Food; grams: number; slot: MealSlot; date?: string }[]) => void;
   updateEntry: (id: string, patch: { grams?: number; slot?: MealSlot }) => void;
   removeEntry: (id: string) => void;
   duplicateDay: (from: string, to: string) => void;
+  /** Copia una franja concreta de otro dia. Devuelve cuantos alimentos copio. */
+  repeatSlot: (from: string, to: string, slot: MealSlot) => number;
 
   /** Tipo de dia por fecha: escala el objetivo de macros. */
   dayTypes: Record<string, NutritionDayType>;
@@ -42,6 +52,7 @@ export const useNutritionStore = create<NutritionState>()(
     recipes: [],
     favorites: [],
     recent: [],
+    portions: {},
     dayTypes: {},
 
     setDayType: (date, type) =>
@@ -60,6 +71,7 @@ export const useNutritionStore = create<NutritionState>()(
       set((s) => ({
         entries: [...s.entries, entry],
         recent: [food.id, ...s.recent.filter((id) => id !== food.id)].slice(0, MAX_RECENT),
+        portions: { ...s.portions, [food.id]: Math.round(grams) },
       }));
       return entry;
     },
@@ -100,6 +112,25 @@ export const useNutritionStore = create<NutritionState>()(
           }) as FoodEntry,
       );
       set((s) => ({ entries: [...s.entries, ...copies] }));
+    },
+
+    repeatSlot: (from, to, slot) => {
+      const source = alive(get().entries).filter((e) => e.date === from && e.slot === slot);
+      if (!source.length) return 0;
+
+      const copies = source.map(
+        (e) =>
+          newEntity<Omit<FoodEntry, keyof Entity>>({
+            date: to,
+            slot: e.slot,
+            foodId: e.foodId,
+            foodName: e.foodName,
+            grams: e.grams,
+            macros: e.macros,
+          }) as FoodEntry,
+      );
+      set((s) => ({ entries: [...s.entries, ...copies] }));
+      return copies.length;
     },
 
     toggleFavorite: (foodId) =>

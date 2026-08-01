@@ -1,4 +1,10 @@
-import type { MuscleGroup, Workout, WorkoutExercise, WorkoutSet } from './types';
+import type {
+  MovementPattern,
+  MuscleGroup,
+  Workout,
+  WorkoutExercise,
+  WorkoutSet,
+} from './types';
 
 /** 1RM estimado — formula de Epley. Valida hasta ~12 repeticiones. */
 export function estimate1RM(weight: number, reps: number): number {
@@ -100,15 +106,91 @@ export function volumeByMuscle(
   return acc;
 }
 
+/* ─────────────────────────────────── ultima sesion y progresion ───────── */
+
+export interface LastSession {
+  date: string;
+  /** Solo las series efectivas, en el orden en que se hicieron. */
+  sets: WorkoutSet[];
+  /** Peso mas alto movido ese dia. */
+  topWeight: number;
+  bestE1rm: number;
+}
+
+/**
+ * Ultima vez que se entreno ese ejercicio.
+ *
+ * Es el dato con el que se elige el peso de hoy: el record historico dice lo
+ * que fuiste capaz de hacer alguna vez, no lo que toca ahora.
+ */
+export function lastSessionOf(
+  workouts: Workout[],
+  exerciseId: string,
+  excludeWorkoutId?: string,
+): LastSession | null {
+  const ordered = [...workouts].sort(
+    (a, b) => b.date.localeCompare(a.date) || b.startedAt.localeCompare(a.startedAt),
+  );
+
+  for (const w of ordered) {
+    if (w.id === excludeWorkoutId) continue;
+    for (const ex of w.exercises) {
+      if (ex.exerciseId !== exerciseId) continue;
+      const sets = ex.sets.filter(isWorkingSet);
+      if (!sets.length) continue;
+      return {
+        date: w.date,
+        sets,
+        topWeight: Math.max(...sets.map((s) => s.weight)),
+        bestE1rm: Math.max(...sets.map((s) => estimate1RM(s.weight, s.reps))),
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * Rango de repeticiones por defecto cuando el ejercicio no viene de una rutina.
+ *
+ * Un basico pesado y una elevacion lateral no comparten rango, y suponer 8–12
+ * para todo hace que la progresion sugiera tonterias en los extremos.
+ */
+export function defaultRepRange(input: {
+  compound: boolean;
+  pattern: MovementPattern;
+}): [number, number] {
+  if (input.pattern === 'cardio' || input.pattern === 'movilidad') return [10, 15];
+  if (input.pattern.startsWith('core')) return [8, 15];
+  if (input.pattern === 'aislamiento') return [10, 15];
+  return input.compound ? [6, 10] : [8, 12];
+}
+
+/** Incremento razonable segun el ejercicio, en kg. */
+export function defaultIncrement(compound: boolean): number {
+  return compound ? 2.5 : 1;
+}
+
+export type ProgressionKind = 'subir-peso' | 'consolidar' | 'sumar-repeticion';
+
+export interface Progression {
+  weight: number;
+  reps: number;
+  kind: ProgressionKind;
+  /** Texto en espanol. La interfaz traduce `kind`; esto va a las exportaciones. */
+  reason: string;
+}
+
 /** Progresion sugerida: si completaste el rango alto en todas las series, sube peso. */
 export function suggestProgression(
   lastSets: WorkoutSet[],
   repRange: [number, number],
   increment = 2.5,
-): { weight: number; reps: number; reason: string } | null {
+): Progression | null {
   const working = lastSets.filter(isWorkingSet);
   if (!working.length) return null;
   const weight = Math.max(...working.map((s) => s.weight));
+  if (weight <= 0) return null;
+
   const atTop = working.every((s) => s.reps >= repRange[1]);
   const belowBottom = working.some((s) => s.reps < repRange[0]);
 
@@ -116,12 +198,23 @@ export function suggestProgression(
     return {
       weight: Math.round((weight + increment) * 2) / 2,
       reps: repRange[0],
+      kind: 'subir-peso',
       reason: `Completaste ${repRange[1]} reps en todas las series`,
     };
   }
   if (belowBottom) {
-    return { weight, reps: repRange[0], reason: 'Consolida el peso antes de subir' };
+    return {
+      weight,
+      reps: repRange[0],
+      kind: 'consolidar',
+      reason: 'Consolida el peso antes de subir',
+    };
   }
   const minReps = Math.min(...working.map((s) => s.reps));
-  return { weight, reps: Math.min(repRange[1], minReps + 1), reason: 'Suma una repeticion' };
+  return {
+    weight,
+    reps: Math.min(repRange[1], minReps + 1),
+    kind: 'sumar-repeticion',
+    reason: 'Suma una repeticion',
+  };
 }

@@ -1114,6 +1114,51 @@ export const es = {
   'photos.savedAngle': 'Foto de {angle} guardada',
   'photos.saveFailed': 'No se pudo guardar la foto. Intentalo de nuevo.',
 
+  /* entreno: ultima sesion, progresion y RIR */
+  'tr.lastTime': 'Ultima vez',
+  'tr.lastTimeOn': 'Ultima vez · {date}',
+  'tr.neverDone': 'Primera vez con este ejercicio',
+  'tr.suggested': 'Hoy: {weight} × {reps}',
+  'tr.apply': 'Usar',
+  'tr.applied': 'Series preparadas con {weight} × {reps}',
+  'tr.progUp': 'Completaste el rango alto: toca subir',
+  'tr.progHold': 'Consolida el peso antes de subir',
+  'tr.progRep': 'Suma una repeticion',
+  'tr.rir': 'RIR',
+  'tr.rirLong': 'Repeticiones en reserva',
+  'tr.rirHelp': 'Cuantas te quedaban al parar. 0 = hasta el fallo.',
+  'tr.rirPlus': '5+',
+  'tr.repeatLast': 'Repetir: {name}',
+  'tr.repeatLastHint': 'Mismos ejercicios y pesos del {date}, sin marcar',
+  'tr.repeated': 'Sesion preparada. Ajusta lo que haga falta.',
+
+  /* nutricion: repetir y anadir rapido */
+  'nut.repeatYesterday': 'Repetir el de ayer',
+  'nut.repeatYesterdayCount': 'Repetir el de ayer ({n})',
+  'nut.repeated': '{n} alimentos copiados de ayer',
+  'nut.quickAdd': 'Anadir {amount}',
+  'nut.frequent': 'Frecuentes',
+  'nut.addedQuick': '{food} · {amount}',
+
+  /* onboarding en tres preguntas */
+  'ob.q1Title': '¿Quien eres?',
+  'ob.q1Hint': 'Con el sexo y la edad se calcula tu gasto energetico.',
+  'ob.q2Title': '¿Cuanto mides y pesas?',
+  'ob.q2Hint': 'Son los dos unicos numeros que la app necesita para empezar.',
+  'ob.q3Title': '¿Que buscas?',
+  'ob.q3Hint': 'Se puede cambiar cuando quieras desde Ajustes.',
+  'ob.resultTitle': 'Tu objetivo diario',
+  'ob.resultNote':
+    'Calculado con Mifflin-St Jeor. Puedes afinar actividad, ritmo y macros en Ajustes cuando quieras.',
+  'ob.finish': 'Empezar',
+
+  /* modo desarrollador */
+  'set.developer': 'Desarrollador',
+  'set.devOn': 'Modo desarrollador activado',
+  'set.devOff': 'Modo desarrollador desactivado',
+  'set.devHint': 'Herramientas de mantenimiento. No forman parte del producto.',
+  'set.devTapsLeft': 'Faltan {n} toques',
+
   /* datos y respaldo */
   'data.title': 'Datos y respaldo',
   'data.subtitle': 'Copias, espacio y borrado',

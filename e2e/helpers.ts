@@ -60,33 +60,18 @@ export function assertClean(problems: PageProblems, context: string): void {
 
 /**
  * Completa el onboarding para llegar a la app.
- * Es la puerta de entrada obligatoria: sin esto no hay ninguna otra pantalla.
+ *
+ * Son tres preguntas: quien eres, cuanto mides y pesas, y que buscas. El
+ * modo competencia ya no se pregunta aqui; se activa desde Ajustes.
  */
-export async function completeOnboarding(
-  page: Page,
-  opts: { competition?: boolean; name?: string } = {},
-): Promise<void> {
+export async function completeOnboarding(page: Page): Promise<void> {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'BodyFit Prep' })).toBeVisible();
 
-  // Paso 0: bienvenida
-  await page.getByRole('button', { name: 'Continuar' }).click();
-
-  // Paso 1: uso
-  if (opts.competition) {
-    await page.getByRole('button', { name: /Preparacion para competir/ }).click();
-    await page.getByPlaceholder('Mi primera competencia').fill('Show de prueba');
+  // Bienvenida + las tres preguntas
+  for (let i = 0; i < 3; i++) {
+    await page.getByRole('button', { name: 'Continuar' }).click();
   }
-  await page.getByRole('button', { name: 'Continuar' }).click();
-
-  // Paso 2: datos
-  await page.getByPlaceholder('Tu nombre').fill(opts.name ?? 'QA');
-  await page.getByRole('button', { name: 'Continuar' }).click();
-
-  // Paso 3: objetivo
-  await page.getByRole('button', { name: 'Continuar' }).click();
-
-  // Paso 4: macros
   await page.getByRole('button', { name: 'Empezar' }).click();
 
   await expect(page.getByRole('navigation')).toBeVisible();
@@ -113,6 +98,7 @@ export async function seedApp(page: Page, competition = false): Promise<void> {
       trainingDaysPerWeek: 4, discomforts: [], avoidedExercises: [], excludedFoods: [],
       stepGoal: 10000, waterGoalMl: 3000, exerciseMedia: {}, reminders: [],
       acknowledgedDisclaimer: true,
+      devMode: false,
     });
     /*
      * Copia reciente: sin esto el aviso de respaldo aparece fijo sobre la parte
@@ -159,6 +145,20 @@ export async function seedApp(page: Page, competition = false): Promise<void> {
       return d.toISOString().slice(0, 10);
     }
   }, competition);
+  await page.reload();
+  await expect(page.getByRole('navigation')).toBeVisible({ timeout: 15_000 });
+}
+
+/** Enciende el modo desarrollador sin pasar por los siete toques. */
+export async function enableDevMode(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const key = 'bodyfit:v1:settings';
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as { state: Record<string, unknown> };
+    parsed.state.devMode = true;
+    localStorage.setItem(key, JSON.stringify(parsed));
+  });
   await page.reload();
   await expect(page.getByRole('navigation')).toBeVisible({ timeout: 15_000 });
 }
@@ -424,6 +424,5 @@ export const ROUTES = [
   '/fotos', '/ajustes', '/competencia', '/competencia/peak-week',
   '/competencia/dia-del-show', '/competencia/post-show', '/diario', '/cardio',
   '/posing', '/ejercicios', '/ejercicios/press-banca', '/informes',
-  '/ajustes/videos', '/ajustes/recordatorios', '/ajustes/datos',
-  '/ajustes/diagnostico', '/ajustes/diagnostico/iphone',
+  '/ajustes/recordatorios', '/ajustes/datos',
 ] as const;

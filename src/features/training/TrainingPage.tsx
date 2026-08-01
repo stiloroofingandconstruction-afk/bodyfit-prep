@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Dumbbell, Play, Trophy, Zap } from 'lucide-react';
+import { ChevronRight, Dumbbell, Play, RotateCcw, Trophy, Zap } from 'lucide-react';
 import { Page, PageHeader } from '@/components/ui/PageHeader';
 import { Card, SectionTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -15,10 +15,11 @@ import {
   workoutSetCount,
   workoutVolume,
 } from '@/domain/training';
-import { addDays, dayInitial, friendlyDate, startOfWeek, today, weekRange } from '@/lib/date';
+import { addDays, dayInitial, friendlyDate, shortDate, startOfWeek, today, weekRange } from '@/lib/date';
 import { useRoutines, useWorkouts } from '@/store/selectors';
 import { useUnits } from '@/lib/useUnits';
 import { useTrainingStore } from '@/store/trainingStore';
+import { toast } from '@/store/uiStore';
 import { muscleLabel } from '@/i18n/catalogLabels';
 import { t } from '@/i18n';
 import type { Routine } from '@/domain/types';
@@ -29,6 +30,7 @@ export default function TrainingPage() {
   const workouts = useWorkouts();
   const active = useTrainingStore((s) => s.active);
   const startWorkout = useTrainingStore((s) => s.startWorkout);
+  const repeatWorkout = useTrainingStore((s) => s.repeatWorkout);
   const [routine, setRoutine] = useState<Routine | null>(null);
   const u = useUnits();
 
@@ -61,6 +63,9 @@ export default function TrainingPage() {
       .slice(0, 6);
   }, [last30]);
 
+  /** El entreno mas reciente con ejercicios: el candidato a repetir. */
+  const lastWorkout = useMemo(() => workouts.find((w) => w.exercises.length > 0), [workouts]);
+
   const prs = useMemo(() => {
     const list = [...personalRecords(workouts).values()];
     return list.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
@@ -86,18 +91,46 @@ export default function TrainingPage() {
             {t('home.continueWorkout')}
           </Button>
         ) : (
-          <Button
-            variant="primary"
-            size="lg"
-            block
-            onClick={() => {
-              startWorkout(t('home.freeWorkout'));
-              navigate('/entrenamiento/activo');
-            }}
-          >
-            <Zap size={18} />
-            {t('home.freeWorkout')}
-          </Button>
+          <>
+            {/*
+              Repetir la ultima sesion es lo que hace la mayoria: mismos
+              ejercicios, mismos pesos, intentando una repeticion mas. Antes
+              habia que montarla ejercicio por ejercicio cada vez.
+            */}
+            {lastWorkout && (
+              <button
+                onClick={() => {
+                  if (!repeatWorkout(lastWorkout.id)) return;
+                  toast(t('tr.repeated'));
+                  navigate('/entrenamiento/activo');
+                }}
+                className="pressable mb-2 flex w-full items-center gap-3 rounded-2xl bg-brand px-4 py-3.5 text-left text-base"
+              >
+                <RotateCcw size={18} className="shrink-0" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-semibold">
+                    {t('tr.repeatLast', { name: lastWorkout.name })}
+                  </span>
+                  <span className="block truncate text-[12px] opacity-80">
+                    {t('tr.repeatLastHint', { date: shortDate(lastWorkout.date) })}
+                  </span>
+                </span>
+              </button>
+            )}
+
+            <Button
+              variant={lastWorkout ? 'secondary' : 'primary'}
+              size="lg"
+              block
+              onClick={() => {
+                startWorkout(t('home.freeWorkout'));
+                navigate('/entrenamiento/activo');
+              }}
+            >
+              <Zap size={18} />
+              {t('home.freeWorkout')}
+            </Button>
+          </>
         )}
 
         <div className="mt-5">

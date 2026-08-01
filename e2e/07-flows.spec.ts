@@ -81,7 +81,7 @@ async function seedPhoto(page: Page, id = 'photo_e2e'): Promise<void> {
 test('flujo A · usuario recreativo: onboarding, comida, entreno, peso, copia', async ({ page }) => {
   const problems = collectProblems(page);
 
-  await completeOnboarding(page, { name: 'Ana' });
+  await completeOnboarding(page);
   await page.screenshot({ path: resolve(SHOTS, 'flujoA-1-inicio.png'), fullPage: true });
 
   /* ── comida ── */

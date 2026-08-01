@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Bell,
@@ -26,6 +27,8 @@ import { useProfile, useProfileStore } from '@/store/profileStore';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { useSettingsStore, type Experience } from '@/store/settingsStore';
 import { useBackupStore } from '@/store/backupStore';
+import { toast } from '@/store/uiStore';
+import { APP_VERSION } from '@/services/backup';
 import { useActivePrep, useCurrentWeight, useTargets } from '@/store/selectors';
 import { alive } from '@/store/persist';
 import { LOCALE_LABEL, t, type Locale } from '@/i18n';
@@ -43,6 +46,26 @@ export default function SettingsPage() {
   const settings = useSettingsStore();
   const prep = useActivePrep();
   const lastBackup = useBackupStore((s) => s.lastBackupAt);
+  const [versionTaps, setVersionTaps] = useState(0);
+
+  /** Siete toques en la version encienden o apagan las herramientas. */
+  const tapVersion = () => {
+    if (settings.devMode) {
+      settings.update({ devMode: false });
+      setVersionTaps(0);
+      toast(t('set.devOff'), 'info');
+      return;
+    }
+    const next = versionTaps + 1;
+    setVersionTaps(next);
+    if (next >= 7) {
+      settings.update({ devMode: true });
+      setVersionTaps(0);
+      toast(t('set.devOn'));
+    } else if (next >= 4) {
+      toast(t('set.devTapsLeft', { n: 7 - next }), 'info');
+    }
+  };
   const u = useUnits();
 
   const maintenance = tdee(profile, weight);
@@ -408,11 +431,9 @@ export default function SettingsPage() {
           <div className="space-y-1.5">
             {[
               { to: '/ejercicios', label: t('set.toolLibrary'), detail: t('set.toolLibraryDesc'), Icon: ShieldCheck },
-              { to: '/ajustes/videos', label: t('set.toolVideos'), detail: t('set.toolVideosDesc'), Icon: Film },
               { to: '/ajustes/recordatorios', label: t('set.toolReminders'), detail: t('set.toolRemindersDesc'), Icon: Bell },
               { to: '/informes', label: t('set.toolReports'), detail: t('set.toolReportsDesc'), Icon: FileText },
               { to: '/ajustes/datos', label: t('data.openLink'), detail: t('data.openHint'), Icon: Database },
-              { to: '/ajustes/diagnostico', label: t('set.toolDiagnostics'), detail: t('set.toolDiagnosticsDesc'), Icon: Stethoscope },
             ].map(({ to, label, detail, Icon }) => (
               <Link
                 key={to}
@@ -534,7 +555,47 @@ export default function SettingsPage() {
           </Card>
         </div>
 
-        <p className="mt-6 text-center text-[11px] text-faint">BodyFit Prep · v2.0.0</p>
+        {/*
+          Modo desarrollador.
+
+          Diagnostico, la prueba de iPhone y la configuracion de videos son
+          utiles para mantener la app, no para usarla. Siguen enteras, pero
+          detras del gesto de siempre: siete toques en la version.
+        */}
+        {settings.devMode && (
+          <div className="mt-5">
+            <SectionTitle>{t('set.developer')}</SectionTitle>
+            <div className="space-y-1.5">
+              {[
+                { to: '/ajustes/videos', label: t('set.toolVideos'), detail: t('set.toolVideosDesc'), Icon: Film },
+                { to: '/ajustes/diagnostico', label: t('set.toolDiagnostics'), detail: t('set.toolDiagnosticsDesc'), Icon: Stethoscope },
+              ].map(({ to, label, detail, Icon }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="pressable flex items-center gap-3 rounded-2xl border border-line bg-surface px-3.5 py-3"
+                >
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface2 text-muted">
+                    <Icon size={17} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] font-medium">{label}</p>
+                    <p className="truncate text-[12px] text-faint">{detail}</p>
+                  </div>
+                  <ChevronRight size={17} className="shrink-0 text-faint" />
+                </Link>
+              ))}
+            </div>
+            <p className="mt-2 px-1 text-[11px] text-faint">{t('set.devHint')}</p>
+          </div>
+        )}
+
+        <button
+          onClick={tapVersion}
+          className="mt-6 w-full py-2 text-center text-[11px] text-faint"
+        >
+          BodyFit Prep · v{APP_VERSION}
+        </button>
       </Page>
     </>
   );

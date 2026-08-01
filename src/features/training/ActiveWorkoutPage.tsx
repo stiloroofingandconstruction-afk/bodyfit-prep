@@ -7,7 +7,18 @@ import { Segmented } from '@/components/ui/Field';
 import { EmptyState } from '@/components/ui/Misc';
 import { ExercisePickerSheet } from './ExercisePickerSheet';
 import { TechniqueSheet } from '@/features/exercises/TechniqueSheet';
-import { estimate1RM, personalRecords, workoutVolume } from '@/domain/training';
+import {
+  defaultIncrement,
+  defaultRepRange,
+  estimate1RM,
+  lastSessionOf,
+  personalRecords,
+  suggestProgression,
+  workoutVolume,
+  type LastSession,
+  type Progression,
+} from '@/domain/training';
+import { EXERCISE_BY_ID } from '@/data/exercises';
 import { formatDuration } from '@/lib/date';
 import { cx, haptic } from '@/lib/utils';
 import { useUnits } from '@/lib/useUnits';
@@ -16,7 +27,9 @@ import { useWorkouts } from '@/store/selectors';
 import { useUIStore } from '@/store/uiStore';
 import { toast } from '@/store/uiStore';
 import { t } from '@/i18n';
-import type { WorkoutSet } from '@/domain/types';
+import { shortDate } from '@/lib/date';
+import type { Dict } from '@/i18n';
+import type { WorkoutExercise, WorkoutSet } from '@/domain/types';
 
 export default function ActiveWorkoutPage() {
   const navigate = useNavigate();
@@ -38,6 +51,8 @@ export default function ActiveWorkoutPage() {
   const [picking, setPicking] = useState(false);
   const [techniqueFor, setTechniqueFor] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
+  /** Id de la serie cuyo selector de RIR esta abierto. */
+  const [rirFor, setRirFor] = useState<string | null>(null);
   const [rating, setRating] = useState(3);
   const [elapsed, setElapsed] = useState(0);
 
@@ -58,6 +73,38 @@ export default function ActiveWorkoutPage() {
   const doneSets = active.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0);
   const totalSets = active.exercises.reduce((n, e) => n + e.sets.length, 0);
   const volume = workoutVolume({ ...active, exercises: active.exercises });
+
+  /**
+   * Progresion sugerida para este ejercicio a partir de la ultima sesion.
+   *
+   * El rango sale de la rutina si la hay; si el ejercicio se anadio suelto se
+   * deduce del propio ejercicio, porque un basico pesado y una elevacion
+   * lateral no comparten rango.
+   */
+  const progressionFor = (ex: WorkoutExercise, last: LastSession | null): Progression | null => {
+    if (!last) return null;
+    const info = EXERCISE_BY_ID.get(ex.exerciseId);
+    const range =
+      ex.repRange ??
+      (info ? defaultRepRange({ compound: info.compound, pattern: info.pattern }) : [8, 12]);
+    return suggestProgression(last.sets, range, defaultIncrement(info?.compound ?? false));
+  };
+
+  /** Rellena de una vez las series que aun no se han marcado. */
+  const applyProgression = (ex: WorkoutExercise, prog: Progression | null) => {
+    if (!prog) return;
+    for (const st of ex.sets) {
+      if (st.done) continue;
+      updateSet(ex.id, st.id, { weight: prog.weight, reps: prog.reps });
+    }
+    haptic(12);
+    toast(
+      t('tr.applied', {
+        weight: `${u.numWeight(prog.weight).replace(/[.,]0$/, '')} ${u.w}`,
+        reps: prog.reps,
+      }),
+    );
+  };
 
   const toggleDone = (exId: string, set: WorkoutSet, restSeconds?: number) => {
     const next = !set.done;
@@ -111,6 +158,8 @@ export default function ActiveWorkoutPage() {
         <div className="space-y-4">
           {active.exercises.map((ex) => {
             const pr = prs.get(ex.exerciseId);
+            const last = lastSessionOf(history, ex.exerciseId, active.id);
+            const progression = progressionFor(ex, last);
             return (
               <div key={ex.id} className="card overflow-hidden">
                 <div className="flex items-start justify-between gap-2 border-b border-line px-4 py-3">
@@ -151,26 +200,38 @@ export default function ActiveWorkoutPage() {
                   </div>
                 </div>
 
+                {/*
+                  Lo que hiciste la ultima vez y lo que tocaria hoy. Es el
+                  dato con el que se elige el peso: el record historico dice
+                  de lo que fuiste capaz alguna vez, no lo que toca ahora.
+                */}
+                <LastAndNext
+                  last={last}
+                  progression={progression}
+                  onApply={() => applyProgression(ex, progression)}
+                />
+
                 <div className="px-3 py-2">
-                  <div className="mb-1 grid grid-cols-[2rem_1fr_1fr_2.5rem_2rem] items-center gap-2 px-1 text-[10px] tracking-wider text-faint uppercase">
+                  <div className="mb-1 grid grid-cols-[2rem_1fr_1fr_2.75rem_2rem] items-center gap-2 px-1 text-[10px] tracking-wider text-faint uppercase">
                     <span>{t('tr.setColumn')}</span>
                     <span className="text-center">{u.w}</span>
                     <span className="text-center">{t('tr.repsColumn')}</span>
-                    <span className="text-center">1RM</span>
+                    <span className="text-center">{t('tr.rir')}</span>
                     <span />
                   </div>
 
                   {ex.sets.map((set, i) => {
                     const e1rm = estimate1RM(set.weight, set.reps);
                     const isPR = pr ? e1rm > pr.e1rm && set.done : e1rm > 0 && set.done;
+                    const rirOpen = rirFor === set.id;
                     return (
-                      <div
-                        key={set.id}
-                        className={cx(
-                          'grid grid-cols-[2rem_1fr_1fr_2.5rem_2rem] items-center gap-2 rounded-xl px-1 py-1.5',
-                          set.done && 'bg-brand/8',
-                        )}
-                      >
+                      <div key={set.id}>
+                        <div
+                          className={cx(
+                            'grid grid-cols-[2rem_1fr_1fr_2.75rem_2rem] items-center gap-2 rounded-xl px-1 py-1.5',
+                            set.done && 'bg-brand/8',
+                          )}
+                        >
                         <button
                           onClick={() =>
                             updateSet(ex.id, set.id, {
@@ -202,14 +263,24 @@ export default function ActiveWorkoutPage() {
                           integer
                         />
 
-                        <span
+                        {/*
+                          Aqui vivia el 1RM estimado: una columna entera para
+                          un dato que la app puede calcular sola. El sitio lo
+                          necesita el RIR, que es lo unico que solo puede
+                          aportar quien acaba de hacer la serie.
+                        */}
+                        <button
+                          onClick={() => setRirFor(rirOpen ? null : set.id)}
                           className={cx(
-                            'text-center text-[12px] tabular',
-                            isPR ? 'font-bold text-brand' : 'text-faint',
+                            'pressable h-8 rounded-lg text-center text-[12px] font-semibold tabular',
+                            set.rir != null ? 'bg-violet/15 text-violet' : 'bg-surface2 text-faint',
+                            isPR && 'ring-1 ring-brand/40',
                           )}
+                          aria-label={t('tr.rirLong')}
+                          aria-expanded={rirOpen}
                         >
-                          {e1rm > 0 ? u.numWeight(e1rm, 0) : '—'}
-                        </span>
+                          {set.rir == null ? '—' : set.rir >= 5 ? t('tr.rirPlus') : set.rir}
+                        </button>
 
                         <button
                           onClick={() => toggleDone(ex.id, set, ex.restSeconds)}
@@ -223,8 +294,19 @@ export default function ActiveWorkoutPage() {
                           )}
                           aria-label={t('tr.completeSet')}
                         >
-                          <Check size={15} strokeWidth={3} />
-                        </button>
+                            <Check size={15} strokeWidth={3} />
+                          </button>
+                        </div>
+
+                        {rirOpen && (
+                          <RirPicker
+                            value={set.rir}
+                            onPick={(rir) => {
+                              updateSet(ex.id, set.id, { rir });
+                              setRirFor(null);
+                            }}
+                          />
+                        )}
                       </div>
                     );
                   })}
@@ -346,6 +428,114 @@ export default function ActiveWorkoutPage() {
 }
 
 /* ------------------------------------------------------------ auxiliares */
+
+const PROGRESSION_TEXT: Record<Progression['kind'], keyof Dict> = {
+  'subir-peso': 'tr.progUp',
+  consolidar: 'tr.progHold',
+  'sumar-repeticion': 'tr.progRep',
+};
+
+/**
+ * Lo de la ultima vez y lo que tocaria hoy, en dos lineas.
+ *
+ * Sin esto el usuario elige el peso de memoria o abriendo el historial en otra
+ * pantalla. Con esto lo tiene delante mientras teclea, que es cuando lo decide.
+ */
+function LastAndNext({
+  last,
+  progression,
+  onApply,
+}: {
+  last: LastSession | null;
+  progression: Progression | null;
+  onApply: () => void;
+}) {
+  const u = useUnits();
+
+  /*
+   * Los pesos enteros se escriben sin decimal: "100 kg", no "100.0 kg".
+   * En una linea con cinco series seguidas, ese ".0" repetido es ruido puro.
+   */
+  const w = (kg: number) => u.numWeight(kg).replace(/[.,]0$/, '');
+
+  if (!last) {
+    return (
+      <p className="border-b border-line px-4 py-2 text-[12px] text-faint">{t('tr.neverDone')}</p>
+    );
+  }
+
+  return (
+    <div className="border-b border-line px-4 py-2">
+      <p className="text-[12px] text-faint">
+        <span className="text-muted">{t('tr.lastTimeOn', { date: shortDate(last.date) })}</span>
+        {' · '}
+        <span className="tabular">
+          {last.sets
+            .slice(0, 5)
+            .map((s) => `${w(s.weight)}×${s.reps}`)
+            .join('  ')}
+        </span>
+      </p>
+
+      {progression && (
+        <button
+          onClick={onApply}
+          className="pressable mt-1.5 flex w-full items-center gap-2 rounded-xl border border-brand/30 bg-brand/10 px-2.5 py-1.5 text-left"
+        >
+          <TrendingUp size={13} className="shrink-0 text-brand" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13px] font-semibold text-brand tabular">
+              {t('tr.suggested', {
+                weight: `${w(progression.weight)} ${u.w}`,
+                reps: progression.reps,
+              })}
+            </span>
+            <span className="block truncate text-[11px] text-muted">
+              {t(PROGRESSION_TEXT[progression.kind])}
+            </span>
+          </span>
+          <span className="shrink-0 rounded-lg bg-brand px-2.5 py-1 text-[12px] font-semibold text-base">
+            {t('tr.apply')}
+          </span>
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Selector de repeticiones en reserva.
+ *
+ * Aparece bajo la serie y se cierra al elegir: un toque para abrirlo y otro
+ * para responder. Quien no lo use no paga nada por que exista.
+ */
+function RirPicker({
+  value,
+  onPick,
+}: {
+  value?: number;
+  onPick: (rir: number | undefined) => void;
+}) {
+  return (
+    <div className="mb-1.5 rounded-xl bg-surface2 px-2 py-2">
+      <p className="mb-1.5 px-1 text-[11px] text-faint">{t('tr.rirHelp')}</p>
+      <div className="flex gap-1">
+        {[0, 1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            onClick={() => onPick(value === n ? undefined : n)}
+            className={cx(
+              'pressable h-9 flex-1 rounded-lg text-[13px] font-semibold tabular',
+              value === n ? 'bg-violet text-base' : 'border border-line bg-surface text-muted',
+            )}
+          >
+            {n === 5 ? t('tr.rirPlus') : n}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function NumInput({
   value,
