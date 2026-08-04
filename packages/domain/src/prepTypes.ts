@@ -90,11 +90,27 @@ export const ANGLE_LABEL: Record<PhotoAngle, string> = {
   libre: 'Pose libre',
 };
 
+/**
+ * Estado del binario de una foto.
+ *
+ * En la 2.1 todas se quedan en `local-only`: se sincronizan los metadatos —la
+ * fecha, el angulo, el peso— y la imagen no sale del dispositivo. Los otros tres
+ * estados existen desde ahora para no tener que migrar cuando se active la
+ * subida.
+ *
+ * La consecuencia hay que decirla clara en la interfaz: en un telefono nuevo
+ * apareceran las fichas de las fotos pero no las imagenes. Las imagenes siguen
+ * viajando en el archivo de respaldo, que ya las lleva.
+ */
+export type PhotoUploadState = 'local-only' | 'pending-upload' | 'synced' | 'failed';
+
 export interface ProgressPhoto extends Entity {
   date: string;
   angle: PhotoAngle;
-  /** Clave del blob en IndexedDB. */
+  /** Clave del blob en IndexedDB de ESTE dispositivo. */
   blobId: string;
+  /** Donde esta el binario. Ver `PhotoUploadState`. */
+  uploadState?: PhotoUploadState;
   weight?: number;
   /** Semana de prep en la que se tomo (si habia prep activo). */
   prepWeek?: number;

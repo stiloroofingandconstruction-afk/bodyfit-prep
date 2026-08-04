@@ -4,6 +4,7 @@ import { builtinRoutines, exerciseName } from '@/data/registry';
 import { today } from '@/lib/date';
 import { nowISO, uid } from '@/lib/utils';
 import type { Entity, Routine, Workout, WorkoutExercise, WorkoutSet } from '@bodyfit/domain/types';
+import { recordDelete, recordUpsert } from './syncRecorder';
 
 interface TrainingState {
   workouts: Workout[];
@@ -240,13 +241,22 @@ export const useTrainingStore = create<TrainingState>()(
       });
 
       set((s) => ({ workouts: [...s.workouts, finished], active: null }));
+      /*
+       * Se registra el entrenamiento al terminarlo, no serie a serie mientras
+       * se entrena. Durante la sesion el dato cambia cada pocos segundos y solo
+       * existe en este dispositivo; enviarlo entonces seria ruido. Al cerrar la
+       * sesion el dato ya es definitivo.
+       */
+      recordUpsert('training', finished);
       return finished;
     },
 
     discardWorkout: () => set({ active: null }),
 
-    deleteWorkout: (id) =>
-      set((s) => ({ workouts: s.workouts.map((w) => (w.id === id ? softDelete(w) : w)) })),
+    deleteWorkout: (id) => {
+      set((s) => ({ workouts: s.workouts.map((w) => (w.id === id ? softDelete(w) : w)) }));
+      recordDelete('training', id);
+    },
 
     saveRoutine: (routine) => {
       const created = newEntity(routine) as Routine;

@@ -5,6 +5,7 @@ import { macrosFor } from '@bodyfit/domain/macros';
 import { today } from '@/lib/date';
 import type { CustomFood, Entity, Food, FoodEntry, MealSlot, Recipe } from '@bodyfit/domain/types';
 import type { NutritionDayType } from '@bodyfit/domain/prepTypes';
+import { recordDelete, recordUpsert } from './syncRecorder';
 
 interface NutritionState {
   entries: FoodEntry[];
@@ -73,6 +74,7 @@ export const useNutritionStore = create<NutritionState>()(
         recent: [food.id, ...s.recent.filter((id) => id !== food.id)].slice(0, MAX_RECENT),
         portions: { ...s.portions, [food.id]: Math.round(grams) },
       }));
+      recordUpsert('nutrition', entry);
       return entry;
     },
 
@@ -81,7 +83,7 @@ export const useNutritionStore = create<NutritionState>()(
       for (const input of inputs) add(input);
     },
 
-    updateEntry: (id, patch) =>
+    updateEntry: (id, patch) => {
       set((s) => ({
         entries: s.entries.map((e) => {
           if (e.id !== id) return e;
@@ -93,10 +95,15 @@ export const useNutritionStore = create<NutritionState>()(
             macros: macrosFor(per100, grams),
           });
         }),
-      })),
+      }));
+      const updated = get().entries.find((e) => e.id === id);
+      if (updated) recordUpsert('nutrition', updated);
+    },
 
-    removeEntry: (id) =>
-      set((s) => ({ entries: s.entries.map((e) => (e.id === id ? softDelete(e) : e)) })),
+    removeEntry: (id) => {
+      set((s) => ({ entries: s.entries.map((e) => (e.id === id ? softDelete(e) : e)) }));
+      recordDelete('nutrition', id);
+    },
 
     duplicateDay: (from, to) => {
       const source = alive(get().entries).filter((e) => e.date === from);

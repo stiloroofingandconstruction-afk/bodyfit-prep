@@ -37,6 +37,7 @@ const RemindersPage = lazy(() => import('@/features/reminders/RemindersPage'));
 const DataBackup = lazy(() => import('@/features/settings/DataBackupPage'));
 const Diagnostics = lazy(() => import('@/features/settings/DiagnosticsPage'));
 const DeviceTest = lazy(() => import('@/features/settings/DeviceTestPage'));
+const SyncDiagnostics = lazy(() => import('@/features/settings/SyncDiagnosticsPage'));
 
 export function App() {
   const hydrated = useHydrated();
@@ -99,6 +100,7 @@ export function App() {
                   <Route path="/ajustes/videos" element={<VideoSettings />} />
                   <Route path="/ajustes/diagnostico" element={<Diagnostics />} />
                   <Route path="/ajustes/diagnostico/iphone" element={<DeviceTest />} />
+                  <Route path="/ajustes/diagnostico/sync" element={<SyncDiagnostics />} />
                 </>
               ) : (
                 <Route path="/ajustes/*" element={<Navigate to="/ajustes" replace />} />

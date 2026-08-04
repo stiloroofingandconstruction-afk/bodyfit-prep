@@ -26,6 +26,8 @@ import { runUnitsTests } from './smoke-units.mts';
 import { runContentTests } from './smoke-content.mts';
 import { runBackupTests } from './smoke-backup.mts';
 import { runCollectionTests } from './smoke-collections.mts';
+import { runSyncTests } from './smoke-sync.mts';
+import { runSyncWorldTests } from './smoke-sync-world.mts';
 import type { Profile } from '@bodyfit/domain/types';
 
 setCatalog(FOODS);
@@ -329,6 +331,10 @@ runBackupTests(check, line);
 
 /* ============ REGISTRO DE COLECCIONES Y GESTOR DE VERSIONES ========== */
 runCollectionTests(check, line);
+
+/* ============ MOTOR DE SINCRONIZACION: RELOJ, CONFLICTOS, OUTBOX ===== */
+runSyncTests(check, line);
+runSyncWorldTests(check, line);
 
 /* ---------------------------------------------------------------------- */
 console.log(`\n${failures === 0 ? 'TODO CORRECTO' : `${failures} COMPROBACIONES FALLIDAS`}\n`);

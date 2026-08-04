@@ -3,6 +3,7 @@ import { alive, newEntity, persisted, softDelete, touch } from './persist';
 import { bodyMigrations } from './migrations';
 import { today } from '@/lib/date';
 import type { BodyMeasurement, Entity } from '@bodyfit/domain/types';
+import { recordDelete, recordUpsert } from './syncRecorder';
 
 type MeasurementInput = Partial<Omit<BodyMeasurement, keyof Entity | 'date'>> & { date?: string };
 
@@ -26,6 +27,7 @@ export const useBodyStore = create<BodyState>()(
       if (existing) {
         const updated = touch(existing, { ...input, date });
         set((s) => ({ measurements: s.measurements.map((m) => (m.id === existing.id ? updated : m)) }));
+        recordUpsert('body', updated);
         return updated;
       }
       const created = newEntity<Omit<BodyMeasurement, keyof Entity>>({
@@ -33,11 +35,14 @@ export const useBodyStore = create<BodyState>()(
         date,
       } as Omit<BodyMeasurement, keyof Entity>) as BodyMeasurement;
       set((s) => ({ measurements: [...s.measurements, created] }));
+      recordUpsert('body', created);
       return created;
     },
 
-    remove: (id) =>
-      set((s) => ({ measurements: s.measurements.map((m) => (m.id === id ? softDelete(m) : m)) })),
+    remove: (id) => {
+      set((s) => ({ measurements: s.measurements.map((m) => (m.id === id ? softDelete(m) : m)) }));
+      recordDelete('body', id);
+    },
 
     attachPhoto: (date, photoId) => {
       const m = get().upsert({ date });

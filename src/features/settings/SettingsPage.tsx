@@ -12,6 +12,7 @@ import {
   SquarePlus,
   Stethoscope,
   Trash2,
+  RefreshCw,
   Trophy,
 } from 'lucide-react';
 import { Page, PageHeader } from '@/components/ui/PageHeader';
@@ -572,6 +573,7 @@ export default function SettingsPage() {
               {[
                 { to: '/ajustes/videos', label: t('set.toolVideos'), detail: t('set.toolVideosDesc'), Icon: Film },
                 { to: '/ajustes/diagnostico', label: t('set.toolDiagnostics'), detail: t('set.toolDiagnosticsDesc'), Icon: Stethoscope },
+                { to: '/ajustes/diagnostico/sync', label: 'Sincronizacion', detail: 'Cola, reloj y cursor. Desactivada en produccion.', Icon: RefreshCw },
               ].map(({ to, label, detail, Icon }) => (
                 <Link
                   key={to}
