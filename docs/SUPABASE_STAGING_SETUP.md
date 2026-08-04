@@ -73,12 +73,38 @@ Supabase → `bodyfit-staging` → **Authentication → URL Configuration**
 
 | Campo | Valor |
 |---|---|
-| Site URL | la URL del preview de staging en Vercel |
-| Redirect URLs | `https://<preview>.vercel.app/**`<br>`http://localhost:4173/**`<br>`http://localhost:5180/**` |
+| Site URL | `https://bodyfit-prep-git-sync-staging-validation-bodyfit.vercel.app` |
+| Redirect URLs | `https://bodyfit-prep-git-sync-staging-validation-bodyfit.vercel.app/**`<br>`http://localhost:4173/**`<br>`http://localhost:5180/**` |
 
 La de producción (`https://bodyfit-prep.vercel.app/**`) se puede dejar en la
 lista de redirects **pero nunca como Site URL**: así se puede probar el día que
 toque, sin que ningún correo de staging apunte a producción por defecto.
+
+### 1 bis · La plantilla del correo, o no habrá código
+
+**Authentication → Email Templates → Magic Link.**
+
+La plantilla por defecto solo lleva `{{ .ConfirmationURL }}`, y la documentación
+de Supabase es explícita: *si está `{{ .ConfirmationURL }}` se manda un enlace;
+si está `{{ .Token }}` se manda un código*. Sin `{{ .Token }}` **no llega
+ningún código de seis dígitos**.
+
+Eso importa porque en un iPhone con la PWA instalada el enlace del correo abre
+Safari y la sesión acaba fuera de la aplicación. El código es la única vía que
+la deja dentro. Pega esto para tener las dos:
+
+```html
+<h2>Entrar en BodyFit</h2>
+
+<p>Si estás en el ordenador, usa el enlace:</p>
+<p><a href="{{ .ConfirmationURL }}">Entrar</a></p>
+
+<p>Si tienes BodyFit instalada en el teléfono, escribe este código dentro de
+la aplicación:</p>
+<p style="font-size:24px;letter-spacing:4px"><b>{{ .Token }}</b></p>
+
+<p>Caduca en una hora y solo se puede usar una vez.</p>
+```
 
 ### 2 · Variables en Vercel
 

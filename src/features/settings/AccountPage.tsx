@@ -167,7 +167,7 @@ export default function AccountPage() {
             <SectionTitle>Entrar</SectionTitle>
             <Card>
               <p className="mb-3 text-xs text-faint">
-                Sin contrasena. Te enviamos un enlace y un codigo de seis digitos al correo.
+                Sin contrasena. Te enviamos un correo para entrar.
               </p>
               <Label>Correo</Label>
               <Input
@@ -191,7 +191,8 @@ export default function AccountPage() {
                   />
                   <p className="mt-2 text-xs text-faint">
                     Si tienes BodyFit instalada en el telefono, usa el codigo: el enlace del
-                    correo abre Safari y la sesion acabaria fuera de la aplicacion.
+                    correo abre Safari y la sesion acabaria fuera de la aplicacion. Si el
+                    correo solo trae enlace y no codigo, abrelo desde el navegador.
                   </p>
                 </div>
               )}
