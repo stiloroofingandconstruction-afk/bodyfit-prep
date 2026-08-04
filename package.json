@@ -13,13 +13,14 @@
     "test:domain": "node scripts/run-domain-tests.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:all": "npm run typecheck && npm run test:domain && npm run build && npm run audit:dist && npm run audit:bundle && npm run test:e2e",
+    "test:all": "npm run typecheck && npm run test:domain && npm run audit:sql && npm run build && npm run audit:dist && npm run audit:bundle && npm run test:e2e",
     "audit:bundle": "node scripts/audit-bundle.mjs",
     "measure:bundle": "node scripts/measure-bundle.mjs",
     "audit:dist": "node scripts/audit-dist.mjs",
     "audit:rls": "node scripts/audit-rls.mjs",
     "audit:adapter": "node scripts/audit-adapter.mjs",
-    "audit:staging": "npm run audit:rls && npm run audit:adapter"
+    "audit:staging": "npm run audit:rls && npm run audit:adapter",
+    "audit:sql": "node scripts/audit-sql.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.469.0",
@@ -35,6 +36,7 @@
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",
     "lighthouse": "^13.4.1",
+    "pg-query-emscripten": "^5.1.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.7",
