@@ -34,8 +34,19 @@ export default function TrainingPage() {
   const active = useTrainingStore((s) => s.active);
   const startWorkout = useTrainingStore((s) => s.startWorkout);
   const repeatWorkout = useTrainingStore((s) => s.repeatWorkout);
+  const finishWorkout = useTrainingStore((s) => s.finishWorkout);
+  const discardWorkout = useTrainingStore((s) => s.discardWorkout);
   const [routine, setRoutine] = useState<Routine | null>(null);
   const u = useUnits();
+
+  /** Series completadas en la sesion abierta. Decide si hay algo que guardar. */
+  const activeDoneSets = useMemo(
+    () =>
+      active
+        ? active.exercises.reduce((n, e) => n + e.sets.filter((st) => st.done).length, 0)
+        : 0,
+    [active],
+  );
 
   const week = useMemo(() => weekRange(startOfWeek(today())), []);
   const weekVolume = useMemo(
@@ -88,7 +99,82 @@ export default function TrainingPage() {
       />
 
       <Page>
-        {active ? (
+        {/*
+          ─────────────────────────────────────────────────────────────────
+          UNA SESION DE OTRO DIA NO PUEDE BLOQUEAR LA DE HOY
+
+          Si alguien empieza a entrenar y no cierra la sesion —lo normal:
+          suena el telefono, se acaba la bateria, se va del gimnasio— esa
+          sesion se quedaba activa para siempre y la pantalla SOLO ofrecia
+          continuarla. Al dia siguiente no habia forma de empezar el
+          entrenamiento de hoy: la aplicacion insistia en el de ayer.
+
+          Ahora se dice lo que hay y se resuelve en un toque. Lo que NO se
+          hace es descartarla sola: puede tener series de verdad dentro.
+          ─────────────────────────────────────────────────────────────────
+        */}
+        {active && active.date !== today() ? (
+          <Card className="border-warn/30 bg-warn/5">
+            <p className="text-[15px] font-semibold">{t('tr.unfinished')}</p>
+            <p className="mt-1 text-xs text-faint">
+              {t('tr.unfinishedFrom', { date: friendlyDate(active.date) })} ·{' '}
+              {t('tr.unfinishedSets', { n: activeDoneSets })}
+            </p>
+
+            <div className="mt-4 space-y-2">
+              {activeDoneSets > 0 ? (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  block
+                  onClick={() => {
+                    finishWorkout();
+                    toast(t('tr.unfinishedSaved'));
+                  }}
+                >
+                  {t('tr.unfinishedSave')}
+                </Button>
+              ) : (
+                /*
+                 * Sin ninguna serie hecha no hay nada que guardar: guardarla
+                 * solo ensuciaria el historial con una sesion vacia.
+                 */
+                <Button
+                  variant="primary"
+                  size="lg"
+                  block
+                  onClick={() => {
+                    discardWorkout();
+                    toast(t('tr.unfinishedDiscarded'));
+                  }}
+                >
+                  {t('tr.unfinishedDiscardEmpty')}
+                </Button>
+              )}
+
+              <Button
+                variant="secondary"
+                block
+                onClick={() => navigate('/entrenamiento/activo')}
+              >
+                <Play size={18} /> {t('tr.unfinishedContinue')}
+              </Button>
+
+              {activeDoneSets > 0 && (
+                <button
+                  className="w-full py-2 text-xs text-faint underline"
+                  onClick={() => {
+                    if (!confirm(t('tr.unfinishedDiscardConfirm'))) return;
+                    discardWorkout();
+                    toast(t('tr.unfinishedDiscarded'));
+                  }}
+                >
+                  {t('tr.unfinishedDiscard')}
+                </button>
+              )}
+            </div>
+          </Card>
+        ) : active ? (
           <Button variant="primary" size="lg" block onClick={() => navigate('/entrenamiento/activo')}>
             <Play size={18} />
             {t('home.continueWorkout')}

@@ -379,3 +379,114 @@ test.describe('herramientas de mantenimiento', () => {
     await expect(page.getByRole('heading', { name: /Videos de ejercicios/ })).toBeVisible();
   });
 });
+
+test.describe('Sesion sin terminar de otro dia', () => {
+  /** Deja una sesion abierta con fecha de ayer, con o sin series hechas. */
+  async function sesionDeAyer(page: Page, conSeries: boolean): Promise<void> {
+    await page.evaluate((hechas) => {
+      const ayer = new Date(Date.now() - 86400_000).toISOString().slice(0, 10);
+      const raw = localStorage.getItem('bodyfit:v1:training');
+      const parsed = raw ? JSON.parse(raw) : { state: {}, version: 1 };
+      parsed.state = {
+        ...parsed.state,
+        workouts: parsed.state.workouts ?? [],
+        active: {
+          id: 'sesion-de-ayer',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          date: ayer,
+          name: 'Pecho y espalda',
+          startedAt: new Date().toISOString(),
+          exercises: [
+            {
+              id: 'we-1',
+              exerciseId: 'press-banca',
+              exerciseName: 'Press de banca',
+              sets: [
+                { id: 's1', weight: 80, reps: 8, done: hechas, type: 'normal' },
+                { id: 's2', weight: 80, reps: 8, done: false, type: 'normal' },
+              ],
+            },
+          ],
+        },
+      };
+      localStorage.setItem('bodyfit:v1:training', JSON.stringify(parsed));
+    }, conSeries);
+    await page.reload();
+  }
+
+  test('no bloquea el entrenamiento de hoy y se resuelve en un toque', async ({ page }) => {
+    await seedApp(page);
+    await sesionDeAyer(page, true);
+    await page.goto('/entrenamiento');
+
+    // Se dice lo que hay, en vez de insistir en continuarla
+    await expect(page.getByText(/sesion sin terminar/i)).toBeVisible();
+    await expect(page.getByText(/1 series hechas/i)).toBeVisible();
+
+    // Un toque: se guarda en el historial y hoy queda libre
+    await page.getByRole('button', { name: /Guardarla y empezar hoy/i }).click();
+    await expect(page.getByText(/sesion sin terminar/i)).toHaveCount(0);
+    // Y aparecen las opciones normales: repetir la de ayer o empezar libre
+    await expect(page.getByRole('button', { name: /Repetir:/i }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /Entreno libre/i }).first()).toBeVisible();
+
+    // Y lo que se hizo ayer NO se perdio
+    const guardados = await page.evaluate(() => {
+      const raw = localStorage.getItem('bodyfit:v1:training');
+      const p = raw ? JSON.parse(raw) : { state: {} };
+      return { workouts: (p.state.workouts ?? []).length, active: p.state.active };
+    });
+    expect(guardados.workouts, 'la sesion de ayer se guardo').toBe(1);
+    expect(guardados.active, 'ya no hay sesion abierta').toBeNull();
+  });
+
+  test('una sesion vacia de ayer se descarta sin ensuciar el historial', async ({ page }) => {
+    await seedApp(page);
+    await sesionDeAyer(page, false);
+    await page.goto('/entrenamiento');
+
+    await expect(page.getByText(/0 series hechas/i)).toBeVisible();
+    // Sin series hechas no se ofrece guardar: no hay nada que guardar
+    await expect(page.getByRole('button', { name: /Guardarla y empezar hoy/i })).toHaveCount(0);
+
+    await page.getByRole('button', { name: /Descartarla y empezar hoy/i }).click();
+
+    const estado = await page.evaluate(() => {
+      const raw = localStorage.getItem('bodyfit:v1:training');
+      const p = raw ? JSON.parse(raw) : { state: {} };
+      return { workouts: (p.state.workouts ?? []).length, active: p.state.active };
+    });
+    expect(estado.workouts, 'no se guarda una sesion vacia').toBe(0);
+    expect(estado.active).toBeNull();
+  });
+
+  test('una sesion de HOY sigue comportandose como siempre', async ({ page }) => {
+    await seedApp(page);
+    await page.evaluate(() => {
+      const hoy = new Date().toISOString().slice(0, 10);
+      const raw = localStorage.getItem('bodyfit:v1:training');
+      const parsed = raw ? JSON.parse(raw) : { state: {}, version: 1 };
+      parsed.state = {
+        ...parsed.state,
+        workouts: parsed.state.workouts ?? [],
+        active: {
+          id: 'sesion-de-hoy',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          date: hoy,
+          name: 'Pierna',
+          startedAt: new Date().toISOString(),
+          exercises: [],
+        },
+      };
+      localStorage.setItem('bodyfit:v1:training', JSON.stringify(parsed));
+    });
+    await page.reload();
+    await page.goto('/entrenamiento');
+
+    // Sin avisos raros: se continua y ya
+    await expect(page.getByText(/sesion sin terminar/i)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Continuar/i }).first()).toBeVisible();
+  });
+});
