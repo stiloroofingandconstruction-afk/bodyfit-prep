@@ -207,9 +207,40 @@ for (const entry of ['node_modules', 'dist', '.env']) {
   check(gitignore.includes(entry), `.gitignore ignora ${entry}`);
 }
 
-// Nada de secretos en el arbol
-const envFiles = readdirSync(ROOT).filter((f) => f.startsWith('.env'));
-check(envFiles.length === 0, 'sin archivos .env en el repositorio', envFiles.join(', ') || 'ninguno');
+/*
+ * Nada de secretos en el arbol.
+ *
+ * `.env.example` es la excepcion y es deliberada: documenta que variables hacen
+ * falta sin llevar ningun valor. Prohibirlo obligaria a documentarlas en otro
+ * sitio, que envejece peor.
+ *
+ * Lo que se comprueba entonces no es que el archivo no exista, sino algo mas
+ * util: que no contenga credenciales de verdad. Alguien rellena la plantilla
+ * para probar, se olvida, y la sube.
+ */
+const envFiles = readdirSync(ROOT).filter((f) => f.startsWith('.env') && f !== '.env.example');
+check(envFiles.length === 0, 'sin archivos .env con valores en el repositorio', envFiles.join(', ') || 'ninguno');
+
+if (existsSync(join(ROOT, '.env.example'))) {
+  /*
+   * Solo las lineas de valor. Los comentarios de la plantilla NOMBRAN
+   * `service_role` para explicar por que no puede estar ahi, y escanear el
+   * archivo entero convertia esa advertencia en un fallo.
+   */
+  const example = readFileSync(join(ROOT, '.env.example'), 'utf8')
+    .split('\n')
+    .filter((l) => !l.trimStart().startsWith('#'))
+    .join('\n');
+  const conValores = [
+    [/https:\/\/[a-z0-9]{20}\.supabase\.co/, 'una URL de proyecto real'],
+    [/sb_publishable_[A-Za-z0-9_-]{10,}/, 'una clave publishable real'],
+    [/sb_secret_|service_role|eyJ[A-Za-z0-9_-]{20,}/, 'una clave secreta o un JWT'],
+    [/^[A-Z0-9_]*PASSWORD\s*=\s*\S+/m, 'una contrasena rellenada'],
+  ];
+  for (const [pattern, what] of conValores) {
+    check(!pattern.test(example), `.env.example no contiene ${what}`);
+  }
+}
 
 /* ---------------------------------------------------------------------- */
 console.log(

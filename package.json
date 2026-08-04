@@ -16,7 +16,10 @@
     "test:all": "npm run typecheck && npm run test:domain && npm run build && npm run audit:dist && npm run audit:bundle && npm run test:e2e",
     "audit:bundle": "node scripts/audit-bundle.mjs",
     "measure:bundle": "node scripts/measure-bundle.mjs",
-    "audit:dist": "node scripts/audit-dist.mjs"
+    "audit:dist": "node scripts/audit-dist.mjs",
+    "audit:rls": "node scripts/audit-rls.mjs",
+    "audit:adapter": "node scripts/audit-adapter.mjs",
+    "audit:staging": "npm run audit:rls && npm run audit:adapter"
   },
   "dependencies": {
     "lucide-react": "^0.469.0",

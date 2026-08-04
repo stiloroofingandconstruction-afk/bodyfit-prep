@@ -38,6 +38,7 @@ const DataBackup = lazy(() => import('@/features/settings/DataBackupPage'));
 const Diagnostics = lazy(() => import('@/features/settings/DiagnosticsPage'));
 const DeviceTest = lazy(() => import('@/features/settings/DeviceTestPage'));
 const SyncDiagnostics = lazy(() => import('@/features/settings/SyncDiagnosticsPage'));
+const Account = lazy(() => import('@/features/settings/AccountPage'));
 
 export function App() {
   const hydrated = useHydrated();
@@ -101,6 +102,13 @@ export function App() {
                   <Route path="/ajustes/diagnostico" element={<Diagnostics />} />
                   <Route path="/ajustes/diagnostico/iphone" element={<DeviceTest />} />
                   <Route path="/ajustes/diagnostico/sync" element={<SyncDiagnostics />} />
+                  {/*
+                    Cuenta y sincronizacion. Vive con las herramientas de
+                    mantenimiento hasta que la sincronizacion salga de
+                    `disabled`: ofrecer crear una cuenta que no sincroniza
+                    seria prometer algo que hoy no se cumple.
+                  */}
+                  <Route path="/ajustes/cuenta" element={<Account />} />
                 </>
               ) : (
                 <Route path="/ajustes/*" element={<Navigate to="/ajustes" replace />} />

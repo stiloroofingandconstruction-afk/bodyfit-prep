@@ -545,6 +545,7 @@ export const en: Partial<Record<keyof typeof es, string>> = {
   'photos.needTwo': 'You need two photos',
   'photos.needTwoDesc': 'There is only {n} photo from {angle}. Add another one to compare.',
   'photos.addToday': 'Add today’s photo',
+  'photos.onlyOnOriginalDevice': 'Only on the original device',
   'photos.before': 'Before',
   'photos.after': 'After',
   'photos.all': 'All',

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Camera, Columns2, Lock, Plus, Trash2 } from 'lucide-react';
+import { Camera, Columns2, ImageOff, Lock, Plus, Trash2 } from 'lucide-react';
 import { Page, PageHeader } from '@/components/ui/PageHeader';
 import { Card, SectionTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -20,13 +20,26 @@ import { t } from '@/i18n';
 
 const ANGLES = Object.keys(ANGLE_LABEL) as PhotoAngle[];
 
-/** Cachea las URLs de objeto y las revoca al desmontar. */
-function usePhotoURLs(photos: ProgressPhoto[]): Map<string, string> {
+/**
+ * Cachea las URLs de objeto y las revoca al desmontar.
+ *
+ * Devuelve tambien `resolved`, y esa distincion importa: sin ella, una foto
+ * cuyo binario no esta en este dispositivo se queda con el esqueleto de carga
+ * pulsando para siempre, y quien mira cree que la aplicacion esta colgada.
+ *
+ * Pasa de verdad y va a pasar mas: la sincronizacion lleva los METADATOS de las
+ * fotos entre dispositivos, pero el binario se queda donde se tomo. En un
+ * telefono nuevo apareceran fichas sin imagen, y hay que decirlo con palabras
+ * en vez de dejar un rectangulo latiendo.
+ */
+function usePhotoURLs(photos: ProgressPhoto[]): { urls: Map<string, string>; resolved: boolean } {
   const [urls, setUrls] = useState<Map<string, string>>(new Map());
+  const [resolved, setResolved] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const created: string[] = [];
+    setResolved(false);
     (async () => {
       const map = new Map<string, string>();
       for (const p of photos) {
@@ -36,7 +49,10 @@ function usePhotoURLs(photos: ProgressPhoto[]): Map<string, string> {
           map.set(p.id, url);
         }
       }
-      if (!cancelled) setUrls(map);
+      if (!cancelled) {
+        setUrls(map);
+        setResolved(true);
+      }
     })();
     return () => {
       cancelled = true;
@@ -44,7 +60,7 @@ function usePhotoURLs(photos: ProgressPhoto[]): Map<string, string> {
     };
   }, [photos]);
 
-  return urls;
+  return { urls, resolved };
 }
 
 export default function PhotosPage() {
@@ -63,7 +79,7 @@ export default function PhotosPage() {
     () => (angle ? photos.filter((p) => p.angle === angle) : photos),
     [photos, angle],
   );
-  const urls = usePhotoURLs(filtered);
+  const { urls, resolved } = usePhotoURLs(filtered);
 
   const onPick = async (file: File | undefined, targetAngle: PhotoAngle) => {
     if (!file) return;
@@ -165,6 +181,14 @@ export default function PhotosPage() {
                       className="aspect-[3/4] w-full rounded-xl border border-line object-cover"
                       loading="lazy"
                     />
+                  ) : resolved ? (
+                    /* El binario no esta aqui. Se dice, no se finge que carga. */
+                    <div className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-line bg-surface2 p-2 text-center">
+                      <ImageOff size={18} className="text-faint" aria-hidden />
+                      <span className="text-[10px] leading-tight text-faint">
+                        {t('photos.onlyOnOriginalDevice')}
+                      </span>
+                    </div>
                   ) : (
                     <div className="aspect-[3/4] w-full animate-pulse rounded-xl bg-surface2" />
                   )}
@@ -215,7 +239,7 @@ function CompareSheet({ photos, onClose }: { photos: ProgressPhoto[]; onClose: (
     () => ofAngle.filter((p) => p.id === leftId || p.id === rightId),
     [ofAngle, leftId, rightId],
   );
-  const urls = usePhotoURLs(selected);
+  const { urls } = usePhotoURLs(selected);
 
   const left = ofAngle.find((p) => p.id === leftId);
   const right = ofAngle.find((p) => p.id === rightId);

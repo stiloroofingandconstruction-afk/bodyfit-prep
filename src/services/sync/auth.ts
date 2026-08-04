@@ -77,12 +77,163 @@ function store(next: Session | null): void {
 export async function sendMagicLink(email: string): Promise<void> {
   if (!URL || !ANON) throw new Error('Supabase no configurado');
 
+  /*
+   * `emailRedirectTo` tiene que estar en la lista de Redirect URLs del proyecto
+   * o Supabase devuelve al Site URL por defecto y la persona acaba en otro
+   * sitio. Se manda el origen actual: asi el mismo codigo funciona en local, en
+   * el preview de staging y en produccion sin ramas.
+   */
   const res = await fetch(`${URL}/auth/v1/otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', apikey: ANON },
-    body: JSON.stringify({ email, create_user: true }),
+    body: JSON.stringify({
+      email,
+      create_user: true,
+      gotrue_meta_security: {},
+      options: { email_redirect_to: `${location.origin}/ajustes/cuenta` },
+    }),
   });
   if (!res.ok) throw new Error(`no se pudo enviar el enlace: ${res.status}`);
+}
+
+/**
+ * Verifica el codigo de seis digitos.
+ *
+ * Existe ademas del enlace porque en un iPhone con la aplicacion instalada el
+ * enlace del correo abre Safari, no la PWA, y la sesion acabaria en el sitio
+ * equivocado. Teclear el codigo mantiene a la persona dentro de la aplicacion.
+ */
+export async function verifyOtp(email: string, token: string): Promise<Session> {
+  if (!URL || !ANON) throw new Error('Supabase no configurado');
+
+  const res = await fetch(`${URL}/auth/v1/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: ANON },
+    body: JSON.stringify({ email, token, type: 'email' }),
+  });
+  if (!res.ok) throw new Error('el codigo no es valido o ha caducado');
+
+  const data = (await res.json()) as {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+    user: { id: string; email: string };
+  };
+
+  adoptSession({
+    userId: data.user.id,
+    email: data.user.email,
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    expiresIn: data.expires_in,
+  });
+  return session!;
+}
+
+/**
+ * Recoge la sesion que llega en el fragmento de la URL tras seguir el enlace.
+ *
+ * Supabase la manda en el `#` y no en la query: el fragmento no viaja al
+ * servidor, asi que el token no acaba en los registros de acceso de nadie. Se
+ * limpia de la barra de direcciones en cuanto se guarda, para que no quede en
+ * el historial ni se comparta al copiar el enlace.
+ */
+export function captureRedirectSession(): Session | null {
+  if (typeof location === 'undefined' || !location.hash.includes('access_token')) return null;
+
+  const params = new URLSearchParams(location.hash.slice(1));
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (!accessToken || !refreshToken) return null;
+
+  /*
+   * El `sub` y el correo salen del propio token. No se verifica la firma aqui:
+   * el cliente no puede hacerlo de forma util, y quien decide si el token vale
+   * es el servidor en cada peticion. Aqui solo se lee para poder ensenar el
+   * correo en pantalla.
+   */
+  const claims = decodeJwtPayload(accessToken);
+  if (!claims?.sub) return null;
+
+  adoptSession({
+    userId: String(claims.sub),
+    email: typeof claims.email === 'string' ? claims.email : '',
+    accessToken,
+    refreshToken,
+    expiresIn: Number(params.get('expires_in') ?? 3600),
+  });
+
+  history.replaceState(null, '', location.pathname + location.search);
+  return session;
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const part = token.split('.')[1];
+    const json = atob(part.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(json) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+/** Quedan menos de cinco minutos: toca renovar antes de la siguiente peticion. */
+export function sessionExpiresSoon(now = Date.now()): boolean {
+  const current = load();
+  return current !== null && current.expiresAt - now < 5 * 60_000;
+}
+
+/**
+ * Renueva el token.
+ *
+ * Si el refresco falla NO se cierra la sesion ni se borra nada: puede ser un
+ * corte de red pasajero, y desloguear a alguien porque el metro entro en un
+ * tunel seria absurdo. La sincronizacion fallara, reintentara, y cuando vuelva
+ * la red se renovara.
+ */
+export async function refreshSession(): Promise<Session | null> {
+  const current = load();
+  if (!current || !URL || !ANON) return null;
+
+  try {
+    const res = await fetch(`${URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: ANON },
+      body: JSON.stringify({ refresh_token: current.refreshToken }),
+    });
+    if (!res.ok) return current;
+
+    const data = (await res.json()) as {
+      access_token: string;
+      refresh_token: string;
+      expires_in: number;
+      user: { id: string; email: string };
+    };
+    adoptSession({
+      userId: data.user.id,
+      email: data.user.email,
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresIn: data.expires_in,
+    });
+    return session;
+  } catch {
+    return current;
+  }
+}
+
+/**
+ * Correo enmascarado, para pantallas y diagnosticos.
+ *
+ * `gustavo@ejemplo.com` -> `gus***@ejemplo.com`. Es suficiente para que la
+ * persona reconozca su cuenta y no expone la direccion completa en una captura
+ * de pantalla o en un archivo de diagnostico que quiza acabe en un correo.
+ */
+export function maskEmail(email: string): string {
+  const [user, domain] = email.split('@');
+  if (!domain) return '***';
+  const visible = user.slice(0, Math.min(3, user.length));
+  return `${visible}***@${domain}`;
 }
 
 /** Guarda la sesion que devuelve Supabase tras seguir el enlace. */

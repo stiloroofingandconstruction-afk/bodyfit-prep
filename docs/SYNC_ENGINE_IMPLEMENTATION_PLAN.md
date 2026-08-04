@@ -867,11 +867,32 @@ antes de que exista la función que la necesita.
 
 | Función | Qué hace |
 |---|---|
-| `sync_push(ops jsonb)` | Valida, asigna `seq`, inserta con `on conflict do nothing`, proyecta sobre las tablas normalizadas, devuelve el resultado por operación |
+| `sync_push(ops jsonb)` | Valida, asigna `seq`, inserta en el log con `on conflict do nothing`, devuelve el resultado por operación |
 | `sync_pull(cursor bigint, limit int)` | Devuelve operaciones con `seq > cursor`, ordenadas |
-| `sync_bootstrap()` | Estado completo actual + `last_seq`, para un dispositivo nuevo |
+| `sync_bootstrap_seq()` | `last_seq` actual. **La lectura del estado completo no está implementada todavía** — ver el aviso de abajo |
 | `register_device(...)` | Alta o actualización en `devices` |
 | `sync_health()` | Comprobación de vida y versión de esquema del servidor |
+
+> **Pendiente y consciente: la proyección log → tablas normalizadas.**
+>
+> `sync_push` escribe en `sync_operations` y ahí se queda. Las 16 tablas de
+> dominio existen, con sus índices y su RLS, pero **nada las rellena todavía**.
+>
+> No es un olvido. La sincronización entre dispositivos funciona con el log
+> solo: los clientes convergen reproduciendo operaciones, que es exactamente lo
+> que prueban la simulación de catorce días y la auditoría del adaptador. Las
+> tablas normalizadas hacen falta para *consultar* —dashboard de coach,
+> estadísticas agregadas, informes— y eso es 2.2.
+>
+> Dos consecuencias que hay que tener presentes mientras siga así:
+>
+> 1. Un dispositivo nuevo reproduce **todo** el log, no arranca desde un
+>    estado. Con los volúmenes de una persona (unas decenas de miles de
+>    operaciones al año) es perfectamente viable; deja de serlo si algún día se
+>    poda el log a 90 días, así que **la poda no se activa hasta que exista la
+>    proyección**.
+> 2. La auditoría de RLS escribe directamente en las tablas por PostgREST para
+>    probar las políticas. Eso prueba las políticas, no la proyección.
 
 Todas `security invoker` salvo `sync_push`, que necesita `security definer`
 para escribir en las tablas normalizadas dentro de la misma transacción. En ese

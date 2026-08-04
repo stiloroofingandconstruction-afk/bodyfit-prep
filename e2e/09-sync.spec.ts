@@ -136,3 +136,124 @@ test.describe('Sincronizacion: dos dispositivos', () => {
     }
   });
 });
+
+test.describe('Cuenta y sincronizacion', () => {
+  test('sin configurar Supabase la pantalla es honesta y no rompe', async ({ browser }) => {
+    const contexto = await browser.newContext();
+    try {
+      const page = await dispositivo(contexto);
+      await page.goto('/ajustes/cuenta');
+      await expect(page.getByText(/Sin cuenta/i)).toBeVisible();
+
+      // La promesa central, escrita en la pantalla y no solo en el codigo
+      await expect(page.getByText(/Todo funciona igual/i)).toBeVisible();
+
+      // Pedir el enlace sin Supabase configurado falla con un mensaje, no con
+      // una pantalla en blanco
+      await page.getByRole('textbox').first().fill('qa@ejemplo.com');
+      await page.getByRole('button', { name: /Enviar enlace/i }).click();
+      await expect(page.getByText(/no configurado/i)).toBeVisible();
+
+      // Y la aplicacion sigue entera
+      await page.goto('/nutricion');
+      await expect(page.getByRole('navigation')).toBeVisible();
+    } finally {
+      await contexto.close();
+    }
+  });
+
+  test('un correo invalido no envia nada', async ({ browser }) => {
+    const contexto = await browser.newContext();
+    try {
+      const page = await dispositivo(contexto);
+      await page.goto('/ajustes/cuenta');
+      await page.getByRole('textbox').first().fill('esto-no-es-un-correo');
+      await page.getByRole('button', { name: /Enviar enlace/i }).click();
+      await expect(page.getByText(/correo valido/i)).toBeVisible();
+    } finally {
+      await contexto.close();
+    }
+  });
+
+  test('la pantalla de cuenta no filtra el correo completo', async ({ browser }) => {
+    /*
+     * `maskEmail` recorta el usuario a tres letras. Importa porque esta
+     * pantalla acaba en capturas de pantalla que la gente manda para pedir
+     * ayuda, y una direccion completa es un dato personal que no hace falta
+     * para reconocer la propia cuenta.
+     */
+    const contexto = await browser.newContext();
+    try {
+      const page = await dispositivo(contexto);
+      await page.evaluate(() => {
+        localStorage.setItem(
+          'bodyfit:v1:sync:session',
+          JSON.stringify({
+            userId: '00000000-0000-4000-8000-000000000001',
+            email: 'gustavo.completo@ejemplo.com',
+            accessToken: 'x',
+            refreshToken: 'y',
+            expiresAt: Date.now() + 3600_000,
+          }),
+        );
+      });
+      await page.goto('/ajustes/cuenta');
+      // Esperar a que hidrate: si no, lo que se lee es la pantalla de arranque
+      await expect(page.getByText(/Cuenta y sincronizacion/i).first()).toBeVisible();
+      const texto = await page.locator('body').innerText();
+
+      expect(texto, 'no debe verse la direccion completa').not.toContain(
+        'gustavo.completo@ejemplo.com',
+      );
+      expect(texto).toContain('gus***@ejemplo.com');
+      expect(texto, 'no debe verse ningun token').not.toContain('accessToken');
+    } finally {
+      await contexto.close();
+    }
+  });
+});
+
+test.describe('Fotos sincronizadas', () => {
+  test('una foto sin binario local se explica, no se queda cargando', async ({ browser }) => {
+    /*
+     * El caso real: la sincronizacion lleva los METADATOS de las fotos al
+     * segundo dispositivo, pero el binario se queda donde se tomo. Antes de
+     * esto, la ficha mostraba un esqueleto pulsando para siempre y quien miraba
+     * creia que la aplicacion estaba colgada.
+     */
+    const contexto = await browser.newContext();
+    try {
+      const page = await dispositivo(contexto);
+
+      await page.evaluate(() => {
+        const now = new Date().toISOString();
+        localStorage.setItem(
+          'bodyfit:v1:photos',
+          JSON.stringify({
+            state: {
+              photos: [
+                {
+                  id: 'foto-de-otro-dispositivo',
+                  createdAt: now,
+                  updatedAt: now,
+                  date: now.slice(0, 10),
+                  angle: 'frontal',
+                  // Apunta a un blob que solo existe en el dispositivo original
+                  blobId: 'blob-que-no-esta-aqui',
+                  uploadState: 'local-only',
+                },
+              ],
+            },
+            version: 1,
+          }),
+        );
+      });
+      await page.reload();
+      await page.goto('/fotos');
+
+      await expect(page.getByText(/Solo en el dispositivo original/i)).toBeVisible();
+    } finally {
+      await contexto.close();
+    }
+  });
+});

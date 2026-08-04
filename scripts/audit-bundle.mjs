@@ -88,6 +88,50 @@ for (const [label, needle] of PROHIBIDO_EN_ARRANQUE) {
   check(`${label} no viaja en el arranque`, !entryText.includes(needle));
 }
 
+/* ═════════════════════════════════ la sincronizacion no arranca sola ══ */
+/*
+ * Produccion no puede inicializar sincronizacion.
+ *
+ * El motor, la cola y el adaptador de Supabase viajan diferidos, y el flag va
+ * en `disabled`. Si alguien anade un import estatico desde codigo que se carga
+ * siempre —el Layout, un store, la barra de pestanas— la sincronizacion pasaria
+ * a formar parte del arranque de todo el mundo sin que nadie lo decidiera.
+ */
+for (const [label, needle] of [
+  ['el motor de sincronizacion', 'bodyfit-sync'],
+  ['las llamadas al servidor', 'sync_push'],
+  /*
+   * `dead-letter` y no `outbox`: `outbox` es tambien el nombre de una propiedad
+   * que lee el indicador de estado, que si vive en el arranque. El marcador
+   * tiene que ser exclusivo del modulo, no de su vocabulario.
+   */
+  ['la maquina de estados de la cola', 'dead-letter'],
+]) {
+  check(`${label} no viaja en el arranque`, !entryText.includes(needle));
+}
+
+/*
+ * Y ninguna credencial, ni siquiera la publica.
+ *
+ * La clave anon esta pensada para viajar en el navegador y lo que protege los
+ * datos es RLS. Pero en el bundle de PRODUCCION no debe estar ninguna, porque
+ * produccion no habla con Supabase: si aparece, alguien puso las variables de
+ * staging en el entorno equivocado.
+ */
+const secretos = [
+  ['una URL de Supabase', /https:\/\/[a-z0-9]{20}\.supabase\.co/],
+  ['una clave publishable', /sb_publishable_[A-Za-z0-9_-]{10,}/],
+  ['una clave de servicio', /service_role|sb_secret_/],
+];
+const todoElBundle = files
+  .filter((f) => f.endsWith('.js'))
+  .map((f) => readFileSync(resolve(ASSETS, f), 'utf8'))
+  .join('\n');
+
+for (const [label, pattern] of secretos) {
+  check(`no viaja ${label} en ningun chunk`, !pattern.test(todoElBundle));
+}
+
 /* El espanol si viaja: `t()` cae a el cuando falta una clave en otro idioma. */
 check(
   'el diccionario espanol si esta disponible desde el primer pintado',

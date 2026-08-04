@@ -574,6 +574,7 @@ export default function SettingsPage() {
                 { to: '/ajustes/videos', label: t('set.toolVideos'), detail: t('set.toolVideosDesc'), Icon: Film },
                 { to: '/ajustes/diagnostico', label: t('set.toolDiagnostics'), detail: t('set.toolDiagnosticsDesc'), Icon: Stethoscope },
                 { to: '/ajustes/diagnostico/sync', label: 'Sincronizacion', detail: 'Cola, reloj y cursor. Desactivada en produccion.', Icon: RefreshCw },
+                { to: '/ajustes/cuenta', label: 'Cuenta y sincronizacion', detail: 'Entrar con correo y usar dos dispositivos.', Icon: ShieldCheck },
               ].map(({ to, label, detail, Icon }) => (
                 <Link
                   key={to}

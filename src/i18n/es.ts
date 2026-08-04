@@ -549,6 +549,7 @@ export const es = {
   'photos.needTwo': 'Necesitas dos fotos',
   'photos.needTwoDesc': 'Solo hay {n} foto de {angle}. Anade otra para comparar.',
   'photos.addToday': 'Anadir foto de hoy',
+  'photos.onlyOnOriginalDevice': 'Solo en el dispositivo original',
   'photos.before': 'Antes',
   'photos.after': 'Despues',
   'photos.all': 'Todos',
