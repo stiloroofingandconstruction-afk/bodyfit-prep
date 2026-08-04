@@ -14,24 +14,19 @@
 -- Reversion: 0002_domain_tables.down.sql
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- Columnas comunes a toda entidad sincronizable.
+-- Columnas comunes a toda entidad sincronizable, repetidas en cada tabla:
+--
+--   id, user_id, created_at, updated_at, deleted_at,
+--   hlc, fields_hlc, delete_hlc, device_id, schema_version
+--
+-- Se escriben a mano en cada `create table` en vez de generarlas. Postgres no
+-- tiene herencia de columnas util aqui, y una funcion que devuelve el texto de
+-- las columnas solo anade una indireccion que hay que leer para saber que tiene
+-- una tabla.
+--
 -- `fields_hlc` y `delete_hlc` son relojes separados a proposito: borrar y
--- editar son decisiones ortogonales y hacerlas competir por un solo reloj hace
+-- editar son decisiones ortogonales, y hacerlas competir por un solo reloj hace
 -- que la que llega antes anule a la otra. Ver §9 del plan de implementacion.
-create or replace function sync_entity_columns() returns text language sql immutable as $$
-  select $sql$
-    id             text primary key,
-    user_id        uuid not null references auth.users(id) on delete cascade,
-    created_at     timestamptz not null default now(),
-    updated_at     timestamptz not null default now(),
-    deleted_at     timestamptz,
-    hlc            text not null,
-    fields_hlc     text not null default '',
-    delete_hlc     text not null default '',
-    device_id      text not null,
-    schema_version int  not null
-  $sql$;
-$$;
 
 -- ───────────────────────────────────────────────────────────── identidad ──
 
@@ -429,5 +424,3 @@ begin
     );
   end loop;
 end $$;
-
-drop function sync_entity_columns();

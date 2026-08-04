@@ -111,13 +111,19 @@ for (const [label, needle] of [
 }
 
 /*
- * Y ninguna credencial, ni siquiera la publica.
+ * Credenciales: la regla depende de QUE build se esta auditando.
  *
- * La clave anon esta pensada para viajar en el navegador y lo que protege los
- * datos es RLS. Pero en el bundle de PRODUCCION no debe estar ninguna, porque
- * produccion no habla con Supabase: si aparece, alguien puso las variables de
- * staging en el entorno equivocado.
+ * Un build de staging DEBE llevar la URL y la clave publishable: sin ellas no
+ * habla con Supabase. Uno de produccion NO puede llevar ninguna, porque hoy
+ * produccion no sincroniza; si aparecen, alguien puso las variables de staging
+ * en el entorno equivocado.
+ *
+ * Auditar las dos cosas con la misma regla obligaria a elegir cual de los dos
+ * builds queda sin comprobar. Se detecta cual es y se comprueba el invariante
+ * que le toca.
  */
+const esStaging = existsSync(resolve(process.cwd(), '.env.local'));
+
 const secretos = [
   ['una URL de Supabase', /https:\/\/[a-z0-9]{20}\.supabase\.co/],
   ['una clave publishable', /sb_publishable_[A-Za-z0-9_-]{10,}/],
@@ -128,8 +134,26 @@ const todoElBundle = files
   .map((f) => readFileSync(resolve(ASSETS, f), 'utf8'))
   .join('\n');
 
-for (const [label, pattern] of secretos) {
-  check(`no viaja ${label} en ningun chunk`, !pattern.test(todoElBundle));
+/* Una clave de servicio no puede viajar NUNCA, en ningun build. */
+check(
+  'no viaja una clave de servicio en ningun chunk',
+  !/service_role|sb_secret_/.test(todoElBundle),
+);
+
+if (esStaging) {
+  console.log('\n  (build de staging: .env.local presente)');
+  check(
+    'el build de staging SI lleva la URL de Supabase',
+    /https:\/\/[a-z0-9]{20}\.supabase\.co/.test(todoElBundle),
+  );
+  check(
+    'el build de staging SI lleva la clave publishable',
+    /sb_publishable_[A-Za-z0-9_-]{10,}/.test(todoElBundle),
+  );
+} else {
+  for (const [label, pattern] of secretos) {
+    check(`no viaja ${label} en ningun chunk`, !pattern.test(todoElBundle));
+  }
 }
 
 /* El espanol si viaja: `t()` cae a el cuando falta una clave en otro idioma. */

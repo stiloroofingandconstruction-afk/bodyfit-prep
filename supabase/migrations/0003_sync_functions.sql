@@ -4,15 +4,24 @@
 -- Reversion: 0003_sync_functions.down.sql
 -- ═══════════════════════════════════════════════════════════════════════════
 
+-- `set search_path` en TODAS las funciones, no solo en las `security definer`.
+--
+-- Sin el, una funcion resuelve los nombres con el search_path de quien llama:
+-- alguien con permiso para crear esquemas puede colocar una tabla con el mismo
+-- nombre por delante y hacer que la funcion lea o escriba ahi. El linter de
+-- Supabase lo marca, y marcarlo solo en las definer deja la mitad del problema.
+
 -- Version de esquema que entiende este servidor.
 -- Regla: el servidor entiende N y N-1 SIEMPRE. Nunca se rompe la compatibilidad
 -- hacia atras en un solo despliegue, porque el cliente viejo y el nuevo
 -- conviven durante semanas.
-create or replace function sync_server_schema() returns int language sql immutable as $$
+create or replace function sync_server_schema() returns int
+language sql immutable set search_path = '' as $$
   select 3;
 $$;
 
-create or replace function sync_min_schema() returns int language sql immutable as $$
+create or replace function sync_min_schema() returns int
+language sql immutable set search_path = '' as $$
   select 2;
 $$;
 
@@ -20,7 +29,7 @@ $$;
 
 create or replace function sync_health()
 returns table (reachable boolean, server_schema int, min_schema int)
-language sql stable security invoker as $$
+language sql stable security invoker set search_path = public as $$
   select true, sync_server_schema(), sync_min_schema();
 $$;
 
@@ -32,7 +41,7 @@ create or replace function register_device(
   p_platform       text,
   p_client_version text
 ) returns void
-language plpgsql security invoker as $$
+language plpgsql security invoker set search_path = public as $$
 begin
   if auth.uid() is null then
     raise exception 'sin sesion';
@@ -154,7 +163,7 @@ returns table (
   operation_type text, payload jsonb, hlc text, created_at timestamptz,
   schema_version int, client_version text, checksum text
 )
-language sql stable security invoker as $$
+language sql stable security invoker set search_path = public as $$
   select o.operation_id, o.seq, o.device_id, o.collection, o.entity_id,
          o.operation_type::text, o.payload, o.hlc, o.created_at,
          o.schema_version, o.client_version, o.checksum
@@ -169,7 +178,7 @@ $$;
 
 create or replace function sync_set_cursor(p_device_id text, p_cursor bigint)
 returns void
-language plpgsql security invoker as $$
+language plpgsql security invoker set search_path = public as $$
 begin
   if auth.uid() is null then
     raise exception 'sin sesion';
@@ -185,7 +194,7 @@ end $$;
 
 create or replace function sync_get_cursor(p_device_id text)
 returns bigint
-language sql stable security invoker as $$
+language sql stable security invoker set search_path = public as $$
   select coalesce(
     (select c.cursor from sync_cursors c
       where c.user_id = auth.uid() and c.device_id = p_device_id),
@@ -202,6 +211,6 @@ $$;
 
 create or replace function sync_bootstrap_seq()
 returns bigint
-language sql stable security invoker as $$
+language sql stable security invoker set search_path = public as $$
   select coalesce((select last_seq from sync_user_state where user_id = auth.uid()), 0);
 $$;

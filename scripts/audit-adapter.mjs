@@ -242,21 +242,29 @@ line('pullOperations');
 {
   const p1 = await rpc('sync_pull', { p_cursor: 0, p_limit: 100 }, a.token);
   check('devuelve una pagina', p1.ok && Array.isArray(p1.json) && p1.json.length > 0,
-    `${p1.json?.length} operaciones`);
+    p1.ok ? `${p1.json?.length} operaciones` : p1.text.slice(0, 120));
 
-  const seqs = (p1.json ?? []).map((r) => Number(r.seq));
+  const seqs = (Array.isArray(p1.json) ? p1.json : []).map((r) => Number(r.seq));
   const ordenadas = seqs.every((s, i) => i === 0 || s > seqs[i - 1]);
   check('vienen ordenadas por seq y sin repetir', ordenadas);
 
   /* Paginacion: la segunda pagina continua donde acabo la primera */
   const ultimo = seqs[seqs.length - 1];
   const p2 = await rpc('sync_pull', { p_cursor: ultimo, p_limit: 100 }, a.token);
-  const sinSolape = (p2.json ?? []).every((r) => Number(r.seq) > ultimo);
-  check('la siguiente pagina no repite nada', sinSolape);
+  /*
+   * `Array.isArray` y no `?? []`: cuando PostgREST devuelve un error, `json` es
+   * un objeto con `code` y `message`, no un array. Sin esta guarda la auditoria
+   * moria con un TypeError y ocultaba el error de verdad, que era el de la
+   * llamada anterior.
+   */
+  const filas2 = Array.isArray(p2.json) ? p2.json : [];
+  check('la siguiente pagina no repite nada', p2.ok && filas2.every((r) => Number(r.seq) > ultimo),
+    p2.ok ? '' : p2.text.slice(0, 120));
 
   /* Cursor por delante de todo */
   const vacio = await rpc('sync_pull', { p_cursor: 999999999, p_limit: 100 }, a.token);
-  check('un cursor por delante devuelve vacio, no error', vacio.ok && vacio.json?.length === 0);
+  check('un cursor por delante devuelve vacio, no error',
+    vacio.ok && Array.isArray(vacio.json) && vacio.json.length === 0);
 
   /* Cursor negativo */
   const negativo = await rpc('sync_pull', { p_cursor: -5, p_limit: 10 }, a.token);
@@ -264,13 +272,13 @@ line('pullOperations');
 
   /* Aislamiento entre usuarios */
   const deB = await rpc('sync_pull', { p_cursor: 0, p_limit: 500 }, b.token);
-  const contaminado = (deB.json ?? []).some((r) => r.device_id === DEVICE);
+  const contaminado = (Array.isArray(deB.json) ? deB.json : []).some((r) => r.device_id === DEVICE);
   check('B no recibe las operaciones de A', !contaminado, contaminado ? 'FUGA ENTRE USUARIOS' : '');
 
   /* Limite superior */
   const grande = await rpc('sync_pull', { p_cursor: 0, p_limit: 5000 }, a.token);
-  check('el limite se recorta a 500', grande.ok && (grande.json?.length ?? 0) <= 500,
-    `${grande.json?.length}`);
+  const filasG = Array.isArray(grande.json) ? grande.json : [];
+  check('el limite se recorta a 500', grande.ok && filasG.length <= 500, `${filasG.length}`);
 }
 
 /* ─────────────────────────────────────────────── token caducado y refresco ── */
