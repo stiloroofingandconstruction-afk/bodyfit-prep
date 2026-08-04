@@ -113,9 +113,50 @@ export function operationChecksum(draft: OperationDraft): string {
   return checksum(draft);
 }
 
-/** Sella una operacion. Pura: el `operationId` y el `hlc` los trae quien llama. */
+/**
+ * Forma canonica de una marca de tiempo.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * POR QUE ESTO EXISTE, Y POR QUE ES CRITICO
+ *
+ * El cliente emite `2026-07-01T07:00:02.500Z`. Postgres lo guarda como
+ * `timestamptz` y PostgREST lo devuelve como `2026-07-01T07:00:02.5+00:00`:
+ * mismo instante, OTRA CADENA. El checksum se calcula sobre el texto, asi que
+ * al reconstruir la operacion en el dispositivo receptor no coincidia y
+ * `validateOperation` la descartaba.
+ *
+ * El resultado era el peor fallo posible de todos los imaginables aqui: la
+ * sincronizacion parecia sana —sin errores, el cursor avanzando, la cola
+ * vaciandose— y NO LLEGABA NADA al otro dispositivo. Silencioso y total.
+ *
+ * Lo encontro la auditoria de dos dispositivos contra el Supabase real: 150
+ * operaciones en el servidor, cursores cuadrados, y 74 de 130 entidades.
+ *
+ * Normalizando aqui, el ida y vuelta por la base de datos deja la operacion
+ * byte a byte como se emitio.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+export function canonicalTimestamp(raw: string): string {
+  const ms = Date.parse(raw);
+  // Una fecha ilegible se deja tal cual: ya la rechazara `validateOperation`,
+  // que dira que la fecha no es valida en vez de que el checksum no cuadra.
+  return Number.isNaN(ms) ? raw : new Date(ms).toISOString();
+}
+
+/**
+ * Sella una operacion. Pura: el `operationId` y el `hlc` los trae quien llama.
+ *
+ * Normaliza `createdAt` antes de firmar. Es el unico punto donde se construye
+ * una operacion —al emitirla y al reconstruirla de lo que devuelve el
+ * servidor— asi que normalizar aqui garantiza que las dos den el mismo
+ * checksum.
+ */
 export function createOperation(draft: OperationDraft): SyncOperation {
-  return { ...draft, checksum: operationChecksum(draft) };
+  const canonical: OperationDraft = {
+    ...draft,
+    createdAt: canonicalTimestamp(draft.createdAt),
+  };
+  return { ...canonical, checksum: operationChecksum(canonical) };
 }
 
 export function verifyChecksum(op: SyncOperation): boolean {

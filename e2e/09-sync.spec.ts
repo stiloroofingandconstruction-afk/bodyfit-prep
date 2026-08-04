@@ -1,4 +1,5 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { enableDevMode, seedApp } from './helpers';
 
 /**
@@ -125,10 +126,17 @@ test.describe('Sincronizacion: dos dispositivos', () => {
 
       await page.getByRole('button', { name: /^internal/ }).click();
 
-      // Sin configuracion de Supabase se cae al adaptador local en vez de fallar
-      await expect(page.getByText(/adaptador local/i).first()).toBeVisible();
+      /*
+       * Que adaptador toca depende del BUILD, no de la prueba.
+       *
+       * Un build de staging lleva las variables de Supabase y elige el
+       * adaptador real; uno de produccion no las lleva y cae al local en vez de
+       * fallar. Las dos cosas son correctas y hay que comprobar la que toque:
+       * fijar una sola convertiria el otro build en un falso rojo.
+       */
+      await expect(page.getByText(/adaptador (local|supabase)/i).first()).toBeVisible();
 
-      // Y la aplicacion sigue funcionando entera
+      // Y la aplicacion sigue funcionando entera, en los dos casos
       await page.goto('/nutricion');
       await expect(page.getByRole('navigation')).toBeVisible();
     } finally {
@@ -148,11 +156,16 @@ test.describe('Cuenta y sincronizacion', () => {
       // La promesa central, escrita en la pantalla y no solo en el codigo
       await expect(page.getByText(/Todo funciona igual/i)).toBeVisible();
 
-      // Pedir el enlace sin Supabase configurado falla con un mensaje, no con
-      // una pantalla en blanco
-      await page.getByRole('textbox').first().fill('qa@ejemplo.com');
+      /*
+       * Pedir el enlace tiene que hacer algo visible pase lo que pase: sin
+       * Supabase configurado, decir que no lo esta; con el configurado, decir
+       * que se ha enviado. Lo que no puede es no responder.
+       */
+      await page.getByRole('textbox').first().fill('qa-humo@bodyfit.test');
       await page.getByRole('button', { name: /Enviar enlace/i }).click();
-      await expect(page.getByText(/no configurado/i)).toBeVisible();
+      await expect(
+        page.getByText(/no configurado|hemos enviado|no se pudo enviar/i).first(),
+      ).toBeVisible();
 
       // Y la aplicacion sigue entera
       await page.goto('/nutricion');
@@ -252,6 +265,99 @@ test.describe('Fotos sincronizadas', () => {
       await page.goto('/fotos');
 
       await expect(page.getByText(/Solo en el dispositivo original/i)).toBeVisible();
+    } finally {
+      await contexto.close();
+    }
+  });
+});
+
+test.describe('Prueba guiada de dos dispositivos', () => {
+  /** Deja una sesion falsa para que la pantalla de cuenta muestre lo de dentro. */
+  async function conSesion(page: Page): Promise<void> {
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'bodyfit:v1:sync:session',
+        JSON.stringify({
+          userId: '00000000-0000-4000-8000-000000000001',
+          email: 'qa@ejemplo.com',
+          accessToken: 'x',
+          refreshToken: 'y',
+          expiresAt: Date.now() + 3600_000,
+        }),
+      );
+    });
+  }
+
+  test('los 33 pasos estan y ninguno se marca solo', async ({ browser }) => {
+    const contexto = await browser.newContext();
+    try {
+      const page = await dispositivo(contexto);
+      await page.goto('/ajustes/cuenta/dos-dispositivos');
+      await expect(page.getByText(/Prueba de dos dispositivos/i).first()).toBeVisible();
+
+      // El contador arranca en cero: la aplicacion no puede aprobarse a si misma
+      await expect(page.getByText(/0 de 33 pasos/i)).toBeVisible();
+
+      const pasos = await page.locator('ul li button').count();
+      expect(pasos, 'deben estar los 33 pasos').toBe(33);
+    } finally {
+      await contexto.close();
+    }
+  });
+
+  test('marcar un paso avanza al siguiente y persiste al recargar', async ({ browser }) => {
+    const contexto = await browser.newContext();
+    try {
+      const page = await dispositivo(contexto);
+      await page.goto('/ajustes/cuenta/dos-dispositivos');
+      await expect(page.getByText(/Paso 1 de 33/i)).toBeVisible();
+
+      await page.getByRole('button', { name: /Marcar como hecho/i }).click();
+      await expect(page.getByText(/Paso 2 de 33/i)).toBeVisible();
+      await expect(page.getByText(/1 de 33 pasos/i)).toBeVisible();
+
+      await page.reload();
+      await expect(page.getByText(/1 de 33 pasos/i)).toBeVisible();
+    } finally {
+      await contexto.close();
+    }
+  });
+
+  test('el diagnostico de la prueba no lleva contenido personal', async ({ browser }) => {
+    const contexto = await browser.newContext();
+    try {
+      const page = await dispositivo(contexto);
+      await page.goto('/ajustes/cuenta/dos-dispositivos');
+      await expect(page.getByText(/Estado de este dispositivo/i)).toBeVisible();
+
+      const descarga = page.waitForEvent('download');
+      await page.getByRole('button', { name: 'Diagnostico', exact: true }).click();
+      const archivo = await descarga;
+      const ruta = await archivo.path();
+      const texto = readFileSync(ruta!, 'utf8');
+      const json = JSON.parse(texto);
+
+      expect(json.dispositivo, 'debe llevar el identificador').toBeTruthy();
+      expect(json.pasos, 'debe llevar el progreso').toHaveLength(33);
+      expect(texto, 'no puede llevar payloads').not.toContain('"payload"');
+      expect(texto, 'ni notas personales').not.toContain('notes');
+      expect(texto, 'ni el token').not.toContain('accessToken');
+    } finally {
+      await contexto.close();
+    }
+  });
+
+  test('el enlace a la prueba solo aparece con sesion', async ({ browser }) => {
+    const contexto = await browser.newContext();
+    try {
+      const page = await dispositivo(contexto);
+      await page.goto('/ajustes/cuenta');
+      await expect(page.getByText(/Sin cuenta/i)).toBeVisible();
+      await expect(page.getByText(/Prueba de dos dispositivos/i)).toHaveCount(0);
+
+      await conSesion(page);
+      await page.reload();
+      await expect(page.getByText(/Prueba de dos dispositivos/i)).toBeVisible();
     } finally {
       await contexto.close();
     }

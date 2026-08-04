@@ -24,6 +24,7 @@ import {
 import { adoptLocalData, summarizeLocalData, type AdoptionSummary } from '@/services/sync/adoption';
 import { createBackup } from '@/services/backup';
 import { download } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 import { fmtDateTime } from '@/lib/date';
 import { toast } from '@/store/uiStore';
 
@@ -290,6 +291,26 @@ export default function AccountPage() {
                   {sincronizando ? 'Pausar' : 'Reanudar'}
                 </Button>
               </div>
+            </Card>
+
+            {/*
+              Guion de la prueba fisica. Vive aqui y no en el diagnostico
+              porque es lo que se abre con el movil en la mano, no cuando algo
+              falla.
+            */}
+            <Card>
+              <Link
+                to="/ajustes/cuenta/dos-dispositivos"
+                className="pressable flex items-center justify-between rounded-xl px-1 py-1 text-sm"
+              >
+                <span>
+                  <span className="font-medium">Prueba de dos dispositivos</span>
+                  <span className="block text-xs text-faint">
+                    33 pasos guiados. Nada se marca solo.
+                  </span>
+                </span>
+                <span className="text-faint">›</span>
+              </Link>
             </Card>
 
             <Card>

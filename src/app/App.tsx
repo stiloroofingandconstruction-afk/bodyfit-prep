@@ -39,6 +39,7 @@ const Diagnostics = lazy(() => import('@/features/settings/DiagnosticsPage'));
 const DeviceTest = lazy(() => import('@/features/settings/DeviceTestPage'));
 const SyncDiagnostics = lazy(() => import('@/features/settings/SyncDiagnosticsPage'));
 const Account = lazy(() => import('@/features/settings/AccountPage'));
+const TwoDeviceTest = lazy(() => import('@/features/settings/TwoDeviceTestPage'));
 
 export function App() {
   const hydrated = useHydrated();
@@ -109,6 +110,7 @@ export function App() {
                     seria prometer algo que hoy no se cumple.
                   */}
                   <Route path="/ajustes/cuenta" element={<Account />} />
+                  <Route path="/ajustes/cuenta/dos-dispositivos" element={<TwoDeviceTest />} />
                 </>
               ) : (
                 <Route path="/ajustes/*" element={<Navigate to="/ajustes" replace />} />
