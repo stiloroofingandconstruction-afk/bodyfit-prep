@@ -20,13 +20,13 @@ import {
 } from '@/data/exercises';
 import { LumbarNotice } from './LumbarNotice';
 import { t } from '@/i18n';
-import { bestSet, estimate1RM, isWorkingSet } from '@/domain/training';
+import { bestSet, estimate1RM, isWorkingSet } from '@bodyfit/domain/training';
 import { shortDate } from '@/lib/date';
 import { cx } from '@/lib/utils';
 import { useUnits } from '@/lib/useUnits';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useWorkouts } from '@/store/selectors';
-import type { Exercise } from '@/domain/types';
+import type { Exercise } from '@bodyfit/domain/types';
 
 interface Props {
   exercise: Exercise;

@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 import { persisted, newEntity, softDelete, touch } from './persist';
-import { setLocale, type Locale } from '@/i18n';
+import { loadLocale, setLocale, type Locale } from '@/i18n';
 import { resetDateFormatters } from '@/lib/date';
-import type { WeightUnit, LengthUnit } from '@/domain/units';
-import type { Division } from '@/domain/competition';
-import type { ExerciseMedia } from '@/domain/types';
-import type { Reminder, ReminderKind } from '@/domain/prepTypes';
+import type { WeightUnit, LengthUnit } from '@bodyfit/domain/units';
+import type { Division } from '@bodyfit/domain/competition';
+import type { ExerciseMedia } from '@bodyfit/domain/types';
+import type { Reminder, ReminderKind } from '@bodyfit/domain/prepTypes';
 
 export type Experience = 'principiante' | 'intermedio' | 'avanzado' | 'competidor';
 
@@ -84,10 +84,27 @@ export const useSettingsStore = create<SettingsState>()(
       setUnits: (patch) => set(patch),
 
       setLocaleSetting: (locale) => {
-        setLocale(locale);
-        // Los formateadores de fecha y numero cachean el idioma: hay que tirarlos
-        resetDateFormatters();
-        set({ locale });
+        // El diccionario puede no estar descargado todavia: se pide y, al
+        // llegar, se vuelve a fijar para que la interfaz se repinte traducida.
+        /*
+         * Se espera al diccionario antes de aplicar el idioma.
+         *
+         * El ingles llega por descarga diferida. Si el idioma se fijaba antes,
+         * la interfaz se repintaba con `t()` cayendo al espanol; y cuando el
+         * diccionario llegaba, `locale` ya valia lo mismo, asi que el segundo
+         * `set` no cambiaba nada y la pantalla se quedaba en espanol para
+         * siempre. Aplicarlo una sola vez da un unico repintado, ya traducido.
+         *
+         * Si la descarga falla se aplica igual: `t()` cae al espanol, peor que
+         * traducir pero mucho mejor que ignorar lo que pidio el usuario.
+         */
+        const apply = () => {
+          setLocale(locale);
+          // Los formateadores de fecha y numero cachean el idioma: hay que tirarlos
+          resetDateFormatters();
+          set({ locale });
+        };
+        void loadLocale(locale).then(apply, apply);
       },
 
       update: (patch) => set(patch),
@@ -134,6 +151,23 @@ export const useSettingsStore = create<SettingsState>()(
         if (state?.locale) {
           setLocale(state.locale);
           resetDateFormatters();
+          // Si la sesion anterior estaba en ingles, se recupera el diccionario
+          /*
+           * Solo si hay diccionario que traer.
+           *
+           * Programarlo siempre dejaba una escritura pendiente en el arranque
+           * que volvia a guardar `settings` aunque nada hubiera cambiado. Tras
+           * un borrado de datos la aplicacion recarga, y esa escritura
+           * resucitaba la coleccion: el almacenamiento no quedaba vacio.
+           */
+          const pending = state.locale;
+          if (pending !== 'es') {
+            void loadLocale(pending).then(() => {
+              setLocale(pending);
+              resetDateFormatters();
+              useSettingsStore.setState({ locale: pending });
+            });
+          }
         }
       },
     },

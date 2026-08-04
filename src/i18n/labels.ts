@@ -11,21 +11,21 @@
  * catalogos a pantallas que no los necesitan.
  */
 import { getLocale } from './index';
-import { ACTIVITY_LABEL, GOAL_LABEL } from '@/domain/energy';
-import { ANGLE_LABEL, CARDIO_LABEL, DAY_TYPE_LABEL, REMINDER_LABEL } from '@/domain/prepTypes';
-import { PROJECTION_LABEL } from '@/domain/competition';
-import { ACTION_LABEL } from '@/domain/recommendations';
-import { DIRECTION_LABEL } from '@/domain/weeklySummary';
-import type { ActivityLevel, Goal } from '@/domain/types';
+import { ACTIVITY_LABEL, GOAL_LABEL } from '@bodyfit/domain/energy';
+import { ANGLE_LABEL, CARDIO_LABEL, DAY_TYPE_LABEL, REMINDER_LABEL } from '@bodyfit/domain/prepTypes';
+import { PROJECTION_LABEL } from '@bodyfit/domain/competition';
+import { ACTION_LABEL } from '@bodyfit/domain/recommendations';
+import { DIRECTION_LABEL } from '@bodyfit/domain/weeklySummary';
+import type { ActivityLevel, Goal } from '@bodyfit/domain/types';
 import type {
   CardioType,
   NutritionDayType,
   PhotoAngle,
   RecommendationAction,
   ReminderKind,
-} from '@/domain/prepTypes';
-import type { Projection } from '@/domain/competition';
-import type { Direction } from '@/domain/weeklySummary';
+} from '@bodyfit/domain/prepTypes';
+import type { Projection } from '@bodyfit/domain/competition';
+import type { Direction } from '@bodyfit/domain/weeklySummary';
 
 const EN_ACTIVITY: Record<ActivityLevel, string> = {
   sedentario: 'Sedentary — desk job, no exercise',

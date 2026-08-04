@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persisted } from './persist';
 import { profileMigrations } from './migrations';
-import type { Profile } from '@/domain/types';
+import type { Profile } from '@bodyfit/domain/types';
 
 export const DEFAULT_PROFILE: Profile = {
   name: '',

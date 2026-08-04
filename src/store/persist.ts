@@ -2,23 +2,34 @@ import { createJSONStorage, persist, type PersistOptions } from 'zustand/middlew
 import type { StateCreator } from 'zustand';
 import { zustandStorage } from '@/services/storage';
 import { runMigrations, type Migration } from './migrations';
+import { storageKey, type CollectionKey } from '@bodyfit/domain/collections';
+import { versionOf } from '@bodyfit/domain/versioning';
 import { nowISO, uid } from '@/lib/utils';
-import type { Entity } from '@/domain/types';
+import type { Entity } from '@bodyfit/domain/types';
 
 /**
- * Envoltorio unico de persistencia. Todos los stores pasan por aqui, asi que
- * cambiar de backend (localStorage -> Supabase) es cambiar `zustandStorage`.
+ * Envoltorio unico de persistencia.
+ *
+ * Todos los stores pasan por aqui, asi que cambiar de backend
+ * (localStorage -> Supabase) es cambiar `zustandStorage`.
+ *
+ * El nombre ya no es una cadena libre: es una `CollectionKey` del registro
+ * central. Un store con una coleccion sin registrar no compila, que es
+ * exactamente el momento en el que hay que enterarse.
+ *
+ * La version tampoco se decide aqui. La declara el gestor de versiones, que es
+ * el unico que sabe si esa coleccion tiene migraciones y por cual va.
  */
 export function persisted<T>(
-  name: string,
+  collection: CollectionKey,
   initializer: StateCreator<T>,
   options: Partial<PersistOptions<T, unknown>> & { migrations?: Record<number, Migration> } = {},
 ) {
   const { migrations, ...rest } = options;
 
   return persist(initializer, {
-    name,
-    version: migrations ? STORE_VERSION : 1,
+    name: collection,
+    version: versionOf(collection),
     storage: createJSONStorage(() => zustandStorage),
     /*
      * Las migraciones se conectan aqui y no en cada store para que ninguna se
@@ -35,13 +46,7 @@ export function persisted<T>(
   } as PersistOptions<T, unknown>);
 }
 
-/**
- * Version actual de cualquier coleccion con migraciones.
- *
- * Sube de uno en uno y se anade la funcion correspondiente en `migrations.ts`.
- * Los stores sin migraciones se quedan en 1: no hay nada que transformar.
- */
-export const STORE_VERSION = 2;
+export { storageKey };
 
 /** Crea una entidad nueva con los campos de sincronizacion ya rellenos. */
 export function newEntity<T extends object>(data: T): T & Entity {

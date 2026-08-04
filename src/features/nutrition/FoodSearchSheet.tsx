@@ -6,13 +6,13 @@ import { NumberPad } from '@/components/ui/NumberPad';
 import { Chip, EmptyState } from '@/components/ui/Misc';
 import { foodCategoryLabel } from '@/i18n/catalogLabels';
 import { searchFoods } from '@/data/foodSearch';
-import { macrosFor } from '@/domain/macros';
+import { macrosFor } from '@bodyfit/domain/macros';
 import { cx, fmtNum } from '@/lib/utils';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { useCatalog, useFoodLookup } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
 import { t } from '@/i18n';
-import type { Food, MealSlot } from '@/domain/types';
+import type { Food, MealSlot } from '@bodyfit/domain/types';
 
 interface Props {
   open: boolean;

@@ -4,7 +4,7 @@
  * Contenido original redactado para esta aplicacion. Sin afirmaciones medicas
  * ni absolutas; las contraindicaciones remiten a un profesional.
  */
-import type { ExerciseTechnique } from '@/domain/types';
+import type { ExerciseTechnique } from '@bodyfit/domain/types';
 
 type T = ExerciseTechnique;
 

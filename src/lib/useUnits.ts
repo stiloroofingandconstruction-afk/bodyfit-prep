@@ -17,7 +17,7 @@ import {
   lbToKg,
   type LengthUnit,
   type WeightUnit,
-} from '@/domain/units';
+} from '@bodyfit/domain/units';
 import { useSettingsStore } from '@/store/settingsStore';
 
 const KM_PER_MI = 1.609344;

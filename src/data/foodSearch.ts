@@ -3,8 +3,7 @@
  * El indice se construye una sola vez; cada consulta recorre un array plano
  * de strings ya normalizados, asi que responde en decimas de milisegundo.
  */
-import type { Food } from '@/domain/types';
-import { FOODS } from './foods';
+import type { Food } from '@bodyfit/domain/types';
 
 export function normalize(text: string): string {
   return text
@@ -35,7 +34,15 @@ interface IndexEntry {
 }
 
 let INDEX: IndexEntry[] | null = null;
-let INDEX_SOURCE: Food[] = FOODS;
+/*
+ * Arranca vacio, no con el catalogo entero.
+ *
+ * Importar `FOODS` aqui como valor por defecto metia los 151 alimentos en el
+ * chunk de arranque por un camino que no se veia: los selectores importan
+ * `setCatalog` de este modulo, asi que todo lo que este modulo importe viaja
+ * con ellos. Quien busca alimentos llama antes a `setCatalog`.
+ */
+let INDEX_SOURCE: Food[] = [];
 
 function buildIndex(foods: Food[]): IndexEntry[] {
   return foods.map((food, i) => {

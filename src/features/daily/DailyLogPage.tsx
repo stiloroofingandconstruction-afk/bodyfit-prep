@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input, Label, Stepper } from '@/components/ui/Field';
 import { Stat } from '@/components/ui/Misc';
 import { LineChart } from '@/components/ui/Chart';
-import { PROJECTION_TONE } from '@/domain/competition';
+import { PROJECTION_TONE } from '@bodyfit/domain/competition';
 import { projectionLabel } from '@/i18n/labels';
 import { addDays, friendlyDate, today } from '@/lib/date';
 import { cx } from '@/lib/utils';

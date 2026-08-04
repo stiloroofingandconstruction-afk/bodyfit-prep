@@ -9,18 +9,18 @@ import {
   projectToShow,
   weightTrend,
   type CompetitionPrep,
-} from '../src/domain/competition';
-import { recommend } from '../src/domain/recommendations';
-import { compareMetrics } from '../src/domain/weeklySummary';
-import { cmToIn, inToCm, kgToLb, lbToKg, storeWeight, displayWeight } from '../src/domain/units';
+} from '@bodyfit/domain/competition';
+import { recommend } from '@bodyfit/domain/recommendations';
+import { compareMetrics } from '@bodyfit/domain/weeklySummary';
+import { cmToIn, inToCm, kgToLb, lbToKg, storeWeight, displayWeight } from '@bodyfit/domain/units';
 import { runMigrations, checkinMigrations, profileMigrations } from '../src/store/migrations';
-import { planDay, suggestComplement } from '../src/domain/autoMeal';
+import { planDay, suggestComplement } from '@bodyfit/domain/autoMeal';
 import { EXERCISES, EXERCISE_BY_ID, lumbarAlternativesFor, searchExercises } from '../src/data/exercises';
 import { FOODS } from '../src/data/foods';
 import { posesFor, POSES } from '../src/data/poses';
 import { coachReport, toCSV, weightCSV } from '../src/services/exports';
 import { makeUnits } from '../src/lib/useUnits';
-import { DAY_TYPE_FACTOR } from '../src/domain/prepTypes';
+import { DAY_TYPE_FACTOR } from '@bodyfit/domain/prepTypes';
 
 export function runCompetitionTests(
   check: (name: string, ok: boolean, detail?: string) => void,

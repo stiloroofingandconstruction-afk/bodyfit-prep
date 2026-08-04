@@ -3,11 +3,10 @@
  * para que ningun componente recalcule macros o indices en cada render.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { FOODS } from '@/data/foods';
+import { builtinRoutines, foodCatalog } from '@/data/registry';
 import { setCatalog } from '@/data/foodSearch';
-import { BUILTIN_ROUTINES } from '@/data/routines';
-import { computeTargets } from '@/domain/energy';
-import { remainingMacros, sumMacros } from '@/domain/macros';
+import { computeTargets } from '@bodyfit/domain/energy';
+import { remainingMacros, sumMacros } from '@bodyfit/domain/macros';
 import {
   countdown,
   projectToShow,
@@ -17,7 +16,7 @@ import {
   type DailyReadiness,
   type Projection,
   type WeightTrend,
-} from '@/domain/competition';
+} from '@bodyfit/domain/competition';
 import { addDays, today } from '@/lib/date';
 import { alive } from './persist';
 import { useActivityStore } from './activityStore';
@@ -29,9 +28,9 @@ import { usePrepStore } from './prepStore';
 import { useProfileStore } from './profileStore';
 import { useSettingsStore } from './settingsStore';
 import { useTrainingStore } from './trainingStore';
-import type { Food, FoodEntry, MacroTarget, Macros } from '@/domain/types';
-import { DAY_TYPE_FACTOR } from '@/domain/prepTypes';
-import type { ProgressPhoto } from '@/domain/prepTypes';
+import type { Food, FoodEntry, MacroTarget, Macros } from '@bodyfit/domain/types';
+import { DAY_TYPE_FACTOR } from '@bodyfit/domain/prepTypes';
+import type { ProgressPhoto } from '@bodyfit/domain/prepTypes';
 
 /* --------------------------------------------------------------- catalogo */
 
@@ -42,8 +41,14 @@ export function useCatalog(): Food[] {
   const customFoods = useNutritionStore((s) => s.customFoods);
 
   return useMemo(() => {
+    /*
+     * El catalogo base llega por carga diferida: hasta que una pantalla de
+     * nutricion lo pida, aqui solo estan los alimentos propios del usuario.
+     * Es correcto: sin esas pantallas abiertas, nadie busca alimentos.
+     */
+    const base = foodCatalog()?.all ?? [];
     const customs = alive(customFoods).map((c) => ({ ...c, custom: true }) as Food);
-    const catalog = [...FOODS, ...customs];
+    const catalog = [...base, ...customs];
     // El indice de busqueda solo se reconstruye si cambio el conjunto
     const sig = `${catalog.length}:${customs.map((c) => c.id).join(',')}`;
     if (sig !== lastCatalogSignature) {
@@ -147,7 +152,7 @@ export function useDayNutrition(date: string): DayNutrition {
 
 export function useRoutines() {
   const custom = useTrainingStore((s) => s.routines);
-  return useMemo(() => [...BUILTIN_ROUTINES, ...alive(custom)], [custom]);
+  return useMemo(() => [...builtinRoutines(), ...alive(custom)], [custom]);
 }
 
 export function useWorkouts() {

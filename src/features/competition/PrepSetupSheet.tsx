@@ -8,7 +8,7 @@ import { useUnits } from '@/lib/useUnits';
 import { usePrepStore } from '@/store/prepStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { toast } from '@/store/uiStore';
-import type { CompetitionPrep, Division, Federation, PrepStatus } from '@/domain/competition';
+import type { CompetitionPrep, Division, Federation, PrepStatus } from '@bodyfit/domain/competition';
 import { t } from '@/i18n';
 
 const FEDERATIONS: Federation[] = [

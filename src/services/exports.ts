@@ -4,9 +4,9 @@
  * Todo se genera en el dispositivo: nada sale de aqui salvo que el usuario
  * descargue el archivo a proposito.
  */
-import type { FoodEntry, Workout, BodyMeasurement, WeeklyCheckin } from '@/domain/types';
-import type { DailyReadiness } from '@/domain/competition';
-import type { CardioSession, StepEntry } from '@/domain/prepTypes';
+import type { FoodEntry, Workout, BodyMeasurement, WeeklyCheckin } from '@bodyfit/domain/types';
+import type { DailyReadiness } from '@bodyfit/domain/competition';
+import type { CardioSession, StepEntry } from '@bodyfit/domain/prepTypes';
 import type { UnitsApi } from '@/lib/useUnits';
 
 /**

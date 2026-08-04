@@ -19,8 +19,22 @@
  *    bueno hasta que faltan datos.
  */
 
-/** Version del formato de archivo. Sube solo si cambia la ESTRUCTURA. */
-export const BACKUP_FORMAT = 2;
+import {
+  APP_SCHEMA_VERSION,
+  BACKUP_FORMAT_VERSION,
+  canRollback,
+  checkCompatibility,
+  checksum,
+} from './versioning';
+
+/*
+ * El numero de formato y la funcion de checksum vivian aqui. Ahora los
+ * declara el gestor de versiones, que es el unico sitio donde se decide que
+ * version tiene que cosa. Se reexportan para no romper a quien los importa
+ * desde este modulo.
+ */
+export const BACKUP_FORMAT = BACKUP_FORMAT_VERSION;
+export { checksum, canonicalize } from './versioning';
 
 /** Marca que identifica un archivo como copia de esta app. */
 export const BACKUP_APP = 'BodyFit Prep';
@@ -39,6 +53,8 @@ export interface BackupPhoto {
 export interface BackupFile {
   app: string;
   format: number;
+  /** Esquema de datos que escribio esta copia. Decide si se puede restaurar. */
+  schema: number;
   appVersion: string;
   exportedAt: string;
   /** Version persistida de cada store, para diagnostico. */
@@ -55,6 +71,8 @@ export interface BackupReport {
   errors: string[];
   warnings: string[];
   format: number | null;
+  /** Esquema de datos declarado por la copia. `null` en formatos antiguos. */
+  schema: number | null;
   exportedAt: string | null;
   appVersion: string | null;
   /** Numero de registros por coleccion, para que el usuario vea que hay dentro. */
@@ -65,48 +83,6 @@ export interface BackupReport {
   checksumOk: boolean | null;
   /** Migrado al formato actual. `null` si no se pudo leer. */
   file: BackupFile | null;
-}
-
-/* ────────────────────────────────────────────────────── canonicalizacion ── */
-
-/**
- * Devuelve una copia con las claves de objeto ordenadas alfabeticamente.
- *
- * Sin esto, el checksum dependeria del orden en que JSON.stringify recorre las
- * claves, que no esta garantizado entre motores ni tras un ciclo de
- * serializacion. Ordenando, la misma informacion produce siempre el mismo hash.
- */
-export function canonicalize(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(canonicalize);
-  if (value && typeof value === 'object') {
-    const src = value as Record<string, unknown>;
-    const out: Record<string, unknown> = {};
-    for (const key of Object.keys(src).sort()) out[key] = canonicalize(src[key]);
-    return out;
-  }
-  return value;
-}
-
-/**
- * Suma de verificacion de 64 bits en hexadecimal.
- *
- * Dos pasadas FNV-1a con semillas distintas. No es criptografico — no pretende
- * serlo — pero detecta de sobra truncados, bytes cambiados y ediciones a mano,
- * que es lo unico contra lo que hay que proteger una copia local.
- */
-export function checksum(value: unknown): string {
-  const text = JSON.stringify(canonicalize(value));
-  let a = 0x811c9dc5;
-  let b = 0x01000193;
-  for (let i = 0; i < text.length; i++) {
-    const c = text.charCodeAt(i);
-    a ^= c;
-    a = Math.imul(a, 0x01000193) >>> 0;
-    b = (b + c) >>> 0;
-    b = Math.imul(b, 0x85ebca6b) >>> 0;
-    b ^= b >>> 13;
-  }
-  return (a >>> 0).toString(16).padStart(8, '0') + (b >>> 0).toString(16).padStart(8, '0');
 }
 
 /* ─────────────────────────────────────────────────────────── construccion ── */
@@ -128,6 +104,7 @@ export function buildBackup(input: {
   return {
     app: BACKUP_APP,
     format: BACKUP_FORMAT,
+    schema: APP_SCHEMA_VERSION,
     appVersion,
     exportedAt,
     storeVersions,
@@ -169,6 +146,7 @@ export function parseBackup(json: string): BackupReport {
     errors: [],
     warnings: [],
     format: null,
+    schema: null,
     exportedAt: null,
     appVersion: null,
     collections: [],
@@ -207,6 +185,41 @@ export function parseBackup(json: string): BackupReport {
       `La copia usa el formato ${format} y esta version entiende hasta el ${BACKUP_FORMAT}. Actualiza la aplicacion antes de restaurar.`,
     );
     return report;
+  }
+
+  /*
+   * Compatibilidad del esquema de DATOS, distinta del formato del ARCHIVO.
+   *
+   * Una copia escrita por una version mas nueva puede traer campos que esta
+   * build no entiende; al guardarlos los perderia sin avisar. Antes que eso,
+   * se rechaza y se pide actualizar.
+   */
+  const schema = typeof raw.schema === 'number' ? raw.schema : null;
+  report.schema = schema;
+
+  if (schema != null) {
+    const compat = checkCompatibility(schema);
+    if (compat.kind === 'demasiado-nueva') {
+      report.errors.push(
+        `La copia viene del esquema ${compat.from} y esta version usa el ${compat.current}. Actualiza la aplicacion antes de restaurar.`,
+      );
+      return report;
+    }
+    if (compat.kind === 'demasiado-antigua') {
+      report.errors.push(
+        `La copia viene del esquema ${compat.from}, anterior al minimo soportado (${compat.min}).`,
+      );
+      return report;
+    }
+    if (compat.kind === 'migrar') {
+      report.warnings.push(
+        `La copia viene del esquema ${compat.from}; se migrara al ${compat.to} al restaurar.`,
+      );
+    }
+    if (!canRollback(schema)) {
+      report.errors.push('No se permite restaurar una copia mas nueva que la aplicacion.');
+      return report;
+    }
   }
   if (typeof raw.app === 'string' && raw.app !== BACKUP_APP) {
     report.warnings.push(`El archivo dice pertenecer a "${raw.app}".`);
@@ -277,6 +290,7 @@ export function parseBackup(json: string): BackupReport {
   report.file = {
     app: BACKUP_APP,
     format: BACKUP_FORMAT,
+    schema: schema ?? APP_SCHEMA_VERSION,
     appVersion: report.appVersion ?? 'desconocida',
     exportedAt: report.exportedAt ?? '',
     storeVersions:

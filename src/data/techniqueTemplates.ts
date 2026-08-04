@@ -10,7 +10,7 @@
  *     movimiento para el resto del catalogo, de modo que NINGUN ejercicio se
  *     quede sin instrucciones utiles.
  */
-import type { Exercise, ExerciseTechnique, MovementPattern } from '@/domain/types';
+import type { Exercise, ExerciseTechnique, MovementPattern } from '@bodyfit/domain/types';
 
 /** Forma que devuelven las plantillas: la guia sin los campos transversales. */
 type BaseTemplate = Omit<

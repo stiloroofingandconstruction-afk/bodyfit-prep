@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { alive, newEntity, persisted, softDelete, touch } from './persist';
 import { checkinMigrations } from './migrations';
-import type { Entity, WeeklyCheckin } from '@/domain/types';
+import type { Entity, WeeklyCheckin } from '@bodyfit/domain/types';
 
 type CheckinInput = Omit<WeeklyCheckin, keyof Entity>;
 

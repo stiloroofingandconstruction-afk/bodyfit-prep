@@ -15,7 +15,7 @@ import { useActivityStore } from '@/store/activityStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { toast } from '@/store/uiStore';
 import { t } from '@/i18n';
-import type { Division } from '@/domain/competition';
+import type { Division } from '@bodyfit/domain/competition';
 
 const DIVISIONS: Division[] = [
   "Men's Physique", 'Classic Physique', 'Bodybuilding', 'Bikini', 'Wellness', 'Figure', 'Womens Physique',

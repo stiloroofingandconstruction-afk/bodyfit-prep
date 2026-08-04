@@ -6,8 +6,11 @@ import { Button } from '@/components/ui/Button';
 import { ExerciseTechnique } from './ExerciseTechnique';
 import { EXERCISES, EXERCISE_BY_ID } from '@/data/exercises';
 import { t } from '@/i18n';
+import { useExerciseCatalog } from '@/data/useCatalog';
 
 export default function ExerciseDetailPage() {
+  // Descarga el catalogo al entrar en la pantalla, no en el arranque
+  useExerciseCatalog();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const exercise = id ? EXERCISE_BY_ID.get(id) : undefined;

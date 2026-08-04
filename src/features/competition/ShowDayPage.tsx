@@ -12,7 +12,7 @@ import { alive } from '@/store/persist';
 import { usePrepStore } from '@/store/prepStore';
 import { useActivePrep } from '@/store/selectors';
 import { t } from '@/i18n';
-import type { ChecklistItem, ShowDayItem } from '@/domain/prepTypes';
+import type { ChecklistItem, ShowDayItem } from '@bodyfit/domain/prepTypes';
 
 /*
  * El cronograma y la lista se crean UNA vez, en el idioma activo en ese

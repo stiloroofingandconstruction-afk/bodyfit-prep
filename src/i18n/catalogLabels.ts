@@ -12,8 +12,8 @@
 import { getLocale } from './index';
 import { DIFFICULTY_LABEL, LUMBAR_LABEL, MUSCLE_LABEL, PATTERN_LABEL } from '@/data/exercises';
 import { CATEGORY_LABEL, ROLE_LABEL } from '@/data/foods';
-import type { Difficulty, LumbarLoad, MovementPattern, MuscleGroup } from '@/domain/types';
-import type { FoodCategory, FoodRole } from '@/domain/types';
+import type { Difficulty, LumbarLoad, MovementPattern, MuscleGroup } from '@bodyfit/domain/types';
+import type { FoodCategory, FoodRole } from '@bodyfit/domain/types';
 
 const EN_MUSCLE: Record<MuscleGroup, string> = {
   pecho: 'Chest',

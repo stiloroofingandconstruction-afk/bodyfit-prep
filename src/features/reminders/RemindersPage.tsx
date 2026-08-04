@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Sheet } from '@/components/ui/Sheet';
 import { Input, Label, Select } from '@/components/ui/Field';
 import { EmptyState } from '@/components/ui/Misc';
-import { REMINDER_LABEL, type ReminderKind } from '@/domain/prepTypes';
+import { REMINDER_LABEL, type ReminderKind } from '@bodyfit/domain/prepTypes';
 import { reminderLabel } from '@/i18n/labels';
 import { cx } from '@/lib/utils';
 import { alive } from '@/store/persist';

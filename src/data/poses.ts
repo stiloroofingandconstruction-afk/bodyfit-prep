@@ -5,8 +5,8 @@
  * varian entre federaciones y temporadas: confirma siempre las poses
  * obligatorias en la normativa oficial de tu federacion.
  */
-import type { Pose } from '@/domain/prepTypes';
-import type { Division } from '@/domain/competition';
+import type { Pose } from '@bodyfit/domain/prepTypes';
+import type { Division } from '@bodyfit/domain/competition';
 
 const BB: Division[] = ['Bodybuilding', 'Classic Physique'];
 const PHYS: Division[] = ["Men's Physique"];

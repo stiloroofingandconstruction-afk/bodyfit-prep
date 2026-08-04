@@ -8,12 +8,15 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p packages/domain",
     "icons": "node scripts/generate-icons.mjs",
     "test:domain": "node scripts/run-domain-tests.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:all": "npm run typecheck && npm run test:domain && npm run test:e2e"
+    "test:all": "npm run typecheck && npm run test:domain && npm run build && npm run audit:dist && npm run audit:bundle && npm run test:e2e",
+    "audit:bundle": "node scripts/audit-bundle.mjs",
+    "measure:bundle": "node scripts/measure-bundle.mjs",
+    "audit:dist": "node scripts/audit-dist.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.469.0",
@@ -33,5 +36,8 @@
     "typescript": "^5.7.2",
     "vite": "^6.0.7",
     "vite-plugin-pwa": "^0.21.1"
-  }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }

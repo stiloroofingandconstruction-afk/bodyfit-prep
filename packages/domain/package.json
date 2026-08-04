@@ -1,0 +1,28 @@
+{
+  "name": "@bodyfit/domain",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Logica de dominio de BodyFit Prep. Sin React, sin almacenamiento, sin red.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./autoMeal": "./src/autoMeal.ts",
+    "./backup": "./src/backup.ts",
+    "./body": "./src/body.ts",
+    "./checkin": "./src/checkin.ts",
+    "./collections": "./src/collections.ts",
+    "./competition": "./src/competition.ts",
+    "./energy": "./src/energy.ts",
+    "./macros": "./src/macros.ts",
+    "./media": "./src/media.ts",
+    "./prepTypes": "./src/prepTypes.ts",
+    "./recommendations": "./src/recommendations.ts",
+    "./solver": "./src/solver.ts",
+    "./training": "./src/training.ts",
+    "./types": "./src/types.ts",
+    "./units": "./src/units.ts",
+    "./versioning": "./src/versioning.ts",
+    "./weeklySummary": "./src/weeklySummary.ts"
+  },
+  "sideEffects": false
+}

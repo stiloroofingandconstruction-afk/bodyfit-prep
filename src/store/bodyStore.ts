@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { alive, newEntity, persisted, softDelete, touch } from './persist';
 import { bodyMigrations } from './migrations';
 import { today } from '@/lib/date';
-import type { BodyMeasurement, Entity } from '@/domain/types';
+import type { BodyMeasurement, Entity } from '@bodyfit/domain/types';
 
 type MeasurementInput = Partial<Omit<BodyMeasurement, keyof Entity | 'date'>> & { date?: string };
 

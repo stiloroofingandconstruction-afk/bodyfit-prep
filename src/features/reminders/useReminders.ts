@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { alive } from '@/store/persist';
 import { useSettingsStore } from '@/store/settingsStore';
-import type { Reminder } from '@/domain/prepTypes';
+import type { Reminder } from '@bodyfit/domain/prepTypes';
 
 /**
  * Recordatorios internos.

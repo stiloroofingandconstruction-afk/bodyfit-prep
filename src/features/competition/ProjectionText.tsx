@@ -1,7 +1,7 @@
 import { projectionLabel } from '@/i18n/labels';
 import { useUnits } from '@/lib/useUnits';
 import { cx } from '@/lib/utils';
-import { PROJECTION_TONE, type Projection } from '@/domain/competition';
+import { PROJECTION_TONE, type Projection } from '@bodyfit/domain/competition';
 import { t } from '@/i18n';
 
 /**

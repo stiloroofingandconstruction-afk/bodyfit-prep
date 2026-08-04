@@ -9,7 +9,7 @@
  *  - Hipertrofia, fuerza y tecnica general son secciones separadas y coherentes.
  *  - Toda contraindicacion remite a un profesional, no diagnostica.
  */
-import type { ExerciseTechnique } from '@/domain/types';
+import type { ExerciseTechnique } from '@bodyfit/domain/types';
 
 type T = ExerciseTechnique;
 

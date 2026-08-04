@@ -14,17 +14,20 @@ import {
   importMedia,
   parseYouTubeId,
   validateMedia,
-} from '@/domain/media';
+} from '@bodyfit/domain/media';
 import { today } from '@/lib/date';
 import { cx, download } from '@/lib/utils';
 import { useSettingsStore } from '@/store/settingsStore';
 import { toast } from '@/store/uiStore';
 import { t } from '@/i18n';
-import type { ExerciseMedia } from '@/domain/types';
+import type { ExerciseMedia } from '@bodyfit/domain/types';
+import { useExerciseCatalog } from '@/data/useCatalog';
 
 export { parseYouTubeId };
 
 export default function VideoSettingsPage() {
+  // Descarga el catalogo al entrar en la pantalla, no en el arranque
+  useExerciseCatalog();
   const exerciseMedia = useSettingsStore((s) => s.exerciseMedia);
   const setExerciseMedia = useSettingsStore((s) => s.setExerciseMedia);
   const clearExerciseMedia = useSettingsStore((s) => s.clearExerciseMedia);

@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { alive, newEntity, persisted, softDelete, touch } from './persist';
 import { nutritionMigrations } from './migrations';
-import { macrosFor } from '@/domain/macros';
+import { macrosFor } from '@bodyfit/domain/macros';
 import { today } from '@/lib/date';
-import type { CustomFood, Entity, Food, FoodEntry, MealSlot, Recipe } from '@/domain/types';
-import type { NutritionDayType } from '@/domain/prepTypes';
+import type { CustomFood, Entity, Food, FoodEntry, MealSlot, Recipe } from '@bodyfit/domain/types';
+import type { NutritionDayType } from '@bodyfit/domain/prepTypes';
 
 interface NutritionState {
   entries: FoodEntry[];

@@ -7,7 +7,7 @@ import { Sheet } from '@/components/ui/Sheet';
 import { Input, Label, Segmented, Select, Stepper } from '@/components/ui/Field';
 import { EmptyState, Stat } from '@/components/ui/Misc';
 import { BarChart } from '@/components/ui/Chart';
-import { CARDIO_LABEL, type CardioType, type Intensity } from '@/domain/prepTypes';
+import { CARDIO_LABEL, type CardioType, type Intensity } from '@bodyfit/domain/prepTypes';
 import { dayInitial, friendlyDate, startOfWeek, today, weekRange } from '@/lib/date';
 import { cx } from '@/lib/utils';
 import { alive } from '@/store/persist';

@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { newEntity, persisted, softDelete, touch } from './persist';
 import { deletePhoto } from '@/services/blobStore';
-import type { Entity } from '@/domain/types';
-import type { ProgressPhoto } from '@/domain/prepTypes';
+import type { Entity } from '@bodyfit/domain/types';
+import type { ProgressPhoto } from '@bodyfit/domain/prepTypes';
 
 interface PhotoState {
   photos: ProgressPhoto[];

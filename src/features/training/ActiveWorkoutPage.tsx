@@ -17,7 +17,7 @@ import {
   workoutVolume,
   type LastSession,
   type Progression,
-} from '@/domain/training';
+} from '@bodyfit/domain/training';
 import { EXERCISE_BY_ID } from '@/data/exercises';
 import { formatDuration } from '@/lib/date';
 import { cx, haptic } from '@/lib/utils';
@@ -29,9 +29,12 @@ import { toast } from '@/store/uiStore';
 import { t } from '@/i18n';
 import { shortDate } from '@/lib/date';
 import type { Dict } from '@/i18n';
-import type { WorkoutExercise, WorkoutSet } from '@/domain/types';
+import type { WorkoutExercise, WorkoutSet } from '@bodyfit/domain/types';
+import { useExerciseCatalog } from '@/data/useCatalog';
 
 export default function ActiveWorkoutPage() {
+  // Descarga el catalogo al entrar en la pantalla, no en el arranque
+  useExerciseCatalog();
   const navigate = useNavigate();
   const active = useTrainingStore((s) => s.active);
   const addExercise = useTrainingStore((s) => s.addExercise);

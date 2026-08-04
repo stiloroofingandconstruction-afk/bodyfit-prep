@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Label, Slider, Stepper } from '@/components/ui/Field';
 import { Chip } from '@/components/ui/Misc';
-import { planDay } from '@/domain/autoMeal';
-import { type NutritionDayType } from '@/domain/prepTypes';
+import { planDay } from '@bodyfit/domain/autoMeal';
+import { type NutritionDayType } from '@bodyfit/domain/prepTypes';
 import { dayTypeLabel } from '@/i18n/labels';
 import { t, type Dict } from '@/i18n';
 import { cx, fmtNum } from '@/lib/utils';
@@ -14,7 +14,7 @@ import { useNutritionStore } from '@/store/nutritionStore';
 import { useCatalog } from '@/store/selectors';
 import { useSettingsStore } from '@/store/settingsStore';
 import { toast } from '@/store/uiStore';
-import type { Macros, MealSlot } from '@/domain/types';
+import type { Macros, MealSlot } from '@bodyfit/domain/types';
 
 const SLOT_BY_INDEX: MealSlot[] = ['desayuno', 'almuerzo', 'pre', 'post', 'cena', 'snack', 'snack', 'snack'];
 

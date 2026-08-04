@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/Button';
 import { Input, Label, Segmented, Select } from '@/components/ui/Field';
 import { CATEGORY_LABEL } from '@/data/foods';
 import { foodCategoryLabel } from '@/i18n/catalogLabels';
-import { kcalFromMacros } from '@/domain/macros';
+import { kcalFromMacros } from '@bodyfit/domain/macros';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { toast } from '@/store/uiStore';
 import { t } from '@/i18n';
-import type { FoodCategory, FoodRole } from '@/domain/types';
+import type { FoodCategory, FoodRole } from '@bodyfit/domain/types';
 
 const ROLE_VALUES: FoodRole[] = ['protein', 'carb', 'fat', 'veg', 'free'];
 const ROLE_KEY = {

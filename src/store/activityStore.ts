@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { alive, newEntity, persisted, softDelete, touch } from './persist';
 import { today } from '@/lib/date';
-import type { Entity } from '@/domain/types';
-import type { CardioPlan, CardioSession, PosingSession, StepEntry } from '@/domain/prepTypes';
+import type { Entity } from '@bodyfit/domain/types';
+import type { CardioPlan, CardioSession, PosingSession, StepEntry } from '@bodyfit/domain/prepTypes';
 
 interface ActivityState {
   cardioSessions: CardioSession[];

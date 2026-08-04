@@ -21,7 +21,7 @@ import {
   type Diagnostics,
 } from '@/services/errorLog';
 import { APP_VERSION } from '@/services/backup';
-import { fmtBytes } from '@/domain/backup';
+import { fmtBytes } from '@bodyfit/domain/backup';
 import { download } from '@/lib/utils';
 import { fmtDateTime } from '@/lib/date';
 import { toast } from '@/store/uiStore';

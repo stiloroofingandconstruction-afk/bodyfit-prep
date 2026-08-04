@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Database, X } from 'lucide-react';
-import { backupDue, daysSince } from '@/domain/backup';
+import { backupDue, daysSince } from '@bodyfit/domain/backup';
 import { countStoredEntries, createBackup } from '@/services/backup';
 import { logError } from '@/services/errorLog';
 import { download } from '@/lib/utils';

@@ -9,7 +9,7 @@ import { EmptyState, Stat } from '@/components/ui/Misc';
 import { LineChart } from '@/components/ui/Chart';
 import { ProgressTabs } from './ProgressTabs';
 import { WeightSheet } from './WeightSheet';
-import { bmi, bodyFatCategory, ema, leanMass, navyBodyFat, weeklyTrend, weightSeries } from '@/domain/body';
+import { bmi, bodyFatCategory, ema, leanMass, navyBodyFat, weeklyTrend, weightSeries } from '@bodyfit/domain/body';
 import { compressImage, deletePhoto, photoURL, putPhoto } from '@/services/blobStore';
 import { friendlyDate, shortDate, today } from '@/lib/date';
 import { uid } from '@/lib/utils';
@@ -19,7 +19,7 @@ import { useBodyStore } from '@/store/bodyStore';
 import { useCurrentWeight, useMeasurements } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
 import { t, type Dict } from '@/i18n';
-import type { BodyMeasurement } from '@/domain/types';
+import type { BodyMeasurement } from '@bodyfit/domain/types';
 
 type Range = '30' | '90' | 'all';
 

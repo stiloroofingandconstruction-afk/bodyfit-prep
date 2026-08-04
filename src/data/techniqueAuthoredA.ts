@@ -6,7 +6,7 @@
  *
  * Cada entrada sustituye por completo a la plantilla del patron de movimiento.
  */
-import type { ExerciseTechnique } from '@/domain/types';
+import type { ExerciseTechnique } from '@bodyfit/domain/types';
 
 type T = ExerciseTechnique;
 

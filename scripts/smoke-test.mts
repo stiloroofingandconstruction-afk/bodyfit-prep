@@ -8,24 +8,25 @@
 import { FOODS, FOOD_BY_ID } from '../src/data/foods';
 import { EXERCISE_BY_ID } from '../src/data/exercises';
 import { parseFoodPhrase, searchFoods, setCatalog } from '../src/data/foodSearch';
-import { solvePortions } from '../src/domain/solver';
-import { suggestComplement, suggestMeals } from '../src/domain/autoMeal';
-import { computeTargets, tdee } from '../src/domain/energy';
-import { macrosFor } from '../src/domain/macros';
-import { analyzeCheckin } from '../src/domain/checkin';
-import { navyBodyFat } from '../src/domain/body';
+import { solvePortions } from '@bodyfit/domain/solver';
+import { suggestComplement, suggestMeals } from '@bodyfit/domain/autoMeal';
+import { computeTargets, tdee } from '@bodyfit/domain/energy';
+import { macrosFor } from '@bodyfit/domain/macros';
+import { analyzeCheckin } from '@bodyfit/domain/checkin';
+import { navyBodyFat } from '@bodyfit/domain/body';
 import {
   defaultIncrement,
   defaultRepRange,
   estimate1RM,
   lastSessionOf,
   suggestProgression,
-} from '../src/domain/training';
+} from '@bodyfit/domain/training';
 import { runCompetitionTests } from './smoke-competition.mts';
 import { runUnitsTests } from './smoke-units.mts';
 import { runContentTests } from './smoke-content.mts';
 import { runBackupTests } from './smoke-backup.mts';
-import type { Profile } from '../src/domain/types';
+import { runCollectionTests } from './smoke-collections.mts';
+import type { Profile } from '@bodyfit/domain/types';
 
 setCatalog(FOODS);
 
@@ -325,6 +326,9 @@ runContentTests(check, line);
 
 /* ================== COPIAS DE SEGURIDAD Y RESTAURACION =============== */
 runBackupTests(check, line);
+
+/* ============ REGISTRO DE COLECCIONES Y GESTOR DE VERSIONES ========== */
+runCollectionTests(check, line);
 
 /* ---------------------------------------------------------------------- */
 console.log(`\n${failures === 0 ? 'TODO CORRECTO' : `${failures} COMPROBACIONES FALLIDAS`}\n`);

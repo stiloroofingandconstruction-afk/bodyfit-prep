@@ -3,7 +3,7 @@
  * Se ejecuta desde `smoke-test.mts`.
  */
 import { makeUnits } from '../src/lib/useUnits';
-import { cmToIn, inToCm, kgToLb, lbToKg } from '../src/domain/units';
+import { cmToIn, inToCm, kgToLb, lbToKg } from '@bodyfit/domain/units';
 import {
   exportMedia,
   hasErrors,
@@ -11,13 +11,13 @@ import {
   importMedia,
   parseYouTubeId,
   validateMedia,
-} from '../src/domain/media';
+} from '@bodyfit/domain/media';
 import { AUTHORED_IDS, EXERCISES, EXERCISE_BY_ID } from '../src/data/exercises';
 import { es } from '../src/i18n/es';
 import { en } from '../src/i18n/en';
 import { checkinsCSV, coachReport, weightCSV, workoutsCSV } from '../src/services/exports';
 import { runMigrations, profileMigrations, checkinMigrations } from '../src/store/migrations';
-import type { ExerciseMedia } from '../src/domain/types';
+import type { ExerciseMedia } from '@bodyfit/domain/types';
 
 export function runUnitsTests(
   check: (name: string, ok: boolean, detail?: string) => void,

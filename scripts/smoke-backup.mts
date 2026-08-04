@@ -16,7 +16,7 @@ import {
   daysSince,
   fmtBytes,
   parseBackup,
-} from '../src/domain/backup';
+} from '@bodyfit/domain/backup';
 
 export function runBackupTests(
   check: (name: string, ok: boolean, detail?: string) => void,

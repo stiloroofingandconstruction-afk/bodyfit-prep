@@ -14,7 +14,7 @@ import {
   workoutDurationMin,
   workoutSetCount,
   workoutVolume,
-} from '@/domain/training';
+} from '@bodyfit/domain/training';
 import { addDays, dayInitial, friendlyDate, shortDate, startOfWeek, today, weekRange } from '@/lib/date';
 import { useRoutines, useWorkouts } from '@/store/selectors';
 import { useUnits } from '@/lib/useUnits';
@@ -22,9 +22,12 @@ import { useTrainingStore } from '@/store/trainingStore';
 import { toast } from '@/store/uiStore';
 import { muscleLabel } from '@/i18n/catalogLabels';
 import { t } from '@/i18n';
-import type { Routine } from '@/domain/types';
+import type { Routine } from '@bodyfit/domain/types';
+import { useExerciseCatalog } from '@/data/useCatalog';
 
 export default function TrainingPage() {
+  // Descarga el catalogo al entrar en la pantalla, no en el arranque
+  useExerciseCatalog();
   const navigate = useNavigate();
   const routines = useRoutines();
   const workouts = useWorkouts();

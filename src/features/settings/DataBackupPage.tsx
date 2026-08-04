@@ -27,7 +27,7 @@ import {
   type StorageStatus,
 } from '@/services/backup';
 import { clearAll } from '@/services/storage';
-import { daysSince, fmtBytes } from '@/domain/backup';
+import { daysSince, fmtBytes } from '@bodyfit/domain/backup';
 import { download } from '@/lib/utils';
 import { fmtDateTime } from '@/lib/date';
 import { useBackupStore } from '@/store/backupStore';

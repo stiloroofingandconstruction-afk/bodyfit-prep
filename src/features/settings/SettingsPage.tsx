@@ -19,7 +19,7 @@ import { Card, SectionTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Label, NumberField, Segmented, Select, Slider } from '@/components/ui/Field';
 import { Stat } from '@/components/ui/Misc';
-import { ACTIVITY_LEVELS, ageFrom, bmr, tdee } from '@/domain/energy';
+import { ACTIVITY_LEVELS, ageFrom, bmr, tdee } from '@bodyfit/domain/energy';
 import { activityLabel } from '@/i18n/labels';
 import { useUnits } from '@/lib/useUnits';
 import { fmtDateTime, toISODate } from '@/lib/date';
@@ -33,10 +33,13 @@ import { useActivePrep, useCurrentWeight, useTargets } from '@/store/selectors';
 import { alive } from '@/store/persist';
 import { LOCALE_LABEL, t, type Locale } from '@/i18n';
 import { EXERCISE_BY_ID } from '@/data/exercises';
-import type { ActivityLevel, Goal, Sex } from '@/domain/types';
-import type { WeightUnit, LengthUnit } from '@/domain/units';
+import type { ActivityLevel, Goal, Sex } from '@bodyfit/domain/types';
+import type { WeightUnit, LengthUnit } from '@bodyfit/domain/units';
+import { useExerciseCatalog } from '@/data/useCatalog';
 
 export default function SettingsPage() {
+  // Descarga el catalogo al entrar en la pantalla, no en el arranque
+  useExerciseCatalog();
   const profile = useProfile();
   const update = useProfileStore((s) => s.update);
   const weight = useCurrentWeight();

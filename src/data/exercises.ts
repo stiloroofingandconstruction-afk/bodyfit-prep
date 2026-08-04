@@ -16,12 +16,13 @@ import type {
   LumbarLoad,
   MovementPattern,
   MuscleGroup,
-} from '@/domain/types';
+} from '@bodyfit/domain/types';
 import { templateFor } from './techniqueTemplates';
 import { AUTHORED_UPPER } from './techniqueAuthoredA';
 import { AUTHORED_LOWER } from './techniqueAuthoredB';
 import { AUTHORED_UPPER_2 } from './techniqueAuthoredC';
 import { AUTHORED_LOWER_2 } from './techniqueAuthoredD';
+import { registerExercises } from './registry';
 
 /** Guias escritas individualmente, una por ejercicio. */
 const AUTHORED: Record<string, ExerciseTechnique> = {
@@ -1210,3 +1211,6 @@ export function relatedExercises(
 ): Exercise[] {
   return ex[key].map((id) => EXERCISE_BY_ID.get(id)).filter((x): x is Exercise => !!x);
 }
+
+/* El registro se rellena en cuanto este modulo se evalua, lo cargue quien lo cargue. */
+registerExercises(EXERCISES, EXERCISE_BY_ID);

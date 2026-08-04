@@ -16,17 +16,44 @@ export interface StorageAdapter {
   listKeys(): Promise<string[]>;
 }
 
-/** Claves de coleccion. Una por store persistido. */
-export const COLLECTIONS = {
-  profile: 'profile',
-  nutrition: 'nutrition',
-  training: 'training',
-  body: 'body',
-  checkins: 'checkins',
-  settings: 'settings',
-} as const;
+/*
+ * Aqui vivian `COLLECTIONS`, `SCHEMA_VERSION` y `STORAGE_PREFIX`.
+ *
+ * `COLLECTIONS` declaraba seis colecciones cuando ya habia once persistidas, y
+ * nadie la usaba: era una lista falsa esperando a que algo la recorriera para
+ * dejar cinco colecciones fuera en silencio. `SCHEMA_VERSION` era una tercera
+ * numeracion compitiendo con otras dos.
+ *
+ * Ahora hay una sola fuente para cada cosa:
+ *   colecciones -> @/domain/collections
+ *   versiones   -> @/domain/versioning
+ *
+ * Se reexportan desde aqui para que quien trabaje con almacenamiento las
+ * encuentre donde espera buscarlas.
+ */
+export {
+  BACKUP_COLLECTIONS,
+  COLLECTION_KEYS,
+  COLLECTION_REGISTRY,
+  MIGRATED_COLLECTIONS,
+  STORAGE_PREFIX,
+  SYNC_COLLECTIONS,
+  collectionFromStorageKey,
+  collectionSpec,
+  isCollectionKey,
+  storageKey,
+  type CollectionKey,
+  type CollectionSpec,
+} from '@bodyfit/domain/collections';
 
-export type CollectionKey = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
-
-export const STORAGE_PREFIX = 'bodyfit:v1:';
-export const SCHEMA_VERSION = 1;
+export {
+  APP_SCHEMA_VERSION,
+  BACKUP_FORMAT_VERSION,
+  MIN_SUPPORTED_SCHEMA,
+  canRollback,
+  checkCompatibility,
+  isReadable,
+  versionOf,
+  versionSummary,
+  type Compatibility,
+} from '@bodyfit/domain/versioning';

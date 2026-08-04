@@ -7,7 +7,7 @@ import { Sheet } from '@/components/ui/Sheet';
 import { Chip, EmptyState } from '@/components/ui/Misc';
 import { Label, Select } from '@/components/ui/Field';
 import { ProgressTabs } from '@/features/body/ProgressTabs';
-import { ANGLE_LABEL, type PhotoAngle, type ProgressPhoto } from '@/domain/prepTypes';
+import { ANGLE_LABEL, type PhotoAngle, type ProgressPhoto } from '@bodyfit/domain/prepTypes';
 import { compressImage, photoURL, putPhoto } from '@/services/blobStore';
 import { shortDate, today } from '@/lib/date';
 import { cx, uid } from '@/lib/utils';

@@ -1,4 +1,5 @@
-import type { Routine, RoutineExercise } from '@/domain/types';
+import type { Routine, RoutineExercise } from '@bodyfit/domain/types';
+import { registerRoutines } from './registry';
 
 function ex(exerciseId: string, sets: number, lo: number, hi: number, rest = 120): RoutineExercise {
   return { exerciseId, sets, repRange: [lo, hi], restSeconds: rest };
@@ -181,3 +182,5 @@ export const BUILTIN_ROUTINES: Routine[] = [
     ],
   },
 ];
+
+registerRoutines(BUILTIN_ROUTINES);

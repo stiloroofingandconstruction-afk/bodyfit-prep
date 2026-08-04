@@ -4,14 +4,14 @@ import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Misc';
 import { searchFoods, parseFoodPhrase } from '@/data/foodSearch';
-import { solvePortions, type PortionInput } from '@/domain/solver';
-import { suggestComplement, suggestMeals } from '@/domain/autoMeal';
+import { solvePortions, type PortionInput } from '@bodyfit/domain/solver';
+import { suggestComplement, suggestMeals } from '@bodyfit/domain/autoMeal';
 import { cx, fmtNum, fmtSigned } from '@/lib/utils';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { useCatalog } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
 import { t } from '@/i18n';
-import type { Food, Macros, MealSlot } from '@/domain/types';
+import type { Food, Macros, MealSlot } from '@bodyfit/domain/types';
 
 interface Props {
   open: boolean;

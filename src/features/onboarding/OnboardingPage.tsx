@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Label, NumberField, Segmented, Slider } from '@/components/ui/Field';
-import { computeTargets } from '@/domain/energy';
+import { computeTargets } from '@bodyfit/domain/energy';
 import { parseBackup, restoreBackup } from '@/services/backup';
 import { toast } from '@/store/uiStore';
 import { t } from '@/i18n';
@@ -12,8 +12,8 @@ import { makeUnits } from '@/lib/useUnits';
 import { DEFAULT_PROFILE, useProfileStore } from '@/store/profileStore';
 import { useBodyStore } from '@/store/bodyStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import type { Goal, Profile, Sex } from '@/domain/types';
-import type { WeightUnit, LengthUnit } from '@/domain/units';
+import type { Goal, Profile, Sex } from '@bodyfit/domain/types';
+import type { WeightUnit, LengthUnit } from '@bodyfit/domain/units';
 
 /**
  * Onboarding en tres preguntas.

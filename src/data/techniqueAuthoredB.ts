@@ -6,7 +6,7 @@
  * Todos los ejercicios con carga axial, bisagra de cadera o flexion lumbar
  * incluyen `lumbarAdaptation` con una alternativa concreta y accionable.
  */
-import type { ExerciseTechnique } from '@/domain/types';
+import type { ExerciseTechnique } from '@bodyfit/domain/types';
 
 type T = ExerciseTechnique;
 

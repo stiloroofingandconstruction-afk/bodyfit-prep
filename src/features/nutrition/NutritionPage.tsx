@@ -22,17 +22,18 @@ import { SmartMealSheet } from './SmartMealSheet';
 import { CustomFoodSheet } from './CustomFoodSheet';
 import { DayPlanSheet } from './DayPlanSheet';
 import { Chip } from '@/components/ui/Misc';
-import { DAY_TYPE_LABEL, type NutritionDayType } from '@/domain/prepTypes';
+import { DAY_TYPE_LABEL, type NutritionDayType } from '@bodyfit/domain/prepTypes';
 import { dayTypeLabel } from '@/i18n/labels';
 import { t, type Dict } from '@/i18n';
 import { addDays, friendlyDate, today } from '@/lib/date';
 import { alive } from '@/store/persist';
 import { fmtNum } from '@/lib/utils';
-import { sumMacros } from '@/domain/macros';
+import { sumMacros } from '@bodyfit/domain/macros';
 import { useNutritionStore } from '@/store/nutritionStore';
 import { useDayNutrition } from '@/store/selectors';
 import { toast } from '@/store/uiStore';
-import type { FoodEntry, MealSlot } from '@/domain/types';
+import type { FoodEntry, MealSlot } from '@bodyfit/domain/types';
+import { useFoodCatalog } from '@/data/useCatalog';
 
 const SLOTS: { key: MealSlot; label: keyof Dict }[] = [
   { key: 'desayuno', label: 'slot.breakfast' },
@@ -53,6 +54,8 @@ function defaultSlot(): MealSlot {
 }
 
 export default function NutritionPage() {
+  // Descarga el catalogo al entrar en la pantalla, no en el arranque
+  useFoodCatalog();
   const [date, setDate] = useState(today());
   const [addTo, setAddTo] = useState<MealSlot | null>(null);
   const [smart, setSmart] = useState<'plan' | 'auto' | null>(null);

@@ -5,7 +5,7 @@ import { Chip } from '@/components/ui/Misc';
 import { MUSCLE_ORDER, searchExercises } from '@/data/exercises';
 import { muscleLabel } from '@/i18n/catalogLabels';
 import { t } from '@/i18n';
-import type { MuscleGroup } from '@/domain/types';
+import type { MuscleGroup } from '@bodyfit/domain/types';
 
 interface Props {
   open: boolean;

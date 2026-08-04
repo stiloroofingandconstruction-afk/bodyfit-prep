@@ -15,9 +15,10 @@ import {
   type BackupFile,
   type BackupPhoto,
   type BackupReport,
-} from '@/domain/backup';
+} from '@bodyfit/domain/backup';
 import { getPhoto, listPhotoIds, putPhoto } from './blobStore';
-import { storage } from './storage';
+import { readCollections, storage } from './storage';
+import { BACKUP_COLLECTIONS, isCollectionKey } from '@bodyfit/domain/collections';
 
 export const APP_VERSION = '2.1.0';
 
@@ -68,16 +69,8 @@ export interface BackupResult {
  * Es preferible una copia con 19 de 20 fotos a ninguna copia.
  */
 export async function createBackup(now = new Date()): Promise<BackupResult> {
-  const data: Record<string, unknown> = {};
-  for (const key of await storage.listKeys()) {
-    const raw = await storage.getItem(key);
-    if (raw == null) continue;
-    try {
-      data[key] = JSON.parse(raw);
-    } catch {
-      data[key] = raw;
-    }
-  }
+  // Recorre el registro de colecciones, no lo que haya suelto en disco
+  const data = await readCollections();
 
   const photos: BackupPhoto[] = [];
   let photosFailed = 0;
@@ -123,6 +116,8 @@ export async function createBackup(now = new Date()): Promise<BackupResult> {
 
 export interface RestoreResult {
   collections: string[];
+  /** Claves del archivo que no corresponden a ninguna coleccion registrada. */
+  skipped: string[];
   photos: number;
   photosFailed: number;
   warnings: string[];
@@ -153,14 +148,26 @@ export async function restoreBackup(report: BackupReport): Promise<RestoreResult
     }
   }
 
+  /*
+   * Solo se escriben colecciones registradas. Una clave desconocida se anota y
+   * no se aplica: si viene de una version mas nueva no sabemos que significa, y
+   * escribirla dejaria el almacenamiento en un estado que esta build no
+   * entiende.
+   */
   const collections: string[] = [];
+  const skipped: string[] = [];
   for (const [key, value] of Object.entries(file.data)) {
+    if (!isCollectionKey(key)) {
+      skipped.push(key);
+      continue;
+    }
     await storage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
     collections.push(key);
   }
 
   return {
     collections,
+    skipped,
     photos: file.photos.length - photosFailed,
     photosFailed,
     warnings: report.warnings,
@@ -233,7 +240,7 @@ export async function requestPersistence(): Promise<boolean> {
 /** Cuenta cuantos registros hay ahora mismo, para decidir si toca recordar la copia. */
 export async function countStoredEntries(): Promise<number> {
   let total = 0;
-  for (const key of await storage.listKeys()) {
+  for (const key of BACKUP_COLLECTIONS) {
     const raw = await storage.getItem(key);
     if (!raw) continue;
     try {

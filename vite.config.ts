@@ -49,6 +49,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      /*
+       * El dominio es un paquete, no una carpeta. El alias apunta al fuente en
+       * vez de a un build: asi no hay paso de compilacion intermedio y el
+       * mismo `.ts` lo consumen Vite, esbuild y, manana, Deno.
+       */
+      '@bodyfit/domain': fileURLToPath(new URL('./packages/domain/src', import.meta.url)),
     },
   },
   build: {

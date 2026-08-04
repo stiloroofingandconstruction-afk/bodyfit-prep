@@ -7,7 +7,7 @@
  * lenguaje medico o absoluto, y guias tan genericas que no dicen nada.
  */
 import { AUTHORED_IDS, EXERCISES, EXERCISE_BY_ID, lumbarAlternativesFor } from '../src/data/exercises';
-import type { Exercise } from '../src/domain/types';
+import type { Exercise } from '@bodyfit/domain/types';
 
 /** Frases que no deben aparecer: prometen resultados o suenan a diagnostico. */
 const FORBIDDEN_CLAIMS: [RegExp, string][] = [

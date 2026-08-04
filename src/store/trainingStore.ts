@@ -1,10 +1,9 @@
 import { create } from 'zustand';
 import { newEntity, persisted, softDelete, touch } from './persist';
-import { EXERCISE_BY_ID } from '@/data/exercises';
-import { BUILTIN_ROUTINES } from '@/data/routines';
+import { builtinRoutines, exerciseName } from '@/data/registry';
 import { today } from '@/lib/date';
 import { nowISO, uid } from '@/lib/utils';
-import type { Entity, Routine, Workout, WorkoutExercise, WorkoutSet } from '@/domain/types';
+import type { Entity, Routine, Workout, WorkoutExercise, WorkoutSet } from '@bodyfit/domain/types';
 
 interface TrainingState {
   workouts: Workout[];
@@ -45,14 +44,14 @@ export const useTrainingStore = create<TrainingState>()(
 
     startWorkout: (name, routineId, dayIndex) => {
       const routine = routineId
-        ? [...BUILTIN_ROUTINES, ...get().routines].find((r) => r.id === routineId)
+        ? [...builtinRoutines(), ...get().routines].find((r) => r.id === routineId)
         : undefined;
       const day = routine && dayIndex != null ? routine.days[dayIndex] : undefined;
 
       const exercises: WorkoutExercise[] = (day?.exercises ?? []).map((re) => ({
         id: uid(),
         exerciseId: re.exerciseId,
-        exerciseName: EXERCISE_BY_ID.get(re.exerciseId)?.name ?? re.exerciseId,
+        exerciseName: exerciseName(re.exerciseId),
         restSeconds: re.restSeconds,
         repRange: re.repRange,
         sets: Array.from({ length: re.sets }, () => emptySet()),
@@ -108,7 +107,7 @@ export const useTrainingStore = create<TrainingState>()(
         const ex: WorkoutExercise = {
           id: uid(),
           exerciseId,
-          exerciseName: EXERCISE_BY_ID.get(exerciseId)?.name ?? exerciseId,
+          exerciseName: exerciseName(exerciseId),
           sets: [emptySet(), emptySet(), emptySet()],
           restSeconds: 120,
         };
@@ -143,7 +142,7 @@ export const useTrainingStore = create<TrainingState>()(
                 ? {
                     ...e,
                     exerciseId: newExerciseId,
-                    exerciseName: EXERCISE_BY_ID.get(newExerciseId)?.name ?? newExerciseId,
+                    exerciseName: exerciseName(newExerciseId),
                   }
                 : e,
             ),

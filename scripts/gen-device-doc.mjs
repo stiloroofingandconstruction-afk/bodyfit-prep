@@ -22,6 +22,10 @@ await build({
   format: 'esm',
   platform: 'node',
   outfile: bundle,
+  alias: {
+    '@': resolve(root, 'src'),
+    '@bodyfit/domain': resolve(root, 'packages/domain/src'),
+  },
   logLevel: 'error',
 });
 

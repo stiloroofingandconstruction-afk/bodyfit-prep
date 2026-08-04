@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { AlertTriangle, BadgeCheck, Film, Play, WifiOff } from 'lucide-react';
-import { fmtDuration } from '@/domain/media';
+import { fmtDuration } from '@bodyfit/domain/media';
 import { cx } from '@/lib/utils';
-import type { ExerciseMedia } from '@/domain/types';
+import type { ExerciseMedia } from '@bodyfit/domain/types';
 import { t } from '@/i18n';
 
 interface Props {

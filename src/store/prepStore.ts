@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { alive, newEntity, persisted, softDelete, touch } from './persist';
 import { today } from '@/lib/date';
-import type { Entity } from '@/domain/types';
-import type { CompetitionPrep, DailyReadiness } from '@/domain/competition';
+import type { Entity } from '@bodyfit/domain/types';
+import type { CompetitionPrep, DailyReadiness } from '@bodyfit/domain/competition';
 import type {
   PeakWeekPlan,
   PostShowEntry,
@@ -10,7 +10,7 @@ import type {
   PrepRecommendation,
   RecommendationOutcome,
   ShowDayPlan,
-} from '@/domain/prepTypes';
+} from '@bodyfit/domain/prepTypes';
 
 interface PrepState {
   preps: CompetitionPrep[];

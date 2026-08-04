@@ -2,7 +2,7 @@ import { Ring } from '@/components/ui/Ring';
 import { MacroBar } from '@/components/ui/MacroBar';
 import { fmtNum } from '@/lib/utils';
 import { t } from '@/i18n';
-import type { MacroTarget, Macros } from '@/domain/types';
+import type { MacroTarget, Macros } from '@bodyfit/domain/types';
 
 interface Props {
   consumed: Macros;

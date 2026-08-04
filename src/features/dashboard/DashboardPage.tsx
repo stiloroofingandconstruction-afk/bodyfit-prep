@@ -10,8 +10,8 @@ import { CompetitionDashboard } from './CompetitionDashboard';
 import { SmartMealSheet } from '@/features/nutrition/SmartMealSheet';
 import { FoodSearchSheet } from '@/features/nutrition/FoodSearchSheet';
 import { WeightSheet } from '@/features/body/WeightSheet';
-import { ema } from '@/domain/body';
-import { workoutSetCount, workoutVolume } from '@/domain/training';
+import { ema } from '@bodyfit/domain/body';
+import { workoutSetCount, workoutVolume } from '@bodyfit/domain/training';
 import { friendlyDate, greeting, startOfWeek, today } from '@/lib/date';
 import { cx } from '@/lib/utils';
 import { useUnits } from '@/lib/useUnits';
@@ -29,8 +29,11 @@ import {
 import { useTrainingStore } from '@/store/trainingStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { t } from '@/i18n';
+import { useFoodCatalog } from '@/data/useCatalog';
 
 export default function DashboardPage() {
+  // Descarga el catalogo al entrar en la pantalla, no en el arranque
+  useFoodCatalog();
   const navigate = useNavigate();
   const profile = useProfile();
   const date = today();

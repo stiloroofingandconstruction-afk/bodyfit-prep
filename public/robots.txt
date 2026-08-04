@@ -1,0 +1,17 @@
+# BodyFit Prep
+#
+# Sin este archivo, la reescritura de rutas de la SPA devolvia `index.html`
+# tambien aqui: los rastreadores recibian HTML donde esperaban reglas, y lo
+# trataban como robots.txt invalido.
+#
+# Las pantallas viven detras del onboarding y los datos no salen del
+# dispositivo, asi que no hay nada privado que proteger de un rastreador; solo
+# se evita que gasten tiempo en rutas que para ellos son la misma pagina.
+
+User-agent: *
+Allow: /$
+Disallow: /entreno
+Disallow: /nutricion
+Disallow: /cuerpo
+Disallow: /competencia
+Disallow: /ajustes

@@ -6,7 +6,7 @@ import { lumbarLabel } from '@/i18n/catalogLabels';
 import { cx } from '@/lib/utils';
 import { t } from '@/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
-import type { Exercise } from '@/domain/types';
+import type { Exercise } from '@bodyfit/domain/types';
 
 /** ¿El usuario declaro sensibilidad lumbar en Ajustes? */
 export function useLumbarSensitive(): boolean {

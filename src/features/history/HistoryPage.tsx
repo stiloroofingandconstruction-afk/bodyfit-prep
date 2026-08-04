@@ -7,9 +7,9 @@ import { Stat } from '@/components/ui/Misc';
 import { BarChart, LineChart } from '@/components/ui/Chart';
 import { ProgressTabs } from '@/features/body/ProgressTabs';
 import { MacroSummary } from '@/features/nutrition/MacroSummary';
-import { sumMacros } from '@/domain/macros';
-import { weightSeries } from '@/domain/body';
-import { workoutSetCount, workoutVolume } from '@/domain/training';
+import { sumMacros } from '@bodyfit/domain/macros';
+import { weightSeries } from '@bodyfit/domain/body';
+import { workoutSetCount, workoutVolume } from '@bodyfit/domain/training';
 import {
   addDays,
   dayInitial,

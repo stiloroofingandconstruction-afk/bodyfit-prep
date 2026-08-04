@@ -3,7 +3,7 @@ import { Check, ChevronDown, Lightbulb, X } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Label, Stepper } from '@/components/ui/Field';
-import { ACTION_LABEL, ACTION_TONE, type RecommendationResult } from '@/domain/recommendations';
+import { ACTION_LABEL, ACTION_TONE, type RecommendationResult } from '@bodyfit/domain/recommendations';
 import { cx, fmtSigned } from '@/lib/utils';
 import { t } from '@/i18n';
 

@@ -4,7 +4,8 @@
  *
  * Formato compacto: f(id, nombre, categoria, rol, [kcal, prot, carb, grasa, fibra], alias, extra)
  */
-import type { Food, FoodCategory, FoodRole, ServingSize } from '@/domain/types';
+import type { Food, FoodCategory, FoodRole, ServingSize } from '@bodyfit/domain/types';
+import { registerFoods } from './registry';
 
 type Tuple = [kcal: number, protein: number, carbs: number, fat: number, fiber: number];
 
@@ -312,3 +313,5 @@ export const ROLE_LABEL: Record<FoodRole, string> = {
   veg: 'Verdura',
   free: 'Libre',
 };
+
+registerFoods(FOODS);

@@ -8,7 +8,8 @@ import { difficultyLabel, muscleLabel } from '@/i18n/catalogLabels';
 import { t, type Dict } from '@/i18n';
 import { cx } from '@/lib/utils';
 import { useSettingsStore } from '@/store/settingsStore';
-import type { Difficulty, MuscleGroup } from '@/domain/types';
+import type { Difficulty, MuscleGroup } from '@bodyfit/domain/types';
+import { useExerciseCatalog } from '@/data/useCatalog';
 
 /** Nivel de carga lumbar en minuscula, para incrustarlo en una frase. */
 const LUMBAR_WORD: Record<'bajo' | 'moderado' | 'alto', keyof Dict> = {
@@ -18,6 +19,8 @@ const LUMBAR_WORD: Record<'bajo' | 'moderado' | 'alto', keyof Dict> = {
 };
 
 export default function ExerciseLibraryPage() {
+  // Descarga el catalogo al entrar en la pantalla, no en el arranque
+  useExerciseCatalog();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [muscle, setMuscle] = useState<MuscleGroup | null>(null);

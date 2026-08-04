@@ -10,7 +10,7 @@ import { alive } from '@/store/persist';
 import { usePrepStore } from '@/store/prepStore';
 import { useActivePrep, useCountdown } from '@/store/selectors';
 import { t } from '@/i18n';
-import type { ChecklistItem } from '@/domain/prepTypes';
+import type { ChecklistItem } from '@bodyfit/domain/prepTypes';
 
 /**
  * Peak week con enfoque conservador.
