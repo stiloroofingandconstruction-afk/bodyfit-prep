@@ -37,8 +37,10 @@ Stilo ni con `mlb-picks-tracker`.
 | Auditoría del adaptador | ✅ 27 comprobaciones, 500 operaciones reales |
 | Avisos de seguridad de Supabase | ✅ 0 (queda 1 informativo, ver abajo) |
 | Usuarios de prueba | ✅ 2, con el correo confirmado |
-| Site URL / Redirect URLs | ⬜ **manual, ver abajo** |
-| Despliegue de staging en Vercel | ⬜ **manual, ver abajo** |
+| Site URL / Redirect URLs | ✅ configuradas y **probadas**: el `verify` redirige al preview |
+| Despliegue de staging en Vercel | ✅ con las variables, verificado en el bundle |
+| Magic Link de extremo a extremo | ✅ **validado** — ver abajo |
+| OTP de seis dígitos | ⬜ pendiente: bloqueado por el límite de 2 correos/hora |
 | Producción | ✅ `disabled`, sin credenciales en el bundle |
 
 ### Esquema aplicado
@@ -79,6 +81,41 @@ Supabase → `bodyfit-staging` → **Authentication → URL Configuration**
 La de producción (`https://bodyfit-prep.vercel.app/**`) se puede dejar en la
 lista de redirects **pero nunca como Site URL**: así se puede probar el día que
 toque, sin que ningún correo de staging apunte a producción por defecto.
+
+### 1 ter · Y la plantilla de CONFIRMACIÓN también
+
+> **Encontrado al probar de verdad.** El primer correo que recibe alguien que
+> entra por primera vez **no es el de Magic Link**: es el de *Confirm signup*,
+> que usa otra plantilla. GoTrue crea el usuario y manda la confirmación de
+> alta.
+>
+> Si solo se edita la plantilla de Magic Link, un usuario nuevo en un iPhone
+> recibe un correo **con enlace y sin código**. El enlace abre Safari, la sesión
+> se queda ahí y la PWA sigue sin cuenta — que es exactamente lo que el código
+> del OTP existía para evitar, solo que en el primer acceso.
+
+**Authentication → Email Templates → Confirm signup**, mismo contenido:
+
+```html
+<h2>Confirma tu correo y entra en BodyFit</h2>
+
+<p>Si estás en el ordenador, usa el enlace:</p>
+<p><a href="{{ .ConfirmationURL }}">Confirmar y entrar</a></p>
+
+<p>Si tienes BodyFit instalada en el teléfono, escribe este código dentro de
+la aplicación:</p>
+<p style="font-size:24px;letter-spacing:4px"><b>{{ .Token }}</b></p>
+```
+
+### El límite de correos es de 2 por hora
+
+El SMTP integrado de Supabase, en plan free, manda **2 correos por hora y
+dirección**. Al probar se choca con eso enseguida: la aplicación lo traduce a
+«Demasiados intentos. Espera unos minutos antes de pedir otro» en vez de
+enseñar un 429.
+
+Para pruebas intensivas hace falta un SMTP propio (Resend, Postmark) en
+**Authentication → Emails → SMTP Settings**.
 
 ### 1 bis · La plantilla del correo, o no habrá código
 
@@ -125,6 +162,25 @@ producción.
 La clave publishable es pública por diseño: viaja en el JavaScript del
 navegador y lo que protege los datos es RLS, que está activo en las 20 tablas
 con `using` **y** `with check` — comprobado con dos usuarios reales.
+
+---
+
+## Magic Link: qué se probó exactamente
+
+Con una dirección real, contra el proyecto de staging y el preview desplegado:
+
+| Paso | Resultado |
+|---|---|
+| `POST /auth/v1/otp?redirect_to=<preview>` | HTTP 200, correo enviado |
+| Token generado y guardado | `confirmation_token` presente en `auth.users` |
+| `GET /auth/v1/verify` | **303 al preview**, no al Site URL → la lista de Redirect URLs es correcta |
+| Sesión en el fragmento | `access_token`, `refresh_token`, `expires_in` |
+| La aplicación la recoge | sesión guardada, correo enmascarado `gpu***@gmail.com` |
+| El token sale de la barra | `location.hash` limpio: no queda en el historial |
+| La sesión sirve | `sync_health` y `sync_push` responden 200 bajo RLS |
+
+Lo único que no cubre esto es que el correo **se vea** en la bandeja, que es
+justo lo que no se puede automatizar.
 
 ---
 
