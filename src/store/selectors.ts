@@ -4,6 +4,10 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { builtinRoutines, foodCatalog } from '@/data/registry';
+import {
+  useExerciseCatalog as useExerciseCatalogLoaded,
+  useFoodCatalog as useFoodCatalogLoaded,
+} from '@/data/useCatalog';
 import { setCatalog } from '@/data/foodSearch';
 import { computeTargets } from '@bodyfit/domain/energy';
 import { remainingMacros, sumMacros } from '@bodyfit/domain/macros';
@@ -39,14 +43,18 @@ let lastCatalogSignature = '';
 /** Catalogo completo: base local + alimentos del usuario. */
 export function useCatalog(): Food[] {
   const customFoods = useNutritionStore((s) => s.customFoods);
+  /*
+   * El catalogo llega por carga diferida, y el hook es lo que hace que este
+   * selector se entere de cuando llega.
+   *
+   * Sin el, el `useMemo` de abajo dependia solo de `customFoods`: se calculaba
+   * una vez con el catalogo todavia vacio y NO SE VOLVIA A CALCULAR nunca. La
+   * busqueda de alimentos se quedaba con los alimentos propios y nada mas.
+   */
+  const cargado = useFoodCatalogLoaded();
 
   return useMemo(() => {
-    /*
-     * El catalogo base llega por carga diferida: hasta que una pantalla de
-     * nutricion lo pida, aqui solo estan los alimentos propios del usuario.
-     * Es correcto: sin esas pantallas abiertas, nadie busca alimentos.
-     */
-    const base = foodCatalog()?.all ?? [];
+    const base = cargado?.all ?? foodCatalog()?.all ?? [];
     const customs = alive(customFoods).map((c) => ({ ...c, custom: true }) as Food);
     const catalog = [...base, ...customs];
     // El indice de busqueda solo se reconstruye si cambio el conjunto
@@ -56,7 +64,7 @@ export function useCatalog(): Food[] {
       setCatalog(catalog);
     }
     return catalog;
-  }, [customFoods]);
+  }, [customFoods, cargado]);
 }
 
 export function useFoodLookup(): Map<string, Food> {
@@ -152,7 +160,17 @@ export function useDayNutrition(date: string): DayNutrition {
 
 export function useRoutines() {
   const custom = useTrainingStore((s) => s.routines);
-  return useMemo(() => [...builtinRoutines(), ...alive(custom)], [custom]);
+  /*
+   * Mismo motivo que en `useCatalog`: las rutinas de fabrica llegan por carga
+   * diferida y el memo dependia solo de las personalizadas. Se calculaba con la
+   * lista vacia y ahi se quedaba, asi que en Entrenamiento no aparecia ninguna
+   * rutina — solo "Entreno libre" — y no habia forma de elegir otra cosa.
+   */
+  const cargado = useExerciseCatalogLoaded();
+  return useMemo(
+    () => [...(cargado?.routines ?? builtinRoutines()), ...alive(custom)],
+    [custom, cargado],
+  );
 }
 
 export function useWorkouts() {

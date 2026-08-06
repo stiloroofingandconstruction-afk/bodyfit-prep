@@ -502,3 +502,47 @@ test.describe('Sesion sin terminar de otro dia', () => {
     await expect(page.getByRole('button', { name: /Entreno libre/i }).first()).toBeVisible();
   });
 });
+
+test.describe('Las rutinas de fabrica aparecen', () => {
+  /*
+   * Regresion de cuando los catalogos pasaron a carga diferida.
+   *
+   * `useRoutines` memorizaba solo sobre las rutinas personalizadas. Las de
+   * fabrica llegan despues, por descarga, y el memo NO se recalculaba: la lista
+   * se quedaba vacia para siempre. En Entrenamiento solo salia "Entreno libre"
+   * y no habia forma de elegir una rutina.
+   *
+   * Lo mismo pasaba con los alimentos: la busqueda solo veia los propios.
+   */
+  test('entrando directo a Entrenamiento hay rutinas que elegir', async ({ page }) => {
+    await seedApp(page);
+    // Directo, sin pasar por ninguna pantalla que cargue el catalogo antes
+    await page.goto('/entrenamiento');
+    await expect(page.getByRole('navigation')).toBeVisible();
+
+    await expect(page.getByText('Rutinas', { exact: true })).toBeVisible();
+    const rutinas = page.locator('button', { hasText: /dias/ });
+    await expect(rutinas.first(), 'no aparece ninguna rutina de fabrica').toBeVisible({
+      timeout: 15_000,
+    });
+    expect(await rutinas.count(), 'deberia haber varias rutinas').toBeGreaterThan(1);
+
+    // Y se puede abrir una
+    await rutinas.first().click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+  });
+
+  test('entrando directo a Nutricion la busqueda ve el catalogo', async ({ page }) => {
+    await seedApp(page);
+    await page.goto('/nutricion');
+    await expect(page.getByRole('navigation')).toBeVisible();
+
+    await page.getByRole('button', { name: /Anadir|Buscar|Alimento/i }).first().click();
+    const buscador = page.getByRole('dialog').getByRole('textbox').first();
+    await buscador.fill('pollo');
+    await expect(
+      page.getByText(/Pechuga de pollo/i).first(),
+      'la busqueda no ve el catalogo de alimentos',
+    ).toBeVisible({ timeout: 15_000 });
+  });
+});
