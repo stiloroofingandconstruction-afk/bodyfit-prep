@@ -40,7 +40,7 @@ import {
 import { APP_SCHEMA_VERSION } from '@bodyfit/domain/versioning';
 import { deviceId, observe, tick } from './identity';
 import { allEntries, putEntries, putEntry, removeEntries } from './outboxStore';
-import { validateCursor, type SyncAdapter } from './adapters/types';
+import { validateCursor, type HealthStatus, type SyncAdapter } from './adapters/types';
 import { localOnlyAdapter } from './adapters/localOnly';
 import { syncEnabled } from './flag';
 import { APP_VERSION } from '@/services/backup';
@@ -127,7 +127,58 @@ export async function initSync(): Promise<void> {
     cursor = '0';
   }
 
+  void announceDevice();
   notify();
+}
+
+/**
+ * Da de alta este dispositivo en el servidor.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Estuvo sin llamarse nunca.
+ *
+ * El metodo estaba en el contrato, la funcion SQL existia y la auditoria del
+ * adaptador la probaba con exito. Lo que faltaba era que la aplicacion la
+ * invocara: se descubrio mirando el servidor despues de un inicio de sesion de
+ * verdad, con la tabla `devices` vacia.
+ *
+ * Una auditoria que prueba un metodo no prueba que alguien lo use. Son cosas
+ * distintas y esta se coló entre las dos.
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * No bloquea nada: si falla, la sincronizacion funciona igual —`sync_push` crea
+ * lo que necesita— y solo se pierde el registro de que este aparato existe. Por
+ * eso no se reintenta ni se propaga el error.
+ */
+async function announceDevice(): Promise<void> {
+  if (!syncEnabled()) return;
+  try {
+    await adapter.registerDevice({
+      deviceId: deviceId(),
+      label: deviceLabel(),
+      platform: typeof navigator === 'undefined' ? 'desconocida' : navigator.platform,
+      clientVersion: APP_VERSION,
+    });
+  } catch (err) {
+    console.warn('[sync] no se pudo registrar el dispositivo', err);
+  }
+}
+
+/**
+ * Un nombre reconocible para la lista de dispositivos.
+ *
+ * Del `userAgent`, no del modelo: Safari en iOS no dice si es un iPhone 12 o un
+ * 15, y fingir precision que no se tiene es peor que decir "iPhone".
+ */
+function deviceLabel(): string {
+  if (typeof navigator === 'undefined') return 'Dispositivo';
+  const ua = navigator.userAgent;
+  if (/iPad/.test(ua)) return 'iPad';
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/Android/.test(ua)) return 'Android';
+  if (/Macintosh/.test(ua)) return 'Mac';
+  if (/Windows/.test(ua)) return 'Windows';
+  return 'Dispositivo';
 }
 
 /* ═══════════════════════════════════════════════════════════ encolado ══ */
@@ -340,6 +391,21 @@ export async function pull(
   lastSyncAt = nowMs;
   notify();
   return { received, applied, skipped };
+}
+
+/**
+ * Pregunta al servidor si esta vivo y que esquema entiende.
+ *
+ * Lo usa el diagnostico. Sin esto, la pantalla ensena la version del CLIENTE y
+ * deja creer que es la del servidor: cuando las dos difieren —que es justo el
+ * caso que rompe una sincronizacion— no habria forma de verlo.
+ */
+export async function checkServer(): Promise<HealthStatus> {
+  try {
+    return await adapter.healthCheck();
+  } catch (err) {
+    return { reachable: false, serverSchema: null, detail: String(err) };
+  }
 }
 
 /* ══════════════════════════════════════════════════════════ diagnostico ══ */

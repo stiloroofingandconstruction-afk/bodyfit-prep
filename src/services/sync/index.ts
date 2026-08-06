@@ -42,6 +42,7 @@ export {
   subscribeToSync,
   outboxEntries,
   retryDeadLetter,
+  checkServer,
   type SyncStatus,
 } from './engine';
 export { deviceId, currentClock } from './identity';

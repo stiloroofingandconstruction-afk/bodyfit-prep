@@ -8,6 +8,7 @@ import {
   SYNC_FLAGS,
   SYNC_FLAG_LABEL,
   applyAdapterSelection,
+  checkServer,
   currentClock,
   flush,
   initSync,
@@ -41,6 +42,7 @@ import { toast } from '@/store/uiStore';
 export default function SyncDiagnosticsPage() {
   const [, force] = useState(0);
   const [status, setStatus] = useState(() => syncStatus());
+  const [servidor, setServidor] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
     setStatus(syncStatus());
@@ -58,6 +60,14 @@ export default function SyncDiagnosticsPage() {
      */
     applyAdapterSelection();
     void initSync().then(refresh);
+    /*
+     * El esquema del SERVIDOR, no el nuestro. Cuando los dos no coinciden es
+     * exactamente lo que rompe una sincronizacion, y ensenar solo el del
+     * cliente hacia imposible verlo.
+     */
+    void checkServer().then((h) =>
+      setServidor(h.reachable ? `esquema ${h.serverSchema ?? '?'}` : `sin respuesta · ${h.detail}`),
+    );
     return subscribeToSync(refresh);
   }, [refresh]);
 
@@ -144,7 +154,8 @@ export default function SyncDiagnosticsPage() {
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
             <Row label="Dispositivo" value={status.deviceId.slice(0, 13)} />
             <Row label="Cursor" value={status.cursor} />
-            <Row label="Esquema" value={String(status.schemaVersion)} />
+            <Row label="Esquema (cliente)" value={String(status.schemaVersion)} />
+            <Row label="Servidor" value={servidor ?? 'comprobando...'} />
             <Row label="Reloj" value={currentClock().slice(0, 24)} />
           </dl>
 

@@ -264,6 +264,38 @@ export function runCollectionTests(
     numeracionesViejas.join(' | '),
   );
 
+  /* ═════════════════ el contrato de sincronizacion se usa entero ══════ */
+  line('Contrato de sincronizacion');
+
+  /*
+   * Todo metodo declarado en `SyncAdapter` tiene que invocarlo alguien fuera de
+   * los propios adaptadores.
+   *
+   * `registerDevice` estuvo escrito, con su funcion SQL, con su prueba de
+   * auditoria en verde... y sin que la aplicacion lo llamara nunca. Se descubrio
+   * mirando la tabla `devices` vacia despues de un inicio de sesion real.
+   *
+   * Una auditoria que prueba un metodo demuestra que el metodo FUNCIONA, no que
+   * alguien lo USE. Son cosas distintas y por ese hueco se colo este.
+   */
+  const contrato = read('services/sync/adapters/types.ts');
+  const metodos = [...contrato.matchAll(/^\s{2}(\w+)\(/gm)]
+    .map((m) => m[1])
+    .filter((name) => name !== 'readonly');
+
+  const consumidores = allSources()
+    .filter((f) => f.startsWith('services/sync/') && !f.includes('/adapters/'))
+    .concat(allSources().filter((f) => f.startsWith('features/') || f.startsWith('store/')))
+    .map((f) => read(f))
+    .join('\n');
+
+  const sinUsar = metodos.filter((m) => !consumidores.includes(`${m}(`));
+  check(
+    'todo metodo del adaptador lo llama alguien',
+    sinUsar.length === 0,
+    sinUsar.length ? `nadie invoca: ${sinUsar.join(', ')}` : `${metodos.length} metodos`,
+  );
+
   const summary = versionSummary();
   check(
     'el resumen de versiones cubre todas las colecciones',
