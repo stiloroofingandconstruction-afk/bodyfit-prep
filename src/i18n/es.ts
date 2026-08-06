@@ -1129,6 +1129,7 @@ export const es = {
   'tr.rirLong': 'Repeticiones en reserva',
   'tr.rirHelp': 'Cuantas te quedaban al parar. 0 = hasta el fallo.',
   'tr.rirPlus': '5+',
+  'tr.openToday': 'Tienes un entrenamiento abierto',
   'tr.unfinished': 'Tienes una sesion sin terminar',
   'tr.unfinishedFrom': 'Empezada el {date}',
   'tr.unfinishedSets': '{n} series hechas',

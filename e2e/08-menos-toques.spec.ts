@@ -461,7 +461,7 @@ test.describe('Sesion sin terminar de otro dia', () => {
     expect(estado.active).toBeNull();
   });
 
-  test('una sesion de HOY sigue comportandose como siempre', async ({ page }) => {
+  test('una sesion de HOY tampoco te deja atrapado', async ({ page }) => {
     await seedApp(page);
     await page.evaluate(() => {
       const hoy = new Date().toISOString().slice(0, 10);
@@ -485,8 +485,20 @@ test.describe('Sesion sin terminar de otro dia', () => {
     await page.reload();
     await page.goto('/entrenamiento');
 
-    // Sin avisos raros: se continua y ya
+    /*
+     * El primer arreglo solo miraba las sesiones de otro dia y no bastaba: una
+     * abierta HOY bloqueaba igual, y la unica salida estaba enterrada dentro de
+     * la propia sesion. Quien lo sufrio lo describio como "siempre sale el
+     * mismo entrenamiento".
+     */
+    await expect(page.getByText(/entrenamiento abierto/i)).toBeVisible();
     await expect(page.getByText(/sesion sin terminar/i)).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /Continuar/i }).first()).toBeVisible();
+
+    // Y hay salida en un toque, sin entrar en la sesion
+    await expect(page.getByRole('button', { name: /Seguir con esa sesion/i })).toBeVisible();
+    await page.getByRole('button', { name: /Descartarla y empezar hoy/i }).click();
+
+    await expect(page.getByText(/entrenamiento abierto/i)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Entreno libre/i }).first()).toBeVisible();
   });
 });

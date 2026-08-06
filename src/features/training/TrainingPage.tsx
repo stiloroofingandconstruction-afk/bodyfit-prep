@@ -101,23 +101,30 @@ export default function TrainingPage() {
       <Page>
         {/*
           ─────────────────────────────────────────────────────────────────
-          UNA SESION DE OTRO DIA NO PUEDE BLOQUEAR LA DE HOY
+          UNA SESION ABIERTA NUNCA PUEDE DEJARTE ATRAPADO
 
           Si alguien empieza a entrenar y no cierra la sesion —lo normal:
           suena el telefono, se acaba la bateria, se va del gimnasio— esa
-          sesion se quedaba activa para siempre y la pantalla SOLO ofrecia
-          continuarla. Al dia siguiente no habia forma de empezar el
-          entrenamiento de hoy: la aplicacion insistia en el de ayer.
+          sesion se queda activa, y la pantalla SOLO ofrecia continuarla.
+          Sin forma de elegir otro entrenamiento.
 
-          Ahora se dice lo que hay y se resuelve en un toque. Lo que NO se
-          hace es descartarla sola: puede tener series de verdad dentro.
+          El primer arreglo solo miro las sesiones de OTRO dia, y no
+          bastaba: una sesion abierta hoy bloqueaba exactamente igual, y la
+          unica salida estaba enterrada dentro de la propia sesion. Quien
+          lo sufrio lo describio asi: "siempre sale el mismo entrenamiento".
+
+          Ahora vale para cualquier sesion abierta, sea del dia que sea: se
+          dice lo que hay y se resuelve en un toque. Lo que NO se hace es
+          descartarla sola, porque puede tener series de verdad dentro.
           ─────────────────────────────────────────────────────────────────
         */}
-        {active && active.date !== today() ? (
+        {active ? (
           <Card className="border-warn/30 bg-warn/5">
-            <p className="text-[15px] font-semibold">{t('tr.unfinished')}</p>
+            <p className="text-[15px] font-semibold">
+              {active.date === today() ? t('tr.openToday') : t('tr.unfinished')}
+            </p>
             <p className="mt-1 text-xs text-faint">
-              {t('tr.unfinishedFrom', { date: friendlyDate(active.date) })} ·{' '}
+              {active.name} · {t('tr.unfinishedFrom', { date: friendlyDate(active.date) })} ·{' '}
               {t('tr.unfinishedSets', { n: activeDoneSets })}
             </p>
 
@@ -174,11 +181,6 @@ export default function TrainingPage() {
               )}
             </div>
           </Card>
-        ) : active ? (
-          <Button variant="primary" size="lg" block onClick={() => navigate('/entrenamiento/activo')}>
-            <Play size={18} />
-            {t('home.continueWorkout')}
-          </Button>
         ) : (
           <>
             {/*
