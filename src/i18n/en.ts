@@ -1121,6 +1121,7 @@ export const en: Partial<Record<keyof typeof es, string>> = {
   'tr.rirLong': 'Reps in reserve',
   'tr.rirHelp': 'How many you had left when you stopped. 0 = to failure.',
   'tr.rirPlus': '5+',
+  'tr.openToday': 'You have a workout in progress',
   'tr.unfinished': 'You have an unfinished session',
   'tr.unfinishedFrom': 'Started on {date}',
   'tr.unfinishedSets': '{n} sets done',
