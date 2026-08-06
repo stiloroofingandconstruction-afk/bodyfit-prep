@@ -311,6 +311,27 @@ export function runSyncTests(
       'y la operacion reconstruida valida',
       validateOperation({ ...comoLoDevuelvePostgres, checksum: emitida.checksum }).length === 0,
     );
+    /*
+     * El dueno no cambia el checksum.
+     *
+     * La operacion se emite sin sesion (`userId: null`) y vuelve del servidor
+     * con el identificador puesto. Si eso alterara el checksum, todo lo que se
+     * recibe fallaria la validacion y se descartaria sin decir nada — que es
+     * exactamente lo que pasaba.
+     */
+    const sinDueno = op({ device: DEVICE_A, hlc: hlcRt, createdAt: '2026-07-01T07:00:02.500Z' });
+    // Sin el `checksum` viejo dentro: si se cuela, se firma sobre la firma.
+    const { checksum: _previo, ...borrador } = sinDueno;
+    const conDueno = createOperation({
+      ...(borrador as OperationDraft),
+      userId: '00000000-0000-4000-8000-000000000abc',
+    });
+    check(
+      'el userId no cambia el checksum: lo decide el servidor, no el cliente',
+      conDueno.checksum === sinDueno.checksum,
+      'sin esto, todo lo recibido se descarta en silencio',
+    );
+
     check(
       'canonicalTimestamp acepta los dos formatos y da el mismo',
       canonicalTimestamp('2026-07-01T07:00:02.5+00:00') === '2026-07-01T07:00:02.500Z',

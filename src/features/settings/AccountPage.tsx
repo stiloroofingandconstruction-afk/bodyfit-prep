@@ -7,13 +7,13 @@ import { Input, Label } from '@/components/ui/Field';
 import {
   applyAdapterSelection,
   currentSession,
-  flush,
   initSync,
   setSyncFlag,
   subscribeToSync,
   syncFlag,
   syncStatus,
 } from '@/services/sync';
+import { syncNow } from '@/services/sync/scheduler';
 import {
   captureRedirectSession,
   maskEmail,
@@ -115,7 +115,7 @@ export default function AccountPage() {
       const result = await adoptLocalData();
       setSummary(null);
       toast(`${result.queued} registros en cola para subir`);
-      void flush().then(refresh);
+      void syncNow().then(refresh);
     } catch (err) {
       toast(String(err), 'error');
     } finally {
@@ -286,7 +286,7 @@ export default function AccountPage() {
               </dl>
 
               <div className="mt-4 flex gap-2">
-                <Button variant="secondary" onClick={() => void flush().then(refresh)}>
+                <Button variant="secondary" onClick={() => void syncNow().then(refresh)}>
                   <RefreshCw size={16} /> Sincronizar ahora
                 </Button>
                 <Button

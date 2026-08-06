@@ -7,12 +7,12 @@ import { useDeviceTestStore } from '@/store/deviceTestStore';
 import {
   applyAdapterSelection,
   currentClock,
-  flush,
   initSync,
   outboxEntries,
   subscribeToSync,
   syncStatus,
 } from '@/services/sync';
+import { syncNow } from '@/services/sync/scheduler';
 import { PASOS } from './twoDeviceSteps';
 import { download } from '@/lib/utils';
 import { toast } from '@/store/uiStore';
@@ -210,7 +210,7 @@ export default function TwoDeviceTestPage() {
           </dl>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => void flush().then(refresh)}>
+            <Button variant="secondary" onClick={() => void syncNow().then(refresh)}>
               Sincronizar ahora
             </Button>
             <Button variant="ghost" onClick={exportar}>

@@ -110,7 +110,24 @@ export type OperationDraft = Omit<SyncOperation, 'checksum'>;
  * a proposito. Contra eso protege RLS en el servidor, no este numero.
  */
 export function operationChecksum(draft: OperationDraft): string {
-  return checksum(draft);
+  /*
+   * `userId` NO entra en el checksum.
+   *
+   * No es contenido: es propiedad, y la decide el servidor por RLS. El cliente
+   * crea la operacion con `null` —cuando se emite puede no haber sesion— y al
+   * volver del servidor se reconstruye con el identificador del usuario. Dos
+   * valores distintos para el mismo dato daban dos checksums distintos, la
+   * validacion fallaba y la operacion se DESCARTABA EN SILENCIO al recibirla.
+   *
+   * Sintoma: un peso registrado en el telefono llegaba al servidor, el otro
+   * dispositivo se lo bajaba... y no aparecia nunca. Sin error, sin aviso.
+   * Seis rondas de sincronizacion no bastaban porque no era cuestion de tiempo.
+   *
+   * El checksum protege lo que el cliente escribio. Quien es el dueno lo
+   * comprueba RLS en cada peticion, que es donde tiene que comprobarse.
+   */
+  const { userId: _propiedadDelServidor, ...contenido } = draft;
+  return checksum(contenido);
 }
 
 /**

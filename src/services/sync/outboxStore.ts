@@ -11,29 +11,8 @@
  */
 import type { OutboxEntry, OutboxState } from '@bodyfit/domain/sync/outbox';
 
-const DB_NAME = 'bodyfit-sync';
-const DB_VERSION = 1;
-const STORE = 'outbox';
 
-let dbPromise: Promise<IDBDatabase> | null = null;
-
-function open(): Promise<IDBDatabase> {
-  if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(STORE)) {
-        const store = db.createObjectStore(STORE, { keyPath: 'operationId' });
-        // Para poder pedir "que hay pendiente" sin recorrer la cola entera.
-        store.createIndex('state', 'state');
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-  return dbPromise;
-}
+import { OUTBOX_STORE as STORE, openSyncDb as open } from './db';
 
 function tx<T>(mode: IDBTransactionMode, fn: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
   return open().then(

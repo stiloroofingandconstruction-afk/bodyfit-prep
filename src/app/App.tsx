@@ -41,6 +41,27 @@ const SyncDiagnostics = lazy(() => import('@/features/settings/SyncDiagnosticsPa
 const Account = lazy(() => import('@/features/settings/AccountPage'));
 const TwoDeviceTest = lazy(() => import('@/features/settings/TwoDeviceTestPage'));
 
+/**
+ * Enciende la sincronizacion automatica.
+ *
+ * El `import()` es diferido a proposito: con el flag apagado —produccion hoy—
+ * el motor no llega a descargarse, y el arranque pesa exactamente lo mismo que
+ * antes de que existiera todo esto.
+ */
+function useSyncScheduler(): void {
+  useEffect(() => {
+    let stop: (() => void) | undefined;
+    void import('@/services/sync/flag').then(({ syncEnabled }) => {
+      if (!syncEnabled()) return;
+      void import('@/services/sync/scheduler').then((m) => {
+        m.startSyncScheduler();
+        stop = m.stopSyncScheduler;
+      });
+    });
+    return () => stop?.();
+  }, []);
+}
+
 export function App() {
   const hydrated = useHydrated();
   const onboarded = useProfileStore((s) => s.profile.onboarded);
@@ -48,6 +69,7 @@ export function App() {
   const devMode = useSettingsStore((s) => s.devMode);
 
   useGlobalErrorLogging();
+  useSyncScheduler();
 
   if (!hydrated) return <Splash />;
 

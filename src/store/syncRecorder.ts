@@ -69,6 +69,14 @@ async function emit(
   try {
     const { recordChange } = await import('@/services/sync/engine');
     await recordChange({ collection, entityId, operationType, payload });
+
+    /*
+     * Y se pide un ciclo. Sin esto la operacion se quedaba en la cola hasta que
+     * alguien entrara en ajustes y pulsara "Sincronizar ahora" — que es lo que
+     * pasaba, y hacia que esto no fuera sincronizacion sino exportacion manual.
+     */
+    const { syncSoon } = await import('@/services/sync/scheduler');
+    syncSoon();
   } catch (err) {
     /*
      * Un fallo al encolar no puede tumbar la accion del usuario: el cambio ya

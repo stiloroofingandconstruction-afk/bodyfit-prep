@@ -296,6 +296,40 @@ export function runCollectionTests(
     sinUsar.length ? `nadie invoca: ${sinUsar.join(', ')}` : `${metodos.length} metodos`,
   );
 
+  /*
+   * Emitir y aplicar tienen que cubrir LAS MISMAS colecciones.
+   *
+   * Emitir sin aplicar manda datos que el otro dispositivo nunca vera. Aplicar
+   * sin emitir espera algo que no llega. Las dos mitades se escribieron con
+   * meses de diferencia y la segunda no existia: la sincronizacion subia datos
+   * y no bajaba ninguno.
+   */
+  const recorder = read('store/syncRecorder.ts');
+  const emitidas = new Set(
+    allSources()
+      .filter((f) => f.startsWith('store/') && f !== 'store/syncRecorder.ts')
+      .flatMap((f) => [...read(f).matchAll(/record(?:Upsert|Delete|Restore)\('([^']+)'/g)])
+      .map((m) => m[1]),
+  );
+  const aplicadas = new Set(
+    [...read('services/sync/apply.ts').matchAll(/^  (\w+): \{$/gm)].map((m) => m[1]),
+  );
+
+  const sinAplicar = [...emitidas].filter((c) => !aplicadas.has(c));
+  check(
+    'toda coleccion que se emite se sabe aplicar',
+    sinAplicar.length === 0,
+    sinAplicar.length ? `se emiten y no se aplican: ${sinAplicar.join(', ')}` : `${emitidas.size} colecciones`,
+  );
+
+  const sinEmitir = [...aplicadas].filter((c) => !emitidas.has(c));
+  check(
+    'toda coleccion que se aplica se emite desde algun sitio',
+    sinEmitir.length === 0,
+    sinEmitir.join(', '),
+  );
+  check('el recorder existe y emite algo', recorder.includes('recordChange'));
+
   const summary = versionSummary();
   check(
     'el resumen de versiones cubre todas las colecciones',

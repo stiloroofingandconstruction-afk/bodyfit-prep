@@ -10,7 +10,6 @@ import {
   applyAdapterSelection,
   checkServer,
   currentClock,
-  flush,
   initSync,
   outboxEntries,
   retryDeadLetter,
@@ -20,6 +19,7 @@ import {
   syncStatus,
   type SyncFlag,
 } from '@/services/sync';
+import { syncNow } from '@/services/sync/scheduler';
 import { download } from '@/lib/utils';
 import { fmtDateTime } from '@/lib/date';
 import { toast } from '@/store/uiStore';
@@ -193,7 +193,7 @@ export default function SyncDiagnosticsPage() {
           )}
 
           <div className="mt-4 flex gap-2">
-            <Button variant="secondary" onClick={() => void flush().then(refresh)}>
+            <Button variant="secondary" onClick={() => void syncNow().then(refresh)}>
               <RefreshCw size={16} /> Sincronizar ahora
             </Button>
             <Button variant="ghost" onClick={exportDiagnostics}>
