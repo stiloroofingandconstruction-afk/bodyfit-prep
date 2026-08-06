@@ -181,13 +181,21 @@ export default function AccountPage() {
 
               {sent && (
                 <div className="mt-3">
+                  {/*
+                    Sin `maxLength` y sin decir cuantos digitos son.
+                    La longitud del codigo la decide el servidor —Supabase la
+                    tiene configurable— y el nuestro manda ocho, no seis. Un
+                    campo que promete seis y recorta a seis habria hecho
+                    imposible entrar, y el mensaje de error habria culpado al
+                    codigo en vez de al campo.
+                  */}
                   <Label>Codigo del correo</Label>
                   <Input
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
-                    placeholder="123456"
+                    placeholder="El codigo del correo"
                   />
                   <p className="mt-2 text-xs text-faint">
                     Si tienes BodyFit instalada en el telefono, usa el codigo: el enlace del

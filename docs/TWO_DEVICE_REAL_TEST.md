@@ -27,7 +27,7 @@ Si alguna casilla está vacía, esta prueba todavía no toca.
 **Dispositivo A**: iPhone con BodyFit instalada desde la pantalla de inicio.
 **Dispositivo B**: navegador de escritorio o un segundo teléfono.
 
-En el iPhone, entra con el **código de seis dígitos**, no con el enlace: el
+En el iPhone, entra con el **código del correo**, no con el enlace: el
 enlace del correo abre Safari y la sesión acabaría fuera de la PWA.
 
 ---

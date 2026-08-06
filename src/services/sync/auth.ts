@@ -113,7 +113,11 @@ export async function sendMagicLink(email: string): Promise<void> {
 }
 
 /**
- * Verifica el codigo de seis digitos.
+ * Verifica el codigo del correo.
+ *
+ * No se valida la longitud aqui a proposito: la decide el servidor y es
+ * configurable. Este proyecto manda ocho digitos, no los seis de la
+ * documentacion. Quien valide "son seis" romperia el dia que cambie.
  *
  * Existe ademas del enlace porque en un iPhone con la aplicacion instalada el
  * enlace del correo abre Safari, no la PWA, y la sesion acabaria en el sitio

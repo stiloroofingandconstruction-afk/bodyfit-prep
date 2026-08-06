@@ -40,7 +40,7 @@ export const PASOS: readonly PasoQA[] = [
     id: 'qa-01',
     grupo: 'Puesta a punto',
     dispositivo: 'A',
-    instruccion: 'Entra con la cuenta de prueba desde la PWA instalada, usando el codigo de seis digitos.',
+    instruccion: 'Entra con la cuenta de prueba desde la PWA instalada, usando el codigo que llega en el correo.',
     esperado: 'Ajustes → Cuenta muestra tu correo enmascarado.',
     porque:
       'Con el enlace no: en un iPhone el correo lo abre Safari y la sesion acabaria fuera de la aplicacion.',

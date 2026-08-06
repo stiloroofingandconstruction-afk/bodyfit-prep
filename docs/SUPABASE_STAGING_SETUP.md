@@ -40,7 +40,8 @@ Stilo ni con `mlb-picks-tracker`.
 | Site URL / Redirect URLs | ✅ configuradas y **probadas**: el `verify` redirige al preview |
 | Despliegue de staging en Vercel | ✅ con las variables, verificado en el bundle |
 | Magic Link de extremo a extremo | ✅ **validado** — ver abajo |
-| OTP de seis dígitos | ⬜ pendiente: bloqueado por el límite de 2 correos/hora |
+| SMTP propio (Gmail) | ✅ configurado; plantillas editables y límite a 30/hora |
+| Código OTP en el correo | ✅ llega — **de 8 dígitos, no 6** |
 | Producción | ✅ `disabled`, sin credenciales en el bundle |
 
 ### Esquema aplicado
@@ -124,7 +125,7 @@ Para pruebas intensivas hace falta un SMTP propio (Resend, Postmark) en
 La plantilla por defecto solo lleva `{{ .ConfirmationURL }}`, y la documentación
 de Supabase es explícita: *si está `{{ .ConfirmationURL }}` se manda un enlace;
 si está `{{ .Token }}` se manda un código*. Sin `{{ .Token }}` **no llega
-ningún código de seis dígitos**.
+ningún código**.
 
 Eso importa porque en un iPhone con la PWA instalada el enlace del correo abre
 Safari y la sesión acaba fuera de la aplicación. El código es la única vía que
