@@ -34,6 +34,25 @@ export interface ExerciseCatalog {
 
 let exercises: ExerciseCatalog | null = null;
 let exercisesPromise: Promise<ExerciseCatalog> | null = null;
+/**
+ * Si las rutinas de fabrica ya se registraron.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Sin esta marca, el catalogo se daba por completo teniendo solo los
+ * ejercicios.
+ *
+ * Nueve pantallas importan `@/data/exercises` de forma estatica —es correcto:
+ * son rutas diferidas, el catalogo viaja con ellas— y ese import registra los
+ * ejercicios al evaluarse, dejando `routines` vacio. `exerciseCatalog()`
+ * devolvia entonces un objeto no nulo, el hook concluia "ya esta cargado" y NO
+ * LLEGABA A PEDIR el modulo de rutinas nunca.
+ *
+ * Resultado: en Entrenamiento no aparecia ninguna rutina, solo "Entreno libre",
+ * y no habia forma de elegir otra cosa. El chunk de rutinas existia en `dist` y
+ * el navegador no lo pedia jamas.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+let routinesRegistered = false;
 
 /**
  * Lo llaman los propios modulos de catalogo al evaluarse.
@@ -47,6 +66,7 @@ export function registerExercises(all: Exercise[], byId: ReadonlyMap<string, Exe
 }
 
 export function registerRoutines(routines: Routine[]): void {
+  routinesRegistered = true;
   if (exercises) exercises.routines = routines;
   else exercises = { all: [], byId: new Map(), routines };
 }
@@ -59,7 +79,9 @@ export function registerRoutines(routines: Routine[]): void {
  * pregunta debe tener un plan para ese caso.
  */
 export function exerciseCatalog(): ExerciseCatalog | null {
-  return exercises;
+  // Completo significa ejercicios Y rutinas. Con solo una de las dos partes,
+  // quien pregunte debe seguir esperando en vez de creer que ya lo tiene todo.
+  return exercises && routinesRegistered ? exercises : null;
 }
 
 /**
@@ -67,7 +89,7 @@ export function exerciseCatalog(): ExerciseCatalog | null {
  * pantallas pidiendolo a la vez producen una sola descarga.
  */
 export function loadExerciseCatalog(): Promise<ExerciseCatalog> {
-  if (exercises) return Promise.resolve(exercises);
+  if (exercises && routinesRegistered) return Promise.resolve(exercises);
   exercisesPromise ??= Promise.all([import('./exercises'), import('./routines')]).then(
     ([m, r]) => {
       registerExercises(m.EXERCISES, m.EXERCISE_BY_ID);
