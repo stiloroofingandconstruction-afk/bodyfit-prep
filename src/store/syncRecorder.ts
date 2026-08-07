@@ -46,6 +46,27 @@ export function recordRestore(collection: SyncCollectionKey, entityId: string): 
   void emit(collection, entityId, 'restore');
 }
 
+/**
+ * Registra un cambio en una entidad UNICA: el perfil o los ajustes.
+ *
+ * No hay `id` que pasar porque no hay lista: hay uno por persona. El
+ * identificador es fijo para que los dos dispositivos hablen de lo mismo.
+ *
+ * Se manda solo lo que cambio, no el objeto entero. Aqui si importa: estas dos
+ * colecciones se fusionan POR CAMPO, y mandar todo haria que cambiar el idioma
+ * pisara el objetivo que el otro dispositivo acababa de cambiar.
+ */
+export function recordSingleton(
+  collection: 'profile' | 'settings',
+  patch: Record<string, unknown>,
+): void {
+  if (!syncEnabled()) return;
+  const campos = Object.entries(patch).filter(([, v]) => v !== undefined);
+  if (campos.length === 0) return;
+  void emit(collection, collection === 'profile' ? 'perfil' : 'ajustes', 'upsert',
+    Object.fromEntries(campos));
+}
+
 /** Varias entidades de golpe: duplicar un dia, repetir un entrenamiento. */
 export function recordUpsertMany(collection: SyncCollectionKey, entities: readonly Entity[]): void {
   if (!syncEnabled()) return;

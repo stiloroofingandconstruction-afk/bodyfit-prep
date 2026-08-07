@@ -17,6 +17,18 @@
  */
 import { STORAGE_PREFIX } from '@bodyfit/domain/collections';
 
+/**
+ * Lee una variable de compilacion sin dar por hecho que existe `import.meta.env`.
+ *
+ * En el navegador Vite la sustituye; en Node —las pruebas de dominio corren
+ * ahi— `import.meta.env` es `undefined`, y leerlo directamente tumbaba la
+ * suite entera con un TypeError que no decia nada del problema real.
+ */
+function viteEnv(name: string): string | undefined {
+  const meta = import.meta as { env?: Record<string, string | undefined> };
+  return meta.env?.[name];
+}
+
 const SESSION_KEY = `${STORAGE_PREFIX}sync:session`;
 
 /*
@@ -24,8 +36,8 @@ const SESSION_KEY = `${STORAGE_PREFIX}sync:session`;
  * que hizo falta construir una con parametros de query el error fue
  * "This expression is not constructable", que no apunta a la causa.
  */
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const SUPABASE_URL = viteEnv('VITE_SUPABASE_URL');
+const ANON = viteEnv('VITE_SUPABASE_ANON_KEY');
 
 export interface Session {
   readonly userId: string;

@@ -25,6 +25,8 @@ import { useTrainingStore } from '@/store/trainingStore';
 import { useBodyStore } from '@/store/bodyStore';
 import { useCheckinStore } from '@/store/checkinStore';
 import { usePhotoStore } from '@/store/photoStore';
+import { useProfileStore } from '@/store/profileStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import {
   clockKey,
   fromEntityState,
@@ -42,6 +44,53 @@ interface Applier {
   /** Escribe la lista completa de vuelta. */
   readonly write: (list: Entity[]) => void;
 }
+
+/**
+ * Colecciones que son UNA sola entidad, no una lista: el perfil y los ajustes.
+ *
+ * No tienen `id` propio porque no hace falta: hay uno por persona. Se les da un
+ * identificador fijo para que los dos dispositivos hablen de la misma entidad.
+ *
+ * Y se fusionan POR CAMPO, no por entidad: cambiar las unidades en el telefono
+ * y el objetivo en el ordenador tiene que conservar las dos cosas. Con fusion
+ * por entidad ganaria el ultimo y el otro cambio se perderia. Esa regla ya vive
+ * en `conflict.ts`; aqui solo se conecta.
+ */
+interface SingletonApplier {
+  readonly entityId: string;
+  readonly read: () => Record<string, unknown>;
+  readonly write: (fields: Record<string, unknown>) => void;
+}
+
+/**
+ * Que campos del perfil y de los ajustes viajan.
+ *
+ * Se declaran uno a uno a proposito. `devMode` no viaja —es una decision de
+ * este aparato— y tampoco los recordatorios, que dependen de los permisos de
+ * notificacion de cada dispositivo. Una lista explicita obliga a decidir cada
+ * campo nuevo en vez de sincronizarlo por inercia.
+ */
+const SETTINGS_FIELDS = [
+  'weightUnit', 'lengthUnit', 'locale', 'competitionMode', 'division',
+  'experience', 'trainingDaysPerWeek', 'discomforts', 'avoidedExercises',
+  'excludedFoods', 'stepGoal', 'waterGoalMl', 'acknowledgedDisclaimer',
+] as const;
+
+const SINGLETONS: Partial<Record<SyncCollectionKey, SingletonApplier>> = {
+  profile: {
+    entityId: 'perfil',
+    read: () => ({ ...useProfileStore.getState().profile }) as Record<string, unknown>,
+    write: (fields) => useProfileStore.setState((s) => ({ profile: { ...s.profile, ...fields } as never })),
+  },
+  settings: {
+    entityId: 'ajustes',
+    read: () => {
+      const state = useSettingsStore.getState() as unknown as Record<string, unknown>;
+      return Object.fromEntries(SETTINGS_FIELDS.map((k) => [k, state[k]]));
+    },
+    write: (fields) => useSettingsStore.setState(fields as never),
+  },
+};
 
 /**
  * Que store guarda cada coleccion.
@@ -75,7 +124,10 @@ const APPLIERS: Partial<Record<SyncCollectionKey, Applier>> = {
 };
 
 /** Las colecciones que este dispositivo sabe aplicar. Para las pruebas. */
-export const APPLIED_COLLECTIONS = Object.keys(APPLIERS) as SyncCollectionKey[];
+export const APPLIED_COLLECTIONS = [
+  ...Object.keys(APPLIERS),
+  ...Object.keys(SINGLETONS),
+] as SyncCollectionKey[];
 
 /* ═══════════════════════════════════════════════════════════ aplicacion ══ */
 
@@ -110,6 +162,22 @@ export async function applyRemoteOperations(
   let unsupported = 0;
 
   for (const op of sortOperations(ops)) {
+    const singleton = SINGLETONS[op.collection];
+    if (singleton) {
+      const key = clockKey(op.collection, op.entityId);
+      const current = toEntityState(op.collection, op.entityId, singleton.read(), clocks.get(key));
+      const result = applyOperation(current, op);
+      clocks.set(key, fromEntityState(result.next));
+      dirty.set(key, fromEntityState(result.next));
+      if (result.changed) {
+        singleton.write(result.next.fields as Record<string, unknown>);
+        changed++;
+      } else {
+        ignored++;
+      }
+      continue;
+    }
+
     const applier = APPLIERS[op.collection];
     if (!applier) {
       unsupported++;
@@ -171,7 +239,7 @@ export async function applyRemoteOperations(
  * hace repintar la pantalla sin motivo.
  */
 export async function rememberLocalOperation(op: SyncOperation): Promise<void> {
-  if (!APPLIERS[op.collection]) return;
+  if (!APPLIERS[op.collection] && !SINGLETONS[op.collection]) return;
   const clocks = await loadClocks();
   const key = clockKey(op.collection, op.entityId);
   const current = toEntityState(op.collection, op.entityId, null, clocks.get(key));

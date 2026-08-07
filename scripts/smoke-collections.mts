@@ -308,11 +308,19 @@ export function runCollectionTests(
   const emitidas = new Set(
     allSources()
       .filter((f) => f.startsWith('store/') && f !== 'store/syncRecorder.ts')
-      .flatMap((f) => [...read(f).matchAll(/record(?:Upsert|Delete|Restore)\('([^']+)'/g)])
+      .flatMap((f) => [
+        ...read(f).matchAll(/record(?:Upsert|Delete|Restore|Singleton)\('([^']+)'/g),
+      ])
       .map((m) => m[1]),
   );
+  /*
+   * Se leen las dos tablas de `apply.ts`: las colecciones que son listas y las
+   * que son una sola entidad —perfil y ajustes—. Mirar solo una dejaba fuera de
+   * la comprobacion justo las que se anadieron despues.
+   */
+  const aplicarFuente = read('services/sync/apply.ts');
   const aplicadas = new Set(
-    [...read('services/sync/apply.ts').matchAll(/^  (\w+): \{$/gm)].map((m) => m[1]),
+    [...aplicarFuente.matchAll(/^  (\w+): \{$/gm)].map((m) => m[1]),
   );
 
   const sinAplicar = [...emitidas].filter((c) => !aplicadas.has(c));
