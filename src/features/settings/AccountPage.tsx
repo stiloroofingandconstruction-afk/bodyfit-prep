@@ -7,13 +7,13 @@ import { Input, Label } from '@/components/ui/Field';
 import {
   applyAdapterSelection,
   currentSession,
-  flush,
   initSync,
   setSyncFlag,
   subscribeToSync,
   syncFlag,
   syncStatus,
 } from '@/services/sync';
+import { syncNow } from '@/services/sync/scheduler';
 import {
   captureRedirectSession,
   maskEmail,
@@ -24,6 +24,7 @@ import {
 import { adoptLocalData, summarizeLocalData, type AdoptionSummary } from '@/services/sync/adoption';
 import { createBackup } from '@/services/backup';
 import { download } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 import { fmtDateTime } from '@/lib/date';
 import { toast } from '@/store/uiStore';
 
@@ -114,7 +115,7 @@ export default function AccountPage() {
       const result = await adoptLocalData();
       setSummary(null);
       toast(`${result.queued} registros en cola para subir`);
-      void flush().then(refresh);
+      void syncNow().then(refresh);
     } catch (err) {
       toast(String(err), 'error');
     } finally {
@@ -166,7 +167,7 @@ export default function AccountPage() {
             <SectionTitle>Entrar</SectionTitle>
             <Card>
               <p className="mb-3 text-xs text-faint">
-                Sin contrasena. Te enviamos un enlace y un codigo de seis digitos al correo.
+                Sin contrasena. Te enviamos un correo para entrar.
               </p>
               <Label>Correo</Label>
               <Input
@@ -180,17 +181,26 @@ export default function AccountPage() {
 
               {sent && (
                 <div className="mt-3">
+                  {/*
+                    Sin `maxLength` y sin decir cuantos digitos son.
+                    La longitud del codigo la decide el servidor —Supabase la
+                    tiene configurable— y el nuestro manda ocho, no seis. Un
+                    campo que promete seis y recorta a seis habria hecho
+                    imposible entrar, y el mensaje de error habria culpado al
+                    codigo en vez de al campo.
+                  */}
                   <Label>Codigo del correo</Label>
                   <Input
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
-                    placeholder="123456"
+                    placeholder="El codigo del correo"
                   />
                   <p className="mt-2 text-xs text-faint">
                     Si tienes BodyFit instalada en el telefono, usa el codigo: el enlace del
-                    correo abre Safari y la sesion acabaria fuera de la aplicacion.
+                    correo abre Safari y la sesion acabaria fuera de la aplicacion. Si el
+                    correo solo trae enlace y no codigo, abrelo desde el navegador.
                   </p>
                 </div>
               )}
@@ -276,7 +286,7 @@ export default function AccountPage() {
               </dl>
 
               <div className="mt-4 flex gap-2">
-                <Button variant="secondary" onClick={() => void flush().then(refresh)}>
+                <Button variant="secondary" onClick={() => void syncNow().then(refresh)}>
                   <RefreshCw size={16} /> Sincronizar ahora
                 </Button>
                 <Button
@@ -290,6 +300,26 @@ export default function AccountPage() {
                   {sincronizando ? 'Pausar' : 'Reanudar'}
                 </Button>
               </div>
+            </Card>
+
+            {/*
+              Guion de la prueba fisica. Vive aqui y no en el diagnostico
+              porque es lo que se abre con el movil en la mano, no cuando algo
+              falla.
+            */}
+            <Card>
+              <Link
+                to="/ajustes/cuenta/dos-dispositivos"
+                className="pressable flex items-center justify-between rounded-xl px-1 py-1 text-sm"
+              >
+                <span>
+                  <span className="font-medium">Prueba de dos dispositivos</span>
+                  <span className="block text-xs text-faint">
+                    33 pasos guiados. Nada se marca solo.
+                  </span>
+                </span>
+                <span className="text-faint">›</span>
+              </Link>
             </Card>
 
             <Card>

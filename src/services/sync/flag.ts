@@ -11,6 +11,18 @@
  */
 import { STORAGE_PREFIX } from '@bodyfit/domain/collections';
 
+/**
+ * Lee una variable de compilacion sin dar por hecho que existe `import.meta.env`.
+ *
+ * En el navegador Vite la sustituye; en Node —las pruebas de dominio corren
+ * ahi— `import.meta.env` es `undefined`, y leerlo directamente tumbaba la
+ * suite entera con un TypeError que no decia nada del problema real.
+ */
+function viteEnv(name: string): string | undefined {
+  const meta = import.meta as { env?: Record<string, string | undefined> };
+  return meta.env?.[name];
+}
+
 export type SyncFlag = 'disabled' | 'internal' | 'beta' | 'enabled';
 
 const FLAG_KEY = `${STORAGE_PREFIX}sync:flag`;
@@ -32,7 +44,7 @@ export const SYNC_FLAG_LABEL: Record<SyncFlag, string> = {
  * queda desactivada.
  */
 const BUILD_DEFAULT: SyncFlag = ((): SyncFlag => {
-  const raw = import.meta.env.VITE_SYNC_FLAG as string | undefined;
+  const raw = viteEnv('VITE_SYNC_FLAG');
   return SYNC_FLAGS.includes(raw as SyncFlag) ? (raw as SyncFlag) : 'disabled';
 })();
 

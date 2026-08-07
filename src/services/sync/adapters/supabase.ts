@@ -23,8 +23,20 @@ import {
 import { createOperation, type SyncOperation } from '@bodyfit/domain/sync/operations';
 import { currentSession } from '../auth';
 
-const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+/**
+ * Lee una variable de compilacion sin dar por hecho que existe `import.meta.env`.
+ *
+ * En el navegador Vite la sustituye; en Node —las pruebas de dominio corren
+ * ahi— `import.meta.env` es `undefined`, y leerlo directamente tumbaba la
+ * suite entera con un TypeError que no decia nada del problema real.
+ */
+function viteEnv(name: string): string | undefined {
+  const meta = import.meta as { env?: Record<string, string | undefined> };
+  return meta.env?.[name];
+}
+
+const URL = viteEnv('VITE_SUPABASE_URL');
+const ANON = viteEnv('VITE_SUPABASE_ANON_KEY');
 
 /** Sin configuracion no hay adaptador: quien lo seleccione recibe el local. */
 export const SUPABASE_CONFIGURED = Boolean(URL && ANON);

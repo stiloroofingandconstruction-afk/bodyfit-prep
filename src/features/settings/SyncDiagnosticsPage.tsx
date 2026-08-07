@@ -8,8 +8,8 @@ import {
   SYNC_FLAGS,
   SYNC_FLAG_LABEL,
   applyAdapterSelection,
+  checkServer,
   currentClock,
-  flush,
   initSync,
   outboxEntries,
   retryDeadLetter,
@@ -19,6 +19,7 @@ import {
   syncStatus,
   type SyncFlag,
 } from '@/services/sync';
+import { syncNow } from '@/services/sync/scheduler';
 import { download } from '@/lib/utils';
 import { fmtDateTime } from '@/lib/date';
 import { toast } from '@/store/uiStore';
@@ -41,6 +42,7 @@ import { toast } from '@/store/uiStore';
 export default function SyncDiagnosticsPage() {
   const [, force] = useState(0);
   const [status, setStatus] = useState(() => syncStatus());
+  const [servidor, setServidor] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
     setStatus(syncStatus());
@@ -58,6 +60,14 @@ export default function SyncDiagnosticsPage() {
      */
     applyAdapterSelection();
     void initSync().then(refresh);
+    /*
+     * El esquema del SERVIDOR, no el nuestro. Cuando los dos no coinciden es
+     * exactamente lo que rompe una sincronizacion, y ensenar solo el del
+     * cliente hacia imposible verlo.
+     */
+    void checkServer().then((h) =>
+      setServidor(h.reachable ? `esquema ${h.serverSchema ?? '?'}` : `sin respuesta · ${h.detail}`),
+    );
     return subscribeToSync(refresh);
   }, [refresh]);
 
@@ -144,7 +154,8 @@ export default function SyncDiagnosticsPage() {
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
             <Row label="Dispositivo" value={status.deviceId.slice(0, 13)} />
             <Row label="Cursor" value={status.cursor} />
-            <Row label="Esquema" value={String(status.schemaVersion)} />
+            <Row label="Esquema (cliente)" value={String(status.schemaVersion)} />
+            <Row label="Servidor" value={servidor ?? 'comprobando...'} />
             <Row label="Reloj" value={currentClock().slice(0, 24)} />
           </dl>
 
@@ -182,7 +193,7 @@ export default function SyncDiagnosticsPage() {
           )}
 
           <div className="mt-4 flex gap-2">
-            <Button variant="secondary" onClick={() => void flush().then(refresh)}>
+            <Button variant="secondary" onClick={() => void syncNow().then(refresh)}>
               <RefreshCw size={16} /> Sincronizar ahora
             </Button>
             <Button variant="ghost" onClick={exportDiagnostics}>

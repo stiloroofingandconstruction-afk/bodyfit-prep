@@ -6,6 +6,7 @@ import type { WeightUnit, LengthUnit } from '@bodyfit/domain/units';
 import type { Division } from '@bodyfit/domain/competition';
 import type { ExerciseMedia } from '@bodyfit/domain/types';
 import type { Reminder, ReminderKind } from '@bodyfit/domain/prepTypes';
+import { recordSingleton } from './syncRecorder';
 
 export type Experience = 'principiante' | 'intermedio' | 'avanzado' | 'competidor';
 
@@ -81,7 +82,10 @@ export const useSettingsStore = create<SettingsState>()(
       acknowledgedDisclaimer: false,
       devMode: false,
 
-      setUnits: (patch) => set(patch),
+      setUnits: (patch) => {
+        set(patch);
+        recordSingleton('settings', patch as Record<string, unknown>);
+      },
 
       setLocaleSetting: (locale) => {
         // El diccionario puede no estar descargado todavia: se pide y, al
@@ -103,11 +107,15 @@ export const useSettingsStore = create<SettingsState>()(
           // Los formateadores de fecha y numero cachean el idioma: hay que tirarlos
           resetDateFormatters();
           set({ locale });
+          recordSingleton('settings', { locale });
         };
         void loadLocale(locale).then(apply, apply);
       },
 
-      update: (patch) => set(patch),
+      update: (patch) => {
+        set(patch);
+        recordSingleton('settings', patch as Record<string, unknown>);
+      },
 
       toggleAvoidedExercise: (id) =>
         set((s) => ({

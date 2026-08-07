@@ -17,10 +17,27 @@
  */
 import { STORAGE_PREFIX } from '@bodyfit/domain/collections';
 
+/**
+ * Lee una variable de compilacion sin dar por hecho que existe `import.meta.env`.
+ *
+ * En el navegador Vite la sustituye; en Node —las pruebas de dominio corren
+ * ahi— `import.meta.env` es `undefined`, y leerlo directamente tumbaba la
+ * suite entera con un TypeError que no decia nada del problema real.
+ */
+function viteEnv(name: string): string | undefined {
+  const meta = import.meta as { env?: Record<string, string | undefined> };
+  return meta.env?.[name];
+}
+
 const SESSION_KEY = `${STORAGE_PREFIX}sync:session`;
 
-const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+/*
+ * No se llama `URL` a proposito: tapaba el constructor global `URL`, y el dia
+ * que hizo falta construir una con parametros de query el error fue
+ * "This expression is not constructable", que no apunta a la causa.
+ */
+const SUPABASE_URL = viteEnv('VITE_SUPABASE_URL');
+const ANON = viteEnv('VITE_SUPABASE_ANON_KEY');
 
 export interface Session {
   readonly userId: string;
@@ -75,38 +92,53 @@ function store(next: Session | null): void {
  * obligatorio por la guia 4.8.
  */
 export async function sendMagicLink(email: string): Promise<void> {
-  if (!URL || !ANON) throw new Error('Supabase no configurado');
+  if (!SUPABASE_URL || !ANON) throw new Error('Supabase no configurado');
 
   /*
-   * `emailRedirectTo` tiene que estar en la lista de Redirect URLs del proyecto
-   * o Supabase devuelve al Site URL por defecto y la persona acaba en otro
-   * sitio. Se manda el origen actual: asi el mismo codigo funciona en local, en
-   * el preview de staging y en produccion sin ramas.
+   * `redirect_to` va en la QUERY, no en el cuerpo.
+   *
+   * `options.emailRedirectTo` es la forma del cliente `supabase-js`, que la
+   * traduce a este parametro por debajo. Mandandolo en el cuerpo, el endpoint
+   * REST lo IGNORA en silencio —no da error— y el enlace vuelve siempre al Site
+   * URL del proyecto. Con un solo entorno no se nota; con preview y produccion
+   * a la vez, manda a la gente al sitio equivocado.
+   *
+   * El destino tiene que estar ademas en la lista de Redirect URLs del
+   * proyecto, o GoTrue lo descarta y usa el Site URL igualmente.
    */
-  const res = await fetch(`${URL}/auth/v1/otp`, {
+  const endpoint = new URL(`${SUPABASE_URL}/auth/v1/otp`);
+  endpoint.searchParams.set('redirect_to', `${location.origin}/ajustes/cuenta`);
+
+  const res = await fetch(endpoint.toString(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', apikey: ANON },
-    body: JSON.stringify({
-      email,
-      create_user: true,
-      gotrue_meta_security: {},
-      options: { email_redirect_to: `${location.origin}/ajustes/cuenta` },
-    }),
+    body: JSON.stringify({ email, create_user: true }),
   });
-  if (!res.ok) throw new Error(`no se pudo enviar el enlace: ${res.status}`);
+
+  if (!res.ok) {
+    // 429: Supabase limita el envio de correos. Decirlo en vez de "error 429".
+    if (res.status === 429) {
+      throw new Error('Demasiados intentos. Espera unos minutos antes de pedir otro.');
+    }
+    throw new Error(`no se pudo enviar el enlace: ${res.status}`);
+  }
 }
 
 /**
- * Verifica el codigo de seis digitos.
+ * Verifica el codigo del correo.
+ *
+ * No se valida la longitud aqui a proposito: la decide el servidor y es
+ * configurable. Este proyecto manda ocho digitos, no los seis de la
+ * documentacion. Quien valide "son seis" romperia el dia que cambie.
  *
  * Existe ademas del enlace porque en un iPhone con la aplicacion instalada el
  * enlace del correo abre Safari, no la PWA, y la sesion acabaria en el sitio
  * equivocado. Teclear el codigo mantiene a la persona dentro de la aplicacion.
  */
 export async function verifyOtp(email: string, token: string): Promise<Session> {
-  if (!URL || !ANON) throw new Error('Supabase no configurado');
+  if (!SUPABASE_URL || !ANON) throw new Error('Supabase no configurado');
 
-  const res = await fetch(`${URL}/auth/v1/verify`, {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', apikey: ANON },
     body: JSON.stringify({ email, token, type: 'email' }),
@@ -193,10 +225,10 @@ export function sessionExpiresSoon(now = Date.now()): boolean {
  */
 export async function refreshSession(): Promise<Session | null> {
   const current = load();
-  if (!current || !URL || !ANON) return null;
+  if (!current || !SUPABASE_URL || !ANON) return null;
 
   try {
-    const res = await fetch(`${URL}/auth/v1/token?grant_type=refresh_token`, {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: ANON },
       body: JSON.stringify({ refresh_token: current.refreshToken }),

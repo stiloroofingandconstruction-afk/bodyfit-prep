@@ -26,6 +26,7 @@ import {
   sortOperations,
   validateOperation,
   verifyChecksum,
+  canonicalTimestamp,
   type OperationDraft,
   type SyncCollectionKey,
   type SyncOperation,
@@ -269,6 +270,76 @@ export function runSyncTests(
     check(
       'una operacion alterada se detecta al validar',
       validateOperation(alterada).some((p) => p.includes('checksum')),
+    );
+  }
+
+  {
+    /*
+     * El ida y vuelta por Postgres.
+     *
+     * `timestamptz` no conserva el texto: se envia `...T07:00:02.500Z` y
+     * PostgREST devuelve `...T07:00:02.5+00:00`. Mismo instante, otra cadena, y
+     * el checksum se calcula sobre el texto.
+     *
+     * Sin normalizar, TODA operacion que volvia del servidor fallaba la
+     * validacion y se descartaba en silencio: la sincronizacion parecia sana y
+     * no llegaba nada. Lo encontro la auditoria contra el Supabase real.
+     */
+    const hlcRt = formatHlc({ wallMs: 1, counter: 0, deviceId: DEVICE_A });
+    const emitida = op({ device: DEVICE_A, hlc: hlcRt, createdAt: '2026-07-01T07:00:02.500Z' });
+
+    const comoLoDevuelvePostgres = createOperation({
+      operationId: emitida.operationId,
+      userId: emitida.userId,
+      deviceId: emitida.deviceId,
+      collection: emitida.collection,
+      entityId: emitida.entityId,
+      operationType: emitida.operationType,
+      payload: emitida.payload as Record<string, unknown>,
+      hlc: emitida.hlc,
+      createdAt: '2026-07-01T07:00:02.5+00:00',
+      schemaVersion: emitida.schemaVersion,
+      clientVersion: emitida.clientVersion,
+    });
+
+    check(
+      'el formato de fecha de Postgres se normaliza al reconstruir',
+      comoLoDevuelvePostgres.checksum === emitida.checksum,
+      'sin esto, nada de lo que vuelve del servidor pasa la validacion',
+    );
+    check(
+      'y la operacion reconstruida valida',
+      validateOperation({ ...comoLoDevuelvePostgres, checksum: emitida.checksum }).length === 0,
+    );
+    /*
+     * El dueno no cambia el checksum.
+     *
+     * La operacion se emite sin sesion (`userId: null`) y vuelve del servidor
+     * con el identificador puesto. Si eso alterara el checksum, todo lo que se
+     * recibe fallaria la validacion y se descartaria sin decir nada — que es
+     * exactamente lo que pasaba.
+     */
+    const sinDueno = op({ device: DEVICE_A, hlc: hlcRt, createdAt: '2026-07-01T07:00:02.500Z' });
+    // Sin el `checksum` viejo dentro: si se cuela, se firma sobre la firma.
+    const { checksum: _previo, ...borrador } = sinDueno;
+    const conDueno = createOperation({
+      ...(borrador as OperationDraft),
+      userId: '00000000-0000-4000-8000-000000000abc',
+    });
+    check(
+      'el userId no cambia el checksum: lo decide el servidor, no el cliente',
+      conDueno.checksum === sinDueno.checksum,
+      'sin esto, todo lo recibido se descarta en silencio',
+    );
+
+    check(
+      'canonicalTimestamp acepta los dos formatos y da el mismo',
+      canonicalTimestamp('2026-07-01T07:00:02.5+00:00') === '2026-07-01T07:00:02.500Z',
+      canonicalTimestamp('2026-07-01T07:00:02.5+00:00'),
+    );
+    check(
+      'una fecha ilegible se deja tal cual, para que el error sea el correcto',
+      canonicalTimestamp('no es una fecha') === 'no es una fecha',
     );
   }
 

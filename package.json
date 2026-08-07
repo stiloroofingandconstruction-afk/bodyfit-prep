@@ -19,8 +19,9 @@
     "audit:dist": "node scripts/audit-dist.mjs",
     "audit:rls": "node scripts/audit-rls.mjs",
     "audit:adapter": "node scripts/audit-adapter.mjs",
-    "audit:staging": "npm run audit:rls && npm run audit:adapter",
-    "audit:sql": "node scripts/audit-sql.mjs"
+    "audit:staging": "npm run audit:rls && npm run audit:adapter && npm run audit:two-devices",
+    "audit:sql": "node scripts/audit-sql.mjs",
+    "audit:two-devices": "node scripts/run-domain-tests.mjs scripts/run-two-devices.mts"
   },
   "dependencies": {
     "lucide-react": "^0.469.0",

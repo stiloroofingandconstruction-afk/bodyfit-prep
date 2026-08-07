@@ -264,6 +264,80 @@ export function runCollectionTests(
     numeracionesViejas.join(' | '),
   );
 
+  /* ═════════════════ el contrato de sincronizacion se usa entero ══════ */
+  line('Contrato de sincronizacion');
+
+  /*
+   * Todo metodo declarado en `SyncAdapter` tiene que invocarlo alguien fuera de
+   * los propios adaptadores.
+   *
+   * `registerDevice` estuvo escrito, con su funcion SQL, con su prueba de
+   * auditoria en verde... y sin que la aplicacion lo llamara nunca. Se descubrio
+   * mirando la tabla `devices` vacia despues de un inicio de sesion real.
+   *
+   * Una auditoria que prueba un metodo demuestra que el metodo FUNCIONA, no que
+   * alguien lo USE. Son cosas distintas y por ese hueco se colo este.
+   */
+  const contrato = read('services/sync/adapters/types.ts');
+  const metodos = [...contrato.matchAll(/^\s{2}(\w+)\(/gm)]
+    .map((m) => m[1])
+    .filter((name) => name !== 'readonly');
+
+  const consumidores = allSources()
+    .filter((f) => f.startsWith('services/sync/') && !f.includes('/adapters/'))
+    .concat(allSources().filter((f) => f.startsWith('features/') || f.startsWith('store/')))
+    .map((f) => read(f))
+    .join('\n');
+
+  const sinUsar = metodos.filter((m) => !consumidores.includes(`${m}(`));
+  check(
+    'todo metodo del adaptador lo llama alguien',
+    sinUsar.length === 0,
+    sinUsar.length ? `nadie invoca: ${sinUsar.join(', ')}` : `${metodos.length} metodos`,
+  );
+
+  /*
+   * Emitir y aplicar tienen que cubrir LAS MISMAS colecciones.
+   *
+   * Emitir sin aplicar manda datos que el otro dispositivo nunca vera. Aplicar
+   * sin emitir espera algo que no llega. Las dos mitades se escribieron con
+   * meses de diferencia y la segunda no existia: la sincronizacion subia datos
+   * y no bajaba ninguno.
+   */
+  const recorder = read('store/syncRecorder.ts');
+  const emitidas = new Set(
+    allSources()
+      .filter((f) => f.startsWith('store/') && f !== 'store/syncRecorder.ts')
+      .flatMap((f) => [
+        ...read(f).matchAll(/record(?:Upsert|Delete|Restore|Singleton)\('([^']+)'/g),
+      ])
+      .map((m) => m[1]),
+  );
+  /*
+   * Se leen las dos tablas de `apply.ts`: las colecciones que son listas y las
+   * que son una sola entidad —perfil y ajustes—. Mirar solo una dejaba fuera de
+   * la comprobacion justo las que se anadieron despues.
+   */
+  const aplicarFuente = read('services/sync/apply.ts');
+  const aplicadas = new Set(
+    [...aplicarFuente.matchAll(/^  (\w+): \{$/gm)].map((m) => m[1]),
+  );
+
+  const sinAplicar = [...emitidas].filter((c) => !aplicadas.has(c));
+  check(
+    'toda coleccion que se emite se sabe aplicar',
+    sinAplicar.length === 0,
+    sinAplicar.length ? `se emiten y no se aplican: ${sinAplicar.join(', ')}` : `${emitidas.size} colecciones`,
+  );
+
+  const sinEmitir = [...aplicadas].filter((c) => !emitidas.has(c));
+  check(
+    'toda coleccion que se aplica se emite desde algun sitio',
+    sinEmitir.length === 0,
+    sinEmitir.join(', '),
+  );
+  check('el recorder existe y emite algo', recorder.includes('recordChange'));
+
   const summary = versionSummary();
   check(
     'el resumen de versiones cubre todas las colecciones',

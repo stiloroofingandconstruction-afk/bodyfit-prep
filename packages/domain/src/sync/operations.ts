@@ -110,12 +110,70 @@ export type OperationDraft = Omit<SyncOperation, 'checksum'>;
  * a proposito. Contra eso protege RLS en el servidor, no este numero.
  */
 export function operationChecksum(draft: OperationDraft): string {
-  return checksum(draft);
+  /*
+   * `userId` NO entra en el checksum.
+   *
+   * No es contenido: es propiedad, y la decide el servidor por RLS. El cliente
+   * crea la operacion con `null` —cuando se emite puede no haber sesion— y al
+   * volver del servidor se reconstruye con el identificador del usuario. Dos
+   * valores distintos para el mismo dato daban dos checksums distintos, la
+   * validacion fallaba y la operacion se DESCARTABA EN SILENCIO al recibirla.
+   *
+   * Sintoma: un peso registrado en el telefono llegaba al servidor, el otro
+   * dispositivo se lo bajaba... y no aparecia nunca. Sin error, sin aviso.
+   * Seis rondas de sincronizacion no bastaban porque no era cuestion de tiempo.
+   *
+   * El checksum protege lo que el cliente escribio. Quien es el dueno lo
+   * comprueba RLS en cada peticion, que es donde tiene que comprobarse.
+   */
+  const { userId: _propiedadDelServidor, ...contenido } = draft;
+  return checksum(contenido);
 }
 
-/** Sella una operacion. Pura: el `operationId` y el `hlc` los trae quien llama. */
+/**
+ * Forma canonica de una marca de tiempo.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * POR QUE ESTO EXISTE, Y POR QUE ES CRITICO
+ *
+ * El cliente emite `2026-07-01T07:00:02.500Z`. Postgres lo guarda como
+ * `timestamptz` y PostgREST lo devuelve como `2026-07-01T07:00:02.5+00:00`:
+ * mismo instante, OTRA CADENA. El checksum se calcula sobre el texto, asi que
+ * al reconstruir la operacion en el dispositivo receptor no coincidia y
+ * `validateOperation` la descartaba.
+ *
+ * El resultado era el peor fallo posible de todos los imaginables aqui: la
+ * sincronizacion parecia sana —sin errores, el cursor avanzando, la cola
+ * vaciandose— y NO LLEGABA NADA al otro dispositivo. Silencioso y total.
+ *
+ * Lo encontro la auditoria de dos dispositivos contra el Supabase real: 150
+ * operaciones en el servidor, cursores cuadrados, y 74 de 130 entidades.
+ *
+ * Normalizando aqui, el ida y vuelta por la base de datos deja la operacion
+ * byte a byte como se emitio.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+export function canonicalTimestamp(raw: string): string {
+  const ms = Date.parse(raw);
+  // Una fecha ilegible se deja tal cual: ya la rechazara `validateOperation`,
+  // que dira que la fecha no es valida en vez de que el checksum no cuadra.
+  return Number.isNaN(ms) ? raw : new Date(ms).toISOString();
+}
+
+/**
+ * Sella una operacion. Pura: el `operationId` y el `hlc` los trae quien llama.
+ *
+ * Normaliza `createdAt` antes de firmar. Es el unico punto donde se construye
+ * una operacion —al emitirla y al reconstruirla de lo que devuelve el
+ * servidor— asi que normalizar aqui garantiza que las dos den el mismo
+ * checksum.
+ */
 export function createOperation(draft: OperationDraft): SyncOperation {
-  return { ...draft, checksum: operationChecksum(draft) };
+  const canonical: OperationDraft = {
+    ...draft,
+    createdAt: canonicalTimestamp(draft.createdAt),
+  };
+  return { ...canonical, checksum: operationChecksum(canonical) };
 }
 
 export function verifyChecksum(op: SyncOperation): boolean {
