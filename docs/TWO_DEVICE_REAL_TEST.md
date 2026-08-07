@@ -12,6 +12,33 @@ producción, y solo se ven en un teléfono de verdad.
 
 ---
 
+## Verificado en dispositivos reales — 6 de agosto de 2026
+
+| | |
+|---|---|
+| Dispositivo A | iPhone, BodyFit instalada desde la pantalla de inicio |
+| Dispositivo B | Navegador de escritorio |
+| Entorno | Preview de staging con `VITE_SYNC_FLAG=internal` |
+
+**Pasos 1 a 6 superados por una persona.** Entrada con código en la PWA del
+iPhone, entrada en el escritorio con la misma cuenta, peso registrado en el
+iPhone y **visto en el ordenador tras recargar**.
+
+Es la primera vez que el ciclo completo —telefono, Supabase, segundo
+dispositivo— se cierra fuera de una prueba automatizada.
+
+### Lo que sigue sin verificarse
+
+Todo lo que depende del comportamiento de iOS, que ninguna otra prueba puede
+reproducir:
+
+- Modo avión real y reconexión (pasos 9–12)
+- Borrar en uno, editar en el otro, restaurar (pasos 13–17)
+- Cerrar la PWA del todo, bloquear el teléfono y volver (pasos 18–22)
+- Fotos entre dispositivos (pasos 23–25)
+
+---
+
 ## Antes de empezar
 
 | Requisito | Estado |
